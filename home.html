@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PantauPangan — Harga Komoditas Pangan Indonesia</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&family=Lora:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<link rel="stylesheet" href="style.css">
+
+</head>
+<body>
+
+<!-- NAVBAR -->
+<nav id="navbar">
+  <a href="#beranda" class="nav-brand">
+    <div class="nav-logo">🌾</div>
+    <span class="nav-title">Pantau<span>Pangan</span></span>
+  </a>
+  <ul class="nav-links">
+    <li><a href="#beranda" class="active">Beranda</a></li>
+    <li><a href="#cari">Cari Harga</a></li>
+    <li><a href="#harga">Grafik Harga</a></li>
+    <li><a href="#berita">Berita <span class="nav-badge">5</span></a></li>
+  </ul>
+</nav>
+
+<!-- TICKER BERJALAN -->
+<div class="ticker-wrap" style="margin-top:68px">
+  <div class="ticker-track" id="ticker"></div>
+</div>
+
+<!-- HERO -->
+<section id="beranda">
+  <div class="hero-blob"></div>
+  <div class="hero-content">
+    <p class="hero-eyebrow">Platform Informasi Komoditas Pangan Indonesia</p>
+    <h1 class="hero-title">Harga Pangan<br><em>Transparan & Akurat</em><br>untuk Semua</h1>
+    <p class="hero-desc">Data harga komoditas pangan terkini dari seluruh penjuru Indonesia. Membantu petani, pembeli, dan tengkulak mengambil keputusan yang tepat berdasarkan informasi pasar.</p>
+    <div class="hero-cta">
+      <a href="#cari" class="btn-primary">🔍 Cari Harga Sekarang</a>
+      <a href="#harga" class="btn-outline">Lihat Grafik Harga</a>
+    </div>
+    <div class="hero-stats">
+      <div>
+        <span class="hero-stat-num">34</span>
+        <span class="hero-stat-label">Provinsi Terpantau</span>
+      </div>
+      <div>
+        <span class="hero-stat-num">120+</span>
+        <span class="hero-stat-label">Komoditas Pangan</span>
+      </div>
+      <div>
+        <span class="hero-stat-num">Harian</span>
+        <span class="hero-stat-label">Pembaruan Data</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CARI HARGA -->
+<section id="cari">
+  <div class="section-label">Pencarian Harga</div>
+  <h2 class="section-title">Cari Harga Komoditas<br>di Wilayahmu</h2>
+  <p class="section-subtitle">Temukan harga terkini komoditas pangan di provinsi atau kabupaten tertentu dengan mudah.</p>
+
+  <div class="search-box fade-in">
+    <div class="search-row">
+      <div class="search-field">
+        <label>Komoditas</label>
+        <select class="search-input" id="searchCommodity">
+          <option value="">Pilih komoditas...</option>
+          <option>Beras Premium</option>
+          <option>Beras Medium</option>
+          <option>Jagung Pipilan</option>
+          <option>Kedelai Lokal</option>
+          <option>Cabai Merah Keriting</option>
+          <option>Cabai Rawit Merah</option>
+          <option>Bawang Merah</option>
+          <option>Bawang Putih</option>
+          <option>Tomat</option>
+          <option>Kentang</option>
+          <option>Ubi Kayu</option>
+          <option>Kacang Tanah</option>
+          <option>Gula Pasir</option>
+          <option>Minyak Goreng</option>
+          <option>Daging Sapi</option>
+          <option>Daging Ayam</option>
+          <option>Telur Ayam</option>
+          <option>Ikan Bandeng</option>
+          <option>Tempe</option>
+          <option>Tahu</option>
+        </select>
+      </div>
+      <div class="search-field">
+        <label>Provinsi</label>
+        <select class="search-input" id="searchProvince">
+          <option value="">Semua Provinsi</option>
+          <option>Aceh</option>
+          <option>Sumatera Utara</option>
+          <option>Sumatera Barat</option>
+          <option>Riau</option>
+          <option>Jambi</option>
+          <option>Sumatera Selatan</option>
+          <option>Bengkulu</option>
+          <option>Lampung</option>
+          <option>DKI Jakarta</option>
+          <option>Jawa Barat</option>
+          <option>Jawa Tengah</option>
+          <option>DI Yogyakarta</option>
+          <option>Jawa Timur</option>
+          <option>Banten</option>
+          <option>Bali</option>
+          <option>Nusa Tenggara Barat</option>
+          <option>Nusa Tenggara Timur</option>
+          <option>Kalimantan Barat</option>
+          <option>Kalimantan Tengah</option>
+          <option>Kalimantan Selatan</option>
+          <option>Kalimantan Timur</option>
+          <option>Sulawesi Utara</option>
+          <option>Sulawesi Tengah</option>
+          <option>Sulawesi Selatan</option>
+          <option>Sulawesi Tenggara</option>
+          <option>Gorontalo</option>
+          <option>Maluku</option>
+          <option>Papua</option>
+        </select>
+      </div>
+      <div class="search-field" style="max-width:160px">
+        <label>Periode</label>
+        <select class="search-input" id="searchPeriod">
+          <option>Hari Ini</option>
+          <option>7 Hari</option>
+          <option>30 Hari</option>
+        </select>
+      </div>
+      <button class="search-btn" onclick="doSearch()">Cari Harga</button>
+    </div>
+    <div class="search-tags">
+      <span class="search-tags-label">Populer:</span>
+      <button class="tag" onclick="quickSearch('Beras Premium')">Beras</button>
+      <button class="tag" onclick="quickSearch('Cabai Merah Keriting')">Cabai Merah</button>
+      <button class="tag" onclick="quickSearch('Bawang Merah')">Bawang Merah</button>
+      <button class="tag" onclick="quickSearch('Minyak Goreng')">Minyak Goreng</button>
+      <button class="tag" onclick="quickSearch('Telur Ayam')">Telur Ayam</button>
+      <button class="tag" onclick="quickSearch('Daging Sapi')">Daging Sapi</button>
+    </div>
+
+    <div class="search-results" id="searchResults">
+      <p style="font-size:.85rem;color:var(--text-light);margin-bottom:12px" id="searchResultLabel"></p>
+      <div class="results-grid" id="resultsGrid"></div>
+    </div>
+  </div>
+</section>
+
+<!-- GRAFIK HARGA -->
+<section id="harga">
+  <div class="harga-header">
+    <div>
+      <div class="section-label">Grafik & Data</div>
+      <h2 class="section-title">Pantau Pergerakan Harga</h2>
+      <p class="section-subtitle" style="margin-bottom:0">Klik komoditas untuk melihat tren harga.</p>
+    </div>
+    <div class="komoditas-tabs" id="kategoriTabs">
+      <button class="tab-btn active" onclick="filterKategori('semua',this)">Semua</button>
+      <button class="tab-btn" onclick="filterKategori('pokok',this)">Pangan Pokok</button>
+      <button class="tab-btn" onclick="filterKategori('sayur',this)">Sayuran</button>
+      <button class="tab-btn" onclick="filterKategori('protein',this)">Protein</button>
+      <button class="tab-btn" onclick="filterKategori('bumbu',this)">Bumbu</button>
+    </div>
+  </div>
+
+  <div class="harga-grid">
+    <div class="commodity-list" id="commodityList"></div>
+    <div class="chart-panel">
+      <div class="chart-header">
+        <div>
+          <div class="chart-commodity-name" id="chartCommodityName">Beras Premium</div>
+          <div class="chart-price-now" id="chartPriceNow">Rp 14.500/kg</div>
+        </div>
+        <div class="chart-period-btns">
+          <button class="period-btn active" onclick="changePeriod('7H',this)">7H</button>
+          <button class="period-btn" onclick="changePeriod('1B',this)">1B</button>
+          <button class="period-btn" onclick="changePeriod('3B',this)">3B</button>
+          <button class="period-btn" onclick="changePeriod('1T',this)">1T</button>
+        </div>
+      </div>
+      <div class="chart-wrap">
+        <canvas id="priceChart"></canvas>
+      </div>
+      <div class="chart-summary">
+        <div class="chart-stat">
+          <div class="chart-stat-label">Tertinggi</div>
+          <div class="chart-stat-value" id="statHigh">—</div>
+        </div>
+        <div class="chart-stat">
+          <div class="chart-stat-label">Terendah</div>
+          <div class="chart-stat-value" id="statLow">—</div>
+        </div>
+        <div class="chart-stat">
+          <div class="chart-stat-label">Rata-rata</div>
+          <div class="chart-stat-value" id="statAvg">—</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- BERITA -->
+<section id="berita">
+  <div class="berita-header">
+    <div>
+      <div class="section-label">Berita Nasional</div>
+      <h2 class="section-title">Update Terkini Pangan</h2>
+    </div>
+    <button class="view-all-btn">Lihat Semua Berita →</button>
+  </div>
+  <div class="berita-grid" id="beritaGrid"></div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-grid">
+    <div>
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
+        <div style="width:34px;height:34px;background:var(--green-mid);border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:16px">🌾</div>
+        <div class="footer-brand-name">PantauPangan</div>
+      </div>
+      <p class="footer-desc">Platform informasi harga komoditas pangan yang transparan untuk mendukung kesejahteraan petani dan kebutuhan masyarakat Indonesia.</p>
+    </div>
+    <div>
+      <div class="footer-col-title">Fitur</div>
+      <ul class="footer-links">
+        <li><a href="#cari">Cari Harga</a></li>
+        <li><a href="#harga">Grafik Harga</a></li>
+        <li><a href="#berita">Berita Pangan</a></li>
+        <li><a href="#">Laporan Mingguan</a></li>
+      </ul>
+    </div>
+    <div>
+      <div class="footer-col-title">Komoditas</div>
+      <ul class="footer-links">
+        <li><a href="#">Beras & Serealia</a></li>
+        <li><a href="#">Sayuran & Umbi</a></li>
+        <li><a href="#">Protein Hewani</a></li>
+        <li><a href="#">Bumbu & Rempah</a></li>
+      </ul>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <span>© 2025 PantauPangan. Data bersumber dari Bapanas & BPS.</span>
+    <span><a href="#">Kebijakan Privasi</a> · <a href="#">Ketentuan Penggunaan</a></span>
+  </div>
+</footer>
+
+<!-- MODAL BERITA -->
+<div class="modal-overlay" id="newsModal" onclick="closeModal(event)">
+  <div class="modal-box">
+    <div class="news-category" id="modalCategory"></div>
+    <div class="modal-title" id="modalTitle"></div>
+    <div class="modal-source" id="modalSource"></div>
+    <div class="modal-body" id="modalBody"></div>
+    <button class="modal-close" onclick="document.getElementById('newsModal').classList.remove('open')">Tutup</button>
+  </div>
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>
