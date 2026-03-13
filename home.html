@@ -24,6 +24,25 @@
     <li><a href="#harga">Grafik Harga</a></li>
     <li><a href="#berita">Berita <span class="nav-badge">5</span></a></li>
   </ul>
+  <div class="nav-right">
+    <a href="login.html" class="btn-login">👤 Masuk</a>
+    <div class="nav-avatar-wrap" id="navAvatarWrap" style="display:none;position:relative">
+      <div class="nav-avatar" id="navAvatar" onclick="toggleAvatarDropdown()">TA</div>
+      <div class="avatar-dropdown" id="avatarDropdown">
+        <div class="avatar-dropdown-header">
+          <div class="avatar-dropdown-name" id="dropdownName">Tani Arga</div>
+          <div class="avatar-dropdown-email" id="dropdownEmail"><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="d7a3b6b9beb6a5b0b697b2bab6bebbf9b4b8ba">[email&#160;protected]</a></div>
+        </div>
+        <a href="#">👤 Profil Saya</a>
+        <a href="#">⚙️ Pengaturan</a>
+        <a href="#">🔔 Notifikasi Harga</a>
+        <button class="logout-btn" onclick="doLogout()">🚪 Keluar</button>
+      </div>
+    </div>
+    <button class="hamburger" id="hamburgerBtn" onclick="toggleMobileNav()" aria-label="Menu">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
 </nav>
 
 <!-- MOBILE NAV DRAWER -->

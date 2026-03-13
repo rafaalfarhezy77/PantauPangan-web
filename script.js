@@ -316,6 +316,47 @@ window.addEventListener('scroll', ()=>{
   });
 });
 
+// ── START ──
+initTicker();
+renderCommodities();
+renderBerita();
+updateChart();
+selectCommodity('beras');
+
+// Trigger fade-in for elements already in view
+setTimeout(()=>{
+  document.querySelectorAll('.fade-in').forEach(el=>{
+    if (el.getBoundingClientRect().top < window.innerHeight - 60)
+      el.classList.add('visible');
+  });
+}, 100);
+
+// ── SCROLL EFFECTS ──
+window.addEventListener('scroll', ()=>{
+  const nav = document.getElementById('navbar');
+  nav.classList.toggle('scrolled', window.scrollY > 10);
+
+  // Active nav link
+  const sections = ['beranda','cari','harga','berita'];
+  const links = document.querySelectorAll('.nav-links a');
+  sections.forEach((id,i)=>{
+    const el = document.getElementById(id);
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    if (rect.top <= 100 && rect.bottom > 100) {
+      links.forEach(l=>l.classList.remove('active'));
+      links[i].classList.add('active');
+    }
+  });
+
+  // Fade-in on scroll
+  document.querySelectorAll('.fade-in:not(.visible)').forEach(el=>{
+    if (el.getBoundingClientRect().top < window.innerHeight - 60) {
+      el.classList.add('visible');
+    }
+  });
+});
+
 // ── LOGIN & AUTH ──
 let currentUser = null;
 const demoUsers = [
@@ -408,6 +449,3 @@ document.addEventListener('click', (e) => {
   const btn = document.getElementById('hamburgerBtn');
   if (nav && nav.classList.contains('open') && !nav.contains(e.target) && !btn.contains(e.target)) closeMobileNav();
 });
-
-// ── START ──
-init
