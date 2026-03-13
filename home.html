@@ -26,6 +26,98 @@
   </ul>
 </nav>
 
+<!-- MOBILE NAV DRAWER -->
+<div class="mobile-nav" id="mobileNav">
+  <ul>
+    <li><a href="#beranda" class="active" onclick="closeMobileNav()"><span class="mobile-nav-icon">🏠</span> Beranda</a></li>
+    <li><a href="#cari" onclick="closeMobileNav()"><span class="mobile-nav-icon">🔍</span> Cari Harga</a></li>
+    <li><a href="#harga" onclick="closeMobileNav()"><span class="mobile-nav-icon">📊</span> Grafik Harga</a></li>
+    <li><a href="#berita" onclick="closeMobileNav()"><span class="mobile-nav-icon">📰</span> Berita <span class="nav-badge">5</span></a></li>
+  </ul>
+  <div class="mobile-nav-divider"></div>
+  <div id="mobileLoginSection">
+    <a href="login.html" class="mobile-login-btn" style="text-decoration:none;display:flex;align-items:center;justify-content:center;gap:8px">👤 Masuk / Daftar</a>
+  </div>
+  <div id="mobileUserSection" style="display:none">
+    <div style="display:flex;align-items:center;gap:12px;padding:12px 14px;background:var(--green-mist);border-radius:var(--radius-sm);margin-bottom:8px">
+      <div style="width:38px;height:38px;background:var(--green-mid);border-radius:50%;display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:.85rem" id="mobileAvatar">TA</div>
+      <div>
+        <div style="font-size:.88rem;font-weight:700;color:var(--green-deep)" id="mobileName">Tani Arga</div>
+        <div style="font-size:.75rem;color:var(--text-light)" id="mobileEmail"><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="295d484740485b4e48694c44484045074a4644">[email&#160;protected]</a></div>
+      </div>
+    </div>
+    <button class="mobile-login-btn" style="background:#fce4ec;color:#c62828" onclick="doLogout(); closeMobileNav()">🚪 Keluar</button>
+  </div>
+</div>
+
+<!-- LOGIN MODAL -->
+<div class="login-modal-overlay" id="loginModal" onclick="closeLoginModalOverlay(event)">
+  <div class="login-modal">
+    <div class="login-modal-header">
+      <button class="login-modal-close" onclick="closeLoginModal()">✕</button>
+      <div class="login-modal-logo">🌾</div>
+      <div class="login-modal-title">PantauPangan</div>
+      <div class="login-modal-subtitle">Masuk untuk akses fitur lengkap</div>
+    </div>
+    <div class="login-modal-body">
+      <div class="login-tabs">
+        <button class="login-tab active" id="tabMasuk" onclick="switchTab('masuk')">Masuk</button>
+        <button class="login-tab" id="tabDaftar" onclick="switchTab('daftar')">Daftar</button>
+      </div>
+      <div class="login-error" id="loginError"></div>
+      <!-- Form Masuk -->
+      <div id="formMasuk">
+        <div class="form-group">
+          <label>Email</label>
+          <input type="email" class="form-input" id="loginEmail" placeholder="nama@email.com">
+        </div>
+        <div class="form-group">
+          <label>Kata Sandi</label>
+          <input type="password" class="form-input" id="loginPassword" placeholder="••••••••">
+        </div>
+        <div class="login-forgot"><a href="#">Lupa kata sandi?</a></div>
+        <button class="login-submit" onclick="doLogin()">Masuk</button>
+        <div class="login-divider">atau</div>
+        <button class="login-guest" onclick="doGuestLogin()">👀 Lanjut sebagai Tamu</button>
+      </div>
+      <!-- Form Daftar -->
+      <div id="formDaftar" style="display:none">
+        <div class="form-row">
+          <div class="form-group">
+            <label>Nama Depan</label>
+            <input type="text" class="form-input" id="regFirstName" placeholder="Budi">
+          </div>
+          <div class="form-group">
+            <label>Nama Belakang</label>
+            <input type="text" class="form-input" id="regLastName" placeholder="Santoso">
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Email</label>
+          <input type="email" class="form-input" id="regEmail" placeholder="nama@email.com">
+        </div>
+        <div class="form-group">
+          <label>Kata Sandi</label>
+          <input type="password" class="form-input" id="regPassword" placeholder="Min. 8 karakter">
+        </div>
+        <div class="form-group">
+          <label>Peran</label>
+          <select class="form-input" id="regRole">
+            <option value="">Pilih peran kamu...</option>
+            <option value="petani">🌾 Petani</option>
+            <option value="pembeli">🛒 Pembeli</option>
+            <option value="tengkulak">🏪 Tengkulak / Pedagang</option>
+            <option value="lainnya">👤 Lainnya</option>
+          </select>
+        </div>
+        <button class="login-submit" onclick="doRegister()">Buat Akun</button>
+        <div class="login-divider">atau</div>
+        <button class="login-guest" onclick="doGuestLogin()">👀 Lanjut sebagai Tamu</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- TICKER BERJALAN -->
 <div class="ticker-wrap" style="margin-top:68px">
   <div class="ticker-track" id="ticker"></div>

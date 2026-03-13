@@ -316,17 +316,98 @@ window.addEventListener('scroll', ()=>{
   });
 });
 
-// ── START ──
-initTicker();
-renderCommodities();
-renderBerita();
-updateChart();
-selectCommodity('beras');
+// ── LOGIN & AUTH ──
+let currentUser = null;
+const demoUsers = [
+  { email: 'petani@demo.com', password: '12345678', name: 'Budi Santoso', role: 'petani' },
+  { email: 'admin@pantaupangan.id', password: 'admin123', name: 'Admin PantauPangan', role: 'admin' },
+];
+function openLoginModal() {
+  document.getElementById('loginModal').classList.add('open');
+  document.getElementById('loginError').classList.remove('show');
+}
+function closeLoginModal() { document.getElementById('loginModal').classList.remove('open'); }
+function closeLoginModalOverlay(e) { if (e.target.id === 'loginModal') closeLoginModal(); }
+function switchTab(tab) {
+  document.getElementById('formMasuk').style.display = tab === 'masuk' ? 'block' : 'none';
+  document.getElementById('formDaftar').style.display = tab === 'daftar' ? 'block' : 'none';
+  document.getElementById('tabMasuk').classList.toggle('active', tab === 'masuk');
+  document.getElementById('tabDaftar').classList.toggle('active', tab === 'daftar');
+  document.getElementById('loginError').classList.remove('show');
+}
+function showLoginError(msg) {
+  const el = document.getElementById('loginError');
+  el.textContent = msg; el.classList.add('show');
+}
+function toTitleCase(str) {
+  return str.replace(/\w\S*/g, t => t.charAt(0).toUpperCase() + t.substr(1).toLowerCase());
+}
+function doLogin() {
+  const email = document.getElementById('loginEmail').value.trim();
+  const password = document.getElementById('loginPassword').value;
+  if (!email || !password) { showLoginError('Email dan kata sandi wajib diisi.'); return; }
+  const user = demoUsers.find(u => u.email === email && u.password === password);
+  if (user) { loginSuccess({ name: user.name, email: user.email, role: user.role }); return; }
+  if (email.includes('@') && password.length >= 6) {
+    const rawName = email.split('@')[0].replace(/[^a-zA-Z ]/g,' ').trim() || 'Pengguna';
+    loginSuccess({ name: toTitleCase(rawName), email, role: 'umum' });
+  } else { showLoginError('Email atau kata sandi salah. Coba: petani@demo.com / 12345678'); }
+}
+function doRegister() {
+  const firstName = document.getElementById('regFirstName').value.trim();
+  const lastName = document.getElementById('regLastName').value.trim();
+  const email = document.getElementById('regEmail').value.trim();
+  const password = document.getElementById('regPassword').value;
+  const role = document.getElementById('regRole').value;
+  if (!firstName || !email || !password || !role) { showLoginError('Semua kolom wajib diisi.'); return; }
+  if (!email.includes('@')) { showLoginError('Format email tidak valid.'); return; }
+  if (password.length < 8) { showLoginError('Kata sandi minimal 8 karakter.'); return; }
+  loginSuccess({ name: (firstName + ' ' + lastName).trim(), email, role });
+}
+function doGuestLogin() { loginSuccess({ name: 'Tamu', email: 'tamu@pantaupangan.id', role: 'tamu' }); }
+function loginSuccess(user) {
+  currentUser = user;
+  closeLoginModal();
+  const initials = user.name.split(' ').map(w=>w[0]).join('').substring(0,2).toUpperCase();
+  document.getElementById('navLoginBtn').style.display = 'none';
+  const wrap = document.getElementById('navAvatarWrap');
+  wrap.style.display = 'flex'; wrap.style.alignItems = 'center';
+  document.getElementById('navAvatar').textContent = initials;
+  document.getElementById('dropdownName').textContent = user.name;
+  document.getElementById('dropdownEmail').textContent = user.email;
+  document.getElementById('mobileLoginSection').style.display = 'none';
+  document.getElementById('mobileUserSection').style.display = 'block';
+  document.getElementById('mobileAvatar').textContent = initials;
+  document.getElementById('mobileName').textContent = user.name;
+  document.getElementById('mobileEmail').textContent = user.email;
+}
+function doLogout() {
+  currentUser = null;
+  document.getElementById('navLoginBtn').style.display = '';
+  document.getElementById('navAvatarWrap').style.display = 'none';
+  document.getElementById('avatarDropdown').classList.remove('open');
+  document.getElementById('mobileLoginSection').style.display = 'block';
+  document.getElementById('mobileUserSection').style.display = 'none';
+}
+function toggleAvatarDropdown() { document.getElementById('avatarDropdown').classList.toggle('open'); }
+document.addEventListener('click', (e) => {
+  const wrap = document.getElementById('navAvatarWrap');
+  if (wrap && !wrap.contains(e.target)) document.getElementById('avatarDropdown').classList.remove('open');
+});
+// ── HAMBURGER ──
+function toggleMobileNav() {
+  document.getElementById('mobileNav').classList.toggle('open');
+  document.getElementById('hamburgerBtn').classList.toggle('open');
+}
+function closeMobileNav() {
+  document.getElementById('mobileNav').classList.remove('open');
+  document.getElementById('hamburgerBtn').classList.remove('open');
+}
+document.addEventListener('click', (e) => {
+  const nav = document.getElementById('mobileNav');
+  const btn = document.getElementById('hamburgerBtn');
+  if (nav && nav.classList.contains('open') && !nav.contains(e.target) && !btn.contains(e.target)) closeMobileNav();
+});
 
-// Trigger fade-in for elements already in view
-setTimeout(()=>{
-  document.querySelectorAll('.fade-in').forEach(el=>{
-    if (el.getBoundingClientRect().top < window.innerHeight - 60)
-      el.classList.add('visible');
-  });
-}, 100);
+// ── START ──
+init
