@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard — PantauPangan</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&family=Lora:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        colors: {
+          'green-deep':  '#1a3a2a',
+          'green-mid':   '#2d6a4f',
+          'green-light': '#52b788',
+          'green-pale':  '#b7e4c7',
+          'green-mist':  '#d8f3dc',
+          'cream':       '#faf7f2',
+          'cream-dark':  '#f0ebe0',
+        },
+        fontFamily: {
+          sans:  ['Plus Jakarta Sans', 'sans-serif'],
+          serif: ['Lora', 'serif'],
+        },
+      }
+    }
+  }
+</script>
+<style>
+  body { font-family: 'Plus Jakarta Sans', sans-serif; }
+  @keyframes fadeUp { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
+  @keyframes blink  { 0%,100%{opacity:1} 50%{opacity:.3} }
+  .anim-0 { animation: fadeUp .5s ease both; }
+  .anim-1 { animation: fadeUp .5s .1s ease both; }
+  .anim-2 { animation: fadeUp .5s .2s ease both; }
+  .blink  { animation: blink 2s infinite; }
+</style>
+</head>
+<body class="bg-cream min-h-screen flex">
+
+<!-- Overlay mobile -->
+<div id="overlay" onclick="closeSidebar()"
+     class="hidden fixed inset-0 bg-black/40 z-40"></div>
+
+<!-- ── SIDEBAR ── -->
+<aside id="sidebar"
+  class="w-60 bg-green-deep min-h-screen fixed top-0 left-0 flex flex-col z-50
+         -translate-x-full md:translate-x-0 transition-transform duration-300">
+
+  <a href="home.html"
+     class="flex items-center gap-3 px-5 py-6 border-b border-white/10 no-underline">
+    <div class="w-9 h-9 bg-white/10 rounded-xl flex items-center justify-center text-lg">🌾</div>
+    <span class="font-bold text-white text-base">Pantau<span class="text-green-pale">Pangan</span></span>
+  </a>
+
+  <nav class="flex-1 px-3 py-4 flex flex-col gap-0.5 overflow-y-auto">
+    <p class="text-[0.65rem] font-semibold uppercase tracking-widest text-white/30 px-2 py-2">Menu Utama</p>
+
+    <a href="dashboard.html"
+       class="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm font-medium text-white bg-white/10 no-underline">
+      <span class="w-5 text-center text-base">🏠</span>Dashboard
+    </a>
+    <a href="home.html#cari"
+    class="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm font-medium text-white/60 hover:bg-white/10 hover:text-white transition-colors no-underline">
+      <span class="w-5 text-center text-base">🔍</span>Cari Harga
+    </a>
+    <a href="home.html#harga"
+       class="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm font-medium text-white/60 hover:bg-white/10 hover:text-white transition-colors no-underline">
+      <span class="w-5 text-center text-base">📊</span>Grafik Harga
+    </a>
+    <a href="home.html#berita"
+       class="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm font-medium text-white/60 hover:bg-white/10 hover:text-white transition-colors no-underline">
+      <span class="w-5 text-center text-base">📰</span>Berita
+      <span class="ml-auto bg-green-light text-white text-[0.65rem] font-bold px-2 py-0.5 rounded-full">5</span>
+    </a>
+
+    <p class="text-[0.65rem] font-semibold uppercase tracking-widest text-white/30 px-2 pt-4 pb-1.5">Personalisasi</p>
+
+    <a href="#" class="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm font-medium text-white/60 hover:bg-white/10 hover:text-white transition-colors no-underline">
+      <span class="w-5 text-center text-base">⭐</span>Pantauan Saya
+      <span class="ml-auto bg-green-light text-white text-[0.65rem] font-bold px-2 py-0.5 rounded-full">6</span>
+    </a>
+    <a href="#" class="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm font-medium text-white/60 hover:bg-white/10 hover:text-white transition-colors no-underline">
+      <span class="w-5 text-center text-base">🔔</span>Notifikasi
+      <span class="ml-auto bg-red-500 text-white text-[0.65rem] font-bold px-2 py-0.5 rounded-full">3</span>
+    </a>
+    <a href="#" class="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm font-medium text-white/60 hover:bg-white/10 hover:text-white transition-colors no-underline">
+      <span class="w-5 text-center text-base">📈</span>Riwayat Carian
+    </a>
+
+    <p class="text-[0.65rem] font-semibold uppercase tracking-widest text-white/30 px-2 pt-4 pb-1.5">Lainnya</p>
+
+    <a href="#" class="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm font-medium text-white/60 hover:bg-white/10 hover:text-white transition-colors no-underline">
+      <span class="w-5 text-center text-base">⚙️</span>Pengaturan
+    </a>
+    <a href="home.html" class="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm font-medium text-white/60 hover:bg-white/10 hover:text-white transition-colors no-underline">
+      <span class="w-5 text-center text-base">🌐</span>Ke Beranda
+    </a>
+  </nav>
+
+  <div class="px-3 py-4 border-t border-white/10">
+    <div class="flex items-center gap-2.5 px-3 py-2.5 rounded-xl hover:bg-white/10 cursor-pointer transition-colors">
+      <div id="sidebarAvatar" class="w-8 h-8 bg-green-light rounded-full flex items-center justify-center text-xs font-bold text-white flex-shrink-0">BS</div>
+      <div>
+        <p id="sidebarName" class="text-sm font-semibold text-white leading-tight">Budi Santoso</p>
+        <p id="sidebarRole" class="text-xs text-white/40 leading-tight">🌾 Petani</p>
+      </div>
+    </div>
+    <button onclick="window.location.href='login.html'"
+      class="flex items-center gap-2 w-full px-3 py-2 mt-1 rounded-xl text-xs text-red-400/70
+             hover:bg-red-500/10 hover:text-red-400 transition-colors cursor-pointer bg-transparent border-0 font-sans">
+      🚪 Keluar dari Akun
+    </button>
+  </div>
+</aside>
+
+<!-- ── MAIN ── -->
+<div class="flex-1 flex flex-col min-h-screen md:ml-60">
+
+  <!-- Topbar -->
+  <header class="sticky top-0 z-40 bg-cream/95 backdrop-blur-sm border-b border-black/5 h-16 flex items-center justify-between px-4 md:px-8">
+    <div class="flex items-center gap-3">
+      <button onclick="openSidebar()" class="md:hidden text-2xl bg-transparent border-0 cursor-pointer text-green-deep leading-none">☰</button>
+      <span class="font-bold text-green-deep">Dashboard</span>
+    </div>
+    <div class="flex items-center gap-3">
+      <span id="topbarDate" class="text-xs text-gray-400 hidden sm:block"></span>
+      <button class="relative w-9 h-9 bg-white border border-cream-dark rounded-xl flex items-center justify-center hover:border-green-pale transition-colors">
+        🔔
+        <span class="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full border-2 border-cream"></span>
+      </button>
+    </div>
+  </header>
+
+  <!-- Content -->
+  <main class="flex-1 p-4 md:p-8 space-y-6">
+
+    <!-- Welcome banner -->
+    <div class="anim-0 relative bg-gradient-to-br from-green-deep to-green-mid rounded-2xl p-6 md:p-7 overflow-hidden flex flex-wrap items-center justify-between gap-4">
+      <div class="absolute inset-0 opacity-[0.03] bg-[url('data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2260%22 height=%2260%22><path fill=%22white%22 d=%22M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z%22/></svg>')]"></div>
+      <div class="relative z-10">
+        <p class="font-serif italic text-green-pale text-sm mb-1">Selamat datang kembali,</p>
+        <h2 id="welcomeName" class="text-2xl font-bold text-white tracking-tight mb-1">Budi Santoso 👋</h2>
+        <p class="text-sm text-white/60">Pantau harga favoritmu — data diperbarui pukul 06.00 WIB</p>
+      </div>
+      <div class="relative z-10 hidden sm:flex items-center gap-2 bg-white/10 border border-white/15 rounded-full px-4 py-2">
+        <span class="blink w-2 h-2 bg-green-400 rounded-full block flex-shrink-0"></span>
+        <span class="text-xs text-white/80 whitespace-nowrap">Data live · Hari ini</span>
+      </div>
+      <span class="absolute right-8 top-1/2 -translate-y-1/2 text-8xl opacity-10 pointer-events-none select-none">🌾</span>
+    </div>
+
+    <!-- Stats -->
+    <div class="anim-1 grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div class="bg-white border border-cream-dark rounded-2xl p-5 hover:shadow-md hover:-translate-y-0.5 transition-all">
+        <div class="w-10 h-10 bg-green-mist rounded-xl flex items-center justify-center text-xl mb-3">⭐</div>
+        <p class="text-[0.7rem] text-gray-400 uppercase tracking-wider mb-1">Komoditas Dipantau</p>
+        <p class="text-2xl font-bold text-green-deep mb-0.5">6</p>
+        <p class="text-xs text-gray-400">dari 120+ komoditas</p>
+      </div>
+      <div class="bg-white border border-cream-dark rounded-2xl p-5 hover:shadow-md hover:-translate-y-0.5 transition-all">
+        <div class="w-10 h-10 bg-orange-50 rounded-xl flex items-center justify-center text-xl mb-3">📈</div>
+        <p class="text-[0.7rem] text-gray-400 uppercase tracking-wider mb-1">Harga Naik</p>
+        <p class="text-2xl font-bold text-green-deep mb-0.5">4</p>
+        <p class="text-xs text-green-700 font-semibold">▲ dari kemarin</p>
+      </div>
+      <div class="bg-white border border-cream-dark rounded-2xl p-5 hover:shadow-md hover:-translate-y-0.5 transition-all">
+        <div class="w-10 h-10 bg-red-50 rounded-xl flex items-center justify-center text-xl mb-3">📉</div>
+        <p class="text-[0.7rem] text-gray-400 uppercase tracking-wider mb-1">Harga Turun</p>
+        <p class="text-2xl font-bold text-green-deep mb-0.5">2</p>
+        <p class="text-xs text-red-600 font-semibold">▼ dari kemarin</p>
+      </div>
+      <div class="bg-white border border-cream-dark rounded-2xl p-5 hover:shadow-md hover:-translate-y-0.5 transition-all">
+        <div class="w-10 h-10 bg-blue-50 rounded-xl flex items-center justify-center text-xl mb-3">🔍</div>
+        <p class="text-[0.7rem] text-gray-400 uppercase tracking-wider mb-1">Total Pencarian</p>
+        <p class="text-2xl font-bold text-green-deep mb-0.5">28</p>
+        <p class="text-xs text-gray-400">bulan ini</p>
+      </div>
+    </div>
+
+    <!-- Chart + Watchlist -->
+    <div class="anim-1 grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-5">
+
+      <div class="bg-white border border-cream-dark rounded-2xl overflow-hidden">
+        <div class="flex flex-wrap items-center justify-between gap-3 px-6 py-4 border-b border-cream-dark">
+          <div>
+            <p class="font-bold text-green-deep text-sm">Tren Harga Minggu Ini</p>
+            <p class="text-xs text-gray-400 mt-0.5">Rata-rata komoditas pantauanmu</p>
+          </div>
+          <select id="chartSelect" onchange="updateChart()"
+            class="text-xs font-medium px-3 py-2 border border-cream-dark rounded-lg bg-cream text-gray-700 outline-none cursor-pointer font-sans">
+            <option value="beras">Beras Premium</option>
+            <option value="cabai">Cabai Merah</option>
+            <option value="bawang">Bawang Merah</option>
+            <option value="telur">Telur Ayam</option>
+            <option value="minyak">Minyak Goreng</option>
+            <option value="daging">Daging Sapi</option>
+          </select>
+        </div>
+        <div class="p-6"><div class="h-52 relative"><canvas id="dashChart"></canvas></div></div>
+      </div>
+
+      <div class="bg-white border border-cream-dark rounded-2xl overflow-hidden">
+        <div class="flex items-center justify-between px-6 py-4 border-b border-cream-dark">
+          <div>
+            <p class="font-bold text-green-deep text-sm">⭐ Pantauan Saya</p>
+            <p class="text-xs text-gray-400 mt-0.5">6 komoditas aktif</p>
+          </div>
+          <a href="home.html#harga"
+             class="text-xs font-semibold text-green-mid bg-green-mist px-3 py-1.5 rounded-full hover:bg-green-pale transition-colors no-underline">+ Tambah</a>
+        </div>
+        <div id="watchlist"></div>
+      </div>
+    </div>
+
+    <!-- Notif + Riwayat -->
+    <div class="anim-2 grid grid-cols-1 md:grid-cols-2 gap-5">
+
+      <div class="bg-white border border-cream-dark rounded-2xl overflow-hidden">
+        <div class="flex items-center justify-between px-6 py-4 border-b border-cream-dark">
+          <div>
+            <p class="font-bold text-green-deep text-sm">🔔 Notifikasi Harga</p>
+            <p class="text-xs text-gray-400 mt-0.5">3 belum dibaca</p>
+          </div>
+          <button onclick="markAllRead()"
+            class="text-xs font-semibold text-green-mid bg-green-mist px-3 py-1.5 rounded-full hover:bg-green-pale transition-colors cursor-pointer border-0 font-sans">
+            Tandai semua
+          </button>
+        </div>
+        <div id="notifList"></div>
+      </div>
+
+      <div class="bg-white border border-cream-dark rounded-2xl overflow-hidden">
+        <div class="flex items-center justify-between px-6 py-4 border-b border-cream-dark">
+          <div>
+            <p class="font-bold text-green-deep text-sm">🔍 Riwayat Pencarian</p>
+            <p class="text-xs text-gray-400 mt-0.5">Pencarian terakhirmu</p>
+          </div>
+          <button onclick="clearHistory()"
+            class="text-xs font-semibold text-green-mid bg-green-mist px-3 py-1.5 rounded-full hover:bg-green-pale transition-colors cursor-pointer border-0 font-sans">
+            Hapus
+          </button>
+        </div>
+        <div id="historyGrid" class="grid grid-cols-2 gap-3 p-4"></div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<script>
+const user = { name:'Budi Santoso', role:'petani', avatar:'BS' };
+
+const watchlistData = [
+  { icon:'🌾', name:'Beras Premium', region:'Jawa Timur',  price:14500,  change:+1.2, id:'beras'  },
+  { icon:'🌶️', name:'Cabai Merah',   region:'Jawa Tengah', price:32000,  change:+8.4, id:'cabai'  },
+  { icon:'🧅', name:'Bawang Merah',  region:'Jawa Timur',  price:28500,  change:-3.1, id:'bawang' },
+  { icon:'🥚', name:'Telur Ayam',    region:'Jawa Barat',  price:27000,  change:+2.1, id:'telur'  },
+  { icon:'🫙', name:'Minyak Goreng', region:'DKI Jakarta', price:17500,  change:0,    id:'minyak' },
+  { icon:'🥩', name:'Daging Sapi',   region:'Jawa Timur',  price:135000, change:+0.5, id:'daging' },
+];
+
+const notifData = [
+  { dot:'bg-red-500',    text:'<strong>Cabai Merah</strong> naik <strong>8.4%</strong> dalam 24 jam terakhir.',      time:'10 menit lalu', unread:true  },
+  { dot:'bg-red-500',    text:'<strong>Bawang Merah</strong> turun <strong>3.1%</strong> — peluang beli.',            time:'1 jam lalu',    unread:true  },
+  { dot:'bg-orange-400', text:'<strong>Telur Ayam</strong> mendekati batas atas pantauanmu (Rp 28.000).',             time:'3 jam lalu',    unread:true  },
+  { dot:'bg-green-400',  text:'<strong>Beras Premium</strong> stabil di Rp 14.500/kg minggu ini.',                   time:'Kemarin',       unread:false },
+  { dot:'bg-gray-300',   text:'Laporan mingguan komoditas pantauanmu sudah tersedia.',                                time:'2 hari lalu',   unread:false },
+];
+
+const historyData = [
+  { icon:'🌾', commodity:'Beras Premium',  price:'Rp 14.500', region:'Jawa Timur',     time:'Hari ini, 09:14' },
+  { icon:'🌶️', commodity:'Cabai Merah',    price:'Rp 32.000', region:'Jawa Tengah',    time:'Hari ini, 08:30' },
+  { icon:'🧅', commodity:'Bawang Merah',   price:'Rp 28.500', region:'Semua Provinsi', time:'Kemarin'         },
+  { icon:'🥚', commodity:'Telur Ayam',     price:'Rp 27.000', region:'Jawa Barat',     time:'Kemarin'         },
+  { icon:'🫙', commodity:'Minyak Goreng',  price:'Rp 17.500', region:'DKI Jakarta',    time:'2 hari lalu'     },
+  { icon:'🥩', commodity:'Daging Sapi',    price:'Rp 135.000',region:'Jawa Timur',     time:'3 hari lalu'     },
+];
+
+const chartDataMap = {
+  beras:  [14000,14100,13900,14200,14400,14350,14500],
+  cabai:  [27000,28500,29000,30200,31000,30800,32000],
+  bawang: [31000,30500,29800,29200,28900,28700,28500],
+  telur:  [26000,26200,26500,26800,27000,26900,27000],
+  minyak: [17500,17500,17500,17500,17500,17500,17500],
+  daging: [134000,134200,134500,134800,135000,135000,135000],
+};
+
+const days = ['Sen','Sel','Rab','Kam','Jum','Sab','Min'];
+const fmt  = n => 'Rp ' + n.toLocaleString('id-ID');
+
+function initUser() {
+  document.getElementById('sidebarAvatar').textContent = user.avatar;
+  document.getElementById('sidebarName').textContent   = user.name;
+  document.getElementById('welcomeName').textContent   = user.name + ' 👋';
+  const now = new Date();
+  document.getElementById('topbarDate').textContent =
+    now.toLocaleDateString('id-ID',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+}
+
+function renderWatchlist() {
+  document.getElementById('watchlist').innerHTML = watchlistData.map((w,i) => `
+    <a href="detail.html?id=${w.id}"
+       class="flex items-center gap-3 px-5 py-3.5 border-b border-cream-dark last:border-0
+              hover:bg-cream transition-colors no-underline text-inherit">
+      <div class="w-9 h-9 bg-green-mist rounded-xl flex items-center justify-center text-lg flex-shrink-0">${w.icon}</div>
+      <div class="flex-1 min-w-0">
+        <p class="text-sm font-semibold text-gray-900 truncate">${w.name}</p>
+        <p class="text-xs text-gray-400">📍 ${w.region}</p>
+      </div>
+      <div class="text-right flex-shrink-0">
+        <p class="text-sm font-bold text-green-deep">${fmt(w.price)}</p>
+        <p class="text-xs font-semibold ${w.change>0?'text-green-700':w.change<0?'text-red-600':'text-gray-400'}">
+          ${w.change>0?'▲'+w.change+'%':w.change<0?'▼'+Math.abs(w.change)+'%':'—'}
+        </p>
+      </div>
+      <button onclick="removeWatch(event,${i})"
+        class="w-7 h-7 flex items-center justify-center rounded-lg text-gray-300 text-xs
+               hover:bg-red-50 hover:text-red-500 transition-colors flex-shrink-0 border-0 bg-transparent cursor-pointer">✕</button>
+    </a>`).join('');
+}
+
+function removeWatch(e,i) { e.preventDefault(); e.stopPropagation(); watchlistData.splice(i,1); renderWatchlist(); }
+
+function renderNotif() {
+  document.getElementById('notifList').innerHTML = notifData.map((n,i) => `
+    <div onclick="readNotif(${i})"
+         class="flex gap-3 px-5 py-3.5 border-b border-cream-dark last:border-0
+                ${n.unread?'bg-green-50/60':''} hover:bg-cream transition-colors cursor-pointer">
+      <span class="w-2 h-2 ${n.dot} rounded-full mt-1.5 flex-shrink-0 block"></span>
+      <div>
+        <p class="text-sm text-gray-800 leading-relaxed mb-0.5">${n.text}</p>
+        <p class="text-xs text-gray-400">🕐 ${n.time}</p>
+      </div>
+    </div>`).join('');
+}
+
+function readNotif(i)  { notifData[i].unread=false; renderNotif(); }
+function markAllRead() { notifData.forEach(n=>n.unread=false); renderNotif(); }
+
+function renderHistory() {
+  document.getElementById('historyGrid').innerHTML = historyData.map(h => `
+    <a href="detail.html"
+       class="block bg-cream border border-cream-dark rounded-xl p-3.5 hover:border-green-pale hover:shadow-sm transition-all no-underline">
+      <p class="text-xs text-gray-400 mb-1">${h.icon} ${h.commodity}</p>
+      <p class="text-base font-bold text-green-deep mb-0.5">${h.price}</p>
+      <p class="text-xs text-gray-400">📍 ${h.region}</p>
+      <p class="text-[0.7rem] text-gray-300 mt-2 pt-2 border-t border-cream-dark">🕐 ${h.time}</p>
+    </a>`).join('');
+}
+
+function clearHistory() {
+  document.getElementById('historyGrid').innerHTML =
+    `<p class="col-span-2 text-center py-6 text-sm text-gray-400">Belum ada riwayat.</p>`;
+}
+
+let chartInst = null;
+function updateChart() {
+  const key  = document.getElementById('chartSelect').value;
+  const data = chartDataMap[key]||chartDataMap.beras;
+  if (chartInst) chartInst.destroy();
+  const ctx  = document.getElementById('dashChart').getContext('2d');
+  const grad = ctx.createLinearGradient(0,0,0,200);
+  grad.addColorStop(0,'rgba(82,183,136,.2)');
+  grad.addColorStop(1,'rgba(82,183,136,0)');
+  chartInst = new Chart(ctx,{
+    type:'line',
+    data:{ labels:days, datasets:[{ data, borderColor:'#2d6a4f', backgroundColor:grad,
+      borderWidth:2.5, pointRadius:3, pointBackgroundColor:'#2d6a4f', pointHoverRadius:7, tension:.4, fill:true }] },
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      interaction:{intersect:false,mode:'index'},
+      plugins:{ legend:{display:false},
+        tooltip:{ backgroundColor:'#1a3a2a', titleColor:'rgba(255,255,255,.6)', bodyColor:'white',
+          bodyFont:{weight:'bold',size:13}, padding:12, cornerRadius:8,
+          callbacks:{label:c=>' '+fmt(c.parsed.y)} } },
+      scales:{
+        x:{ grid:{display:false}, border:{display:false},
+            ticks:{font:{size:11,family:'Plus Jakarta Sans'},color:'#9ca3af'} },
+        y:{ grid:{color:'rgba(0,0,0,.04)'}, border:{display:false},
+            ticks:{font:{size:11,family:'Plus Jakarta Sans'},color:'#9ca3af',
+              callback:v=>'Rp '+new Intl.NumberFormat('id-ID').format(v/1000)+'rb'} }
+      }
+    }
+  });
+}
+
+function openSidebar()  { document.getElementById('sidebar').classList.remove('-translate-x-full'); document.getElementById('overlay').classList.remove('hidden'); }
+function closeSidebar() { document.getElementById('sidebar').classList.add('-translate-x-full'); document.getElementById('overlay').classList.add('hidden'); }
+
+initUser(); renderWatchlist(); renderNotif(); renderHistory(); updateChart();
+</script>
+</body>
+</html>
