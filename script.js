@@ -69,9 +69,9 @@ let activeKategori = 'semua';
 let activeCommodityId = 'beras';
 let currentPeriod = '7H';
 let chartInstance = null;
-
+ 
 function fmt(n) { return 'Rp '+n.toLocaleString('id-ID'); }
-
+ 
 function renderCommodities() {
   const list = document.getElementById('commodityList');
   const filtered = activeKategori === 'semua' ? commodities : commodities.filter(c=>c.kategori===activeKategori);
@@ -85,6 +85,14 @@ function renderCommodities() {
       <div class="c-right">
         <div class="c-price">${fmt(c.price)}</div>
         <div class="c-change ${c.change>0?'up':c.change<0?'down':''}">${c.change>0?'▲'+c.change+'%':c.change<0?'▼'+Math.abs(c.change)+'%':'—'}</div>
+        <a href="detail.html?id=${c.id}" onclick="event.stopPropagation()"
+           style="display:inline-block;margin-top:5px;font-size:.7rem;font-weight:600;color:var(--green-mid);
+                  background:var(--green-mist);padding:2px 9px;border-radius:20px;text-decoration:none;
+                  transition:background .2s"
+           onmouseover="this.style.background='var(--green-pale)'"
+           onmouseout="this.style.background='var(--green-mist)'">
+          Detail →
+        </a>
       </div>
     </div>
   `).join('');
