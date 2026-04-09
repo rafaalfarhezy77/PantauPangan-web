@@ -75,7 +75,7 @@
       Pantau Harga,<br><em class="font-serif font-normal italic text-green-pale">Rencanakan</em> Belanja
     </h1>
     <p class="text-white/70 text-base leading-relaxed max-w-sm mb-10">
-      Data harga komoditas pangan dari seluruh Indonesia. Real-time, akurat, dan mudah dipahami.
+      Data harga komoditas pangan dari seluruh InRnesia. Real-time, akurat, dan mudah dipahami.
     </p>
 
     <!-- Commodity cards -->
@@ -232,14 +232,8 @@
       <div class="space-y-4 mb-5">
         <div class="grid grid-cols-2 gap-3">
           <div>
-            <label class="block text-xs font-semibold text-gray-600 mb-1.5">Nama Depan</label>
-            <input id="regFirstName" type="text" placeholder="Budi"
-                   class="w-full px-3.5 py-3 bg-white border border-cream-dark rounded-xl text-sm
-                          outline-none focus:border-green-light transition-colors font-sans">
-          </div>
-          <div>
-            <label class="block text-xs font-semibold text-gray-600 mb-1.5">Nama Belakang</label>
-            <input id="regLastName" type="text" placeholder="Santoso"
+            <label class="block text-xs font-semibold text-gray-600 mb-1.5">Username</label>
+            <input id="regUsername" type="text" placeholder="cth : budisantoso"
                    class="w-full px-3.5 py-3 bg-white border border-cream-dark rounded-xl text-sm
                           outline-none focus:border-green-light transition-colors font-sans">
           </div>
@@ -304,7 +298,7 @@
       <button onclick="doRegister()"
         class="w-full py-3.5 bg-green-deep text-white font-semibold text-sm rounded-xl
                hover:bg-green-mid transition-colors cursor-pointer border-0 font-sans mb-3">
-        Buat Akun Gratis →
+        Buat Akun →
       </button>
       <button onclick="doGuestLogin()"
         class="w-full py-3 bg-white border border-cream-dark text-gray-500 font-medium text-sm rounded-xl
@@ -351,11 +345,11 @@
   <!-- ── SUKSES PANEL ── -->
   <div id="successPanel" class="panel text-center py-6">
     <div id="successIcon" class="text-6xl mb-5 block">✅</div>
-    <h2 id="successTitle" class="text-2xl font-bold text-green-deep mb-3">Berhasil Masuk!</h2>
+    <h2 id="successTitle" class="text-2xl font-bold text-green-deep mb-3">Berhasil Masuk! </h2>
     <p id="successDesc" class="text-sm text-gray-400 leading-relaxed mb-8 max-w-xs mx-auto">
       Selamat datang di PantauPangan.
     </p>
-    <button onclick="goToDashboard()"
+    <button onclick="goToHome()"
       class="w-full py-3.5 bg-green-deep text-white font-semibold text-sm rounded-xl
              hover:bg-green-mid transition-colors cursor-pointer border-0 font-sans mb-3">
       Ke Beranda →
@@ -365,6 +359,19 @@
               hover:border-green-pale hover:text-green-deep transition-colors no-underline text-center">
       Buka Dashboard →
     </a>
+  </div>
+
+  <div id="successPanelRegister" class="panel text-center py-6">
+    <div id="successIcon" class="text-6xl mb-5 block">🎉</div>
+    <h2 id="successTitle" class="text-2xl font-bold text-green-deep mb-3">Akun Berhasil Dibuat!</h2>
+    <p id="successDesc" class="text-sm text-gray-400 leading-relaxed mb-8 max-w-xs mx-auto">
+      Halo! Akunmu sudah aktif. Klik tombol Masuk untuk melakukan Login.
+    </p>
+    <button onclick="goToLogin()"
+      class="w-full py-3.5 bg-green-deep text-white font-semibold text-sm rounded-xl
+             hover:bg-green-mid transition-colors cursor-pointer border-0 font-sans mb-3">
+      Masuk →
+    </button>
   </div>
 
 </div><!-- end form panel -->
@@ -421,6 +428,12 @@ function showSuccess(icon, title, desc) {
   document.getElementById('successTitle').textContent = title;
   document.getElementById('successDesc').textContent  = desc;
 }
+function showSuccessReg() {
+  document.getElementById('authPanel').classList.remove('show');
+  document.getElementById('forgotPanel').classList.remove('show');
+  document.getElementById('successPanelRegister').classList.add('show');
+}
+
 
 // ── ALERT ──
 function showAlert(id, msg, type) {
@@ -480,46 +493,81 @@ function selectRole(role, el) {
 }
 
 // ── LOGIN ──
-const demoUsers = [
-  { email:'petani@demo.com',          password:'12345678', name:'Budi Santoso',       role:'petani' },
-  { email:'admin@pantaupangan.id',    password:'admin123', name:'Admin PantauPangan', role:'admin'  },
-];
 
-function doLogin() {
+async function doLogin() {
   const email = document.getElementById('loginEmail').value.trim();
-  const pw    = document.getElementById('loginPassword').value;
-  if (!email || !pw)       { showAlert('formAlert','⚠️ Email dan kata sandi wajib diisi.','error'); return; }
+  const password = document.getElementById('loginPassword').value;
+
+  if (!email || !password)       { showAlert('formAlert','⚠️ Email dan kata sandi wajib diisi.','error'); return; }
   if (!email.includes('@')){ showAlert('formAlert','⚠️ Format email tidak valid.','error'); return; }
-  const user = demoUsers.find(u => u.email===email && u.password===pw);
-  if (user) {
-    loginSuccess(user.name, user.role);
-  } else if (email.includes('@') && pw.length >= 6) {
-    const name = email.split('@')[0].replace(/[^a-zA-Z ]/g,' ').trim();
-    loginSuccess(capitalize(name)||'Pengguna','umum');
-  } else {
-    showAlert('formAlert','❌ Email atau kata sandi salah. Coba: petani@demo.com / 12345678','error');
+
+  try {
+    const response = await fetch('Proses/prosesLogin.php', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({email: email, password: password})
+    });
+
+    const result = await response.json();
+
+    if (result.success) {
+    loginSuccess(result.name, result.role)
+    // Ambil elemen judul
+    const titleEl = document.getElementById('successTitle');
+    
+    // Ganti teks judul dengan username dari database
+    titleEl.textContent = `Berhasil Masuk, ${result.username}!`;
+    
+    // Tampilkan panel sukses
+    showSuccess('✅', `Berhasil Masuk, ${result.username}!`, 'Selamat datang kembali di PantauPangan.');
+} else {
+      showAlert('formAlert', '${result.message}', 'error');
+    }
+  } catch (error) {
+    showAlert ('formAlert', 'Gagal Terhubung ke Server', 'error');
   }
 }
 
-function doRegister() {
-  const firstName = document.getElementById('regFirstName').value.trim();
+async function doRegister() {
+  const username = document.getElementById('regUsername').value.trim();
   const email     = document.getElementById('regEmail').value.trim();
-  const pw        = document.getElementById('regPassword').value;
-  if (!firstName||!email||!pw)  { showAlert('formAlert','⚠️ Nama, email, dan kata sandi wajib diisi.','error'); return; }
+  const password       = document.getElementById('regPassword').value;
+  
+  if (!username||!email||!password)  { showAlert('formAlert','⚠️ Nama, email, dan kata sandi wajib diisi.','error'); return; }
   if (!email.includes('@'))     { showAlert('formAlert','⚠️ Format email tidak valid.','error'); return; }
-  if (pw.length < 8)            { showAlert('formAlert','⚠️ Kata sandi minimal 8 karakter.','error'); return; }
+  if (password.length < 8)            { showAlert('formAlert','⚠️ Kata sandi minimal 8 karakter.','error'); return; }
   if (!selectedRoleValue)       { showAlert('formAlert','⚠️ Pilih peranmu terlebih dahulu.','error'); return; }
-  const lastName = document.getElementById('regLastName').value.trim();
-  const fullName = (firstName+' '+lastName).trim();
-  showSuccess('🎉','Akun Berhasil Dibuat!',`Halo ${fullName}! Akunmu sudah aktif. Klik tombol di bawah untuk mulai memantau harga pangan.`);
+
+  try {
+    const response = await fetch('Proses/prosesRegister.php', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ 
+        username: username,
+        email: email, 
+        password: password, 
+        role: selectedRoleValue 
+      })
+    });
+    
+    const result = await response.json();
+    
+    if (result.success) {
+      showSuccessReg('🎉', 'Akun Berhasil Dibuat!', `Halo ${username}! Akunmu sudah aktif. Klik tombol Masuk untuk mulai memantau harga pangan.`);
+    } else {
+      showAlert('formAlert', `❌ ${result.message}`, 'error');
+    }
+  } catch (error) {
+    showAlert('formAlert', '⚠️ Gagal terhubung ke server.', 'error');
+  }
 }
 
 function doGuestLogin()      { loginSuccess('Tamu','tamu'); }
 function socialLogin(p)      { showSuccess('✅',`Masuk dengan ${p}`,`Simulasi login ${p} berhasil!`); }
 
-function loginSuccess(name, role) {
+function loginSuccess(username, role) {
   const roleLabel = {petani:'Petani',pembeli:'Pembeli',tengkulak:'Tengkulak',admin:'Admin',tamu:'Tamu',umum:'Pengguna'};
-  showSuccess('✅',`Selamat datang, ${name}!`,
+  showSuccess('✅',`Selamat datang, ${username}!`,
     `Kamu masuk sebagai ${roleLabel[role]||'Pengguna'}. Sekarang kamu bisa memantau harga komoditas pangan terkini.`);
 }
 
@@ -531,7 +579,8 @@ function doForgot() {
   setTimeout(() => showAuth(), 3000);
 }
 
-function goToDashboard() { window.location.href = 'dashboard.html'; }
+function goToHome() { window.location.href = 'home.html'; }
+function goToLogin() { window.location.href = 'login.html'; }
 function capitalize(s)   { return s.split(' ').map(w=>w.charAt(0).toUpperCase()+w.slice(1).toLowerCase()).join(' '); }
 </script>
 </body>

@@ -294,8 +294,8 @@ const fmt  = n => 'Rp ' + n.toLocaleString('id-ID');
 
 function initUser() {
   document.getElementById('sidebarAvatar').textContent = user.avatar;
-  document.getElementById('sidebarName').textContent   = user.name;
-  document.getElementById('welcomeName').textContent   = user.name + ' 👋';
+  document.getElementById('sidebarName').textContent   = user.username;
+  document.getElementById('welcomeName').textContent   = user.username + ' 👋';
   const now = new Date();
   document.getElementById('topbarDate').textContent =
     now.toLocaleDateString('id-ID',{weekday:'long',day:'numeric',month:'long',year:'numeric'});

@@ -367,10 +367,7 @@ window.addEventListener('scroll', ()=>{
 
 // ── LOGIN & AUTH ──
 let currentUser = null;
-const demoUsers = [
-  { email: 'petani@demo.com', password: '12345678', name: 'Budi Santoso', role: 'petani' },
-  { email: 'admin@pantaupangan.id', password: 'admin123', name: 'Admin PantauPangan', role: 'admin' },
-];
+
 function openLoginModal() {
   document.getElementById('loginModal').classList.add('open');
   document.getElementById('loginError').classList.remove('show');
@@ -391,28 +388,67 @@ function showLoginError(msg) {
 function toTitleCase(str) {
   return str.replace(/\w\S*/g, t => t.charAt(0).toUpperCase() + t.substr(1).toLowerCase());
 }
-function doLogin() {
+async function doLogin() {
   const email = document.getElementById('loginEmail').value.trim();
   const password = document.getElementById('loginPassword').value;
-  if (!email || !password) { showLoginError('Email dan kata sandi wajib diisi.'); return; }
-  const user = demoUsers.find(u => u.email === email && u.password === password);
-  if (user) { loginSuccess({ name: user.name, email: user.email, role: user.role }); return; }
-  if (email.includes('@') && password.length >= 6) {
-    const rawName = email.split('@')[0].replace(/[^a-zA-Z ]/g,' ').trim() || 'Pengguna';
-    loginSuccess({ name: toTitleCase(rawName), email, role: 'umum' });
-  } else { showLoginError('Email atau kata sandi salah. Coba: petani@demo.com / 12345678'); }
+
+  if (!email || !pw)       { showAlert('formAlert','⚠️ Email dan kata sandi wajib diisi.','error'); return; }
+  if (!email.includes('@')){ showAlert('formAlert','⚠️ Format email tidak valid.','error'); return; }
+
+  try {
+    const response = await fetch('login.php', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({email: email, password: password})
+    });
+
+    const result = await response.json();
+
+    if (result.success) {
+      loginSuccess(result.name, result.role)
+    } else {
+      showAlert('formAlert', '${result.message}', 'error');
+    }
+  } catch (error) {
+    showAlert ('formAlert', 'Gagal Terhubung ke Server', 'error');
+  }
 }
-function doRegister() {
-  const firstName = document.getElementById('regFirstName').value.trim();
-  const lastName = document.getElementById('regLastName').value.trim();
-  const email = document.getElementById('regEmail').value.trim();
-  const password = document.getElementById('regPassword').value;
-  const role = document.getElementById('regRole').value;
-  if (!firstName || !email || !password || !role) { showLoginError('Semua kolom wajib diisi.'); return; }
-  if (!email.includes('@')) { showLoginError('Format email tidak valid.'); return; }
-  if (password.length < 8) { showLoginError('Kata sandi minimal 8 karakter.'); return; }
-  loginSuccess({ name: (firstName + ' ' + lastName).trim(), email, role });
+
+async function doRegister() {
+  const username = document.getElementById('regUsername').value.trim();
+  const email     = document.getElementById('regEmail').value.trim();
+  const pw        = document.getElementById('regPassword').value;
+  const role      = document.getElementById('regRole').value;
+  
+  if (!firstName||!email||!pw)  { showAlert('formAlert','⚠️ Nama, email, dan kata sandi wajib diisi.','error'); return; }
+  if (!email.includes('@'))     { showAlert('formAlert','⚠️ Format email tidak valid.','error'); return; }
+  if (pw.length < 8)            { showAlert('formAlert','⚠️ Kata sandi minimal 8 karakter.','error'); return; }
+  if (!selectedRoleValue)       { showAlert('formAlert','⚠️ Pilih peranmu terlebih dahulu.','error'); return; }
+
+  try {
+    const response = await fetch('register.php', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ 
+        username: username,
+        email: email, 
+        password: password, 
+        role: selectedRoleValue 
+      })
+    });
+    
+    const result = await response.json();
+    
+    if (result.success) {
+      showSuccess('🎉', 'Akun Berhasil Dibuat!', `Halo ${username}! Akunmu sudah aktif. Klik tombol Masuk untuk mulai memantau harga pangan.`);
+    } else {
+      showAlert('formAlert', `❌ ${result.message}`, 'error');
+    }
+  } catch (error) {
+    showAlert('formAlert', '⚠️ Gagal terhubung ke server.', 'error');
+  }
 }
+
 function doGuestLogin() { loginSuccess({ name: 'Tamu', email: 'tamu@pantaupangan.id', role: 'tamu' }); }
 function loginSuccess(user) {
   currentUser = user;
