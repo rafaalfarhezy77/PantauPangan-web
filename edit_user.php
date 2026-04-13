@@ -18,8 +18,9 @@ $id = mysqli_real_escape_string($koneksi, $_GET['id']);
 // Proses Update Data
 if (isset($_POST['update'])) {
     $role_baru = mysqli_real_escape_string($koneksi, $_POST['role']);
+    $admin_sekarang = $_SESSION['username'];
     
-    $query_update = "UPDATE users SET role = '$role_baru' WHERE id = '$id'";
+    $query_update = "UPDATE users SET role = '$role_baru', updated_by = '$admin_sekarang' WHERE id = '$id'";
     if (mysqli_query($koneksi, $query_update)) {
         echo "<script>alert('Role user berhasil diubah!'); window.location.href='dashboardAdmin.php';</script>";
         exit;
