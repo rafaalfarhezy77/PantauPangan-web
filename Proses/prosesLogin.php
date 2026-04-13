@@ -22,6 +22,8 @@
             $_SESSION['role'] = $user['role'];
             $_SESSION['username'] = $user['username'];
 
+            $_SESSION['username'] = $row['username'];
+
             echo json_encode([
                 "success" => true,
                 "username" => $user["username"],
