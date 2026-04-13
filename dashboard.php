@@ -1,3 +1,10 @@
+<?php
+session_start();
+require './Server/koneksi.php';
+
+$query = mysqli_query($koneksi, "SELECT * FROM users");
+?>
+
 <!DOCTYPE html>
 <html lang="id">
 <head>
@@ -37,6 +44,23 @@
   .anim-1 { animation: fadeUp .5s .1s ease both; }
   .anim-2 { animation: fadeUp .5s .2s ease both; }
   .blink  { animation: blink 2s infinite; }
+
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 4px; 
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.2);
+  }
 </style>
 </head>
 <body class="bg-cream min-h-screen flex">
@@ -47,7 +71,7 @@
 
 <!-- ── SIDEBAR ── -->
 <aside id="sidebar"
-  class="w-60 bg-green-deep min-h-screen fixed top-0 left-0 flex flex-col z-50
+  class="w-60 bg-green-deep h-screen fixed top-0 left-0 flex flex-col z-50
          -translate-x-full md:translate-x-0 transition-transform duration-300">
 
   <a href="home.html"
@@ -56,10 +80,10 @@
     <span class="font-bold text-white text-base">Pantau<span class="text-green-pale">Pangan</span></span>
   </a>
 
-  <nav class="flex-1 px-3 py-4 flex flex-col gap-0.5 overflow-y-auto">
+  <nav class="flex-1 px-3 py-4 flex flex-col gap-0.5 overflow-y-auto custom-scrollbar">
     <p class="text-[0.65rem] font-semibold uppercase tracking-widest text-white/30 px-2 py-2">Menu Utama</p>
 
-    <a href="dashboard.html"
+    <a href="dashboard.php"
        class="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm font-medium text-white bg-white/10 no-underline">
       <span class="w-5 text-center text-base">🏠</span>Dashboard
     </a>
@@ -105,11 +129,11 @@
     <div class="flex items-center gap-2.5 px-3 py-2.5 rounded-xl hover:bg-white/10 cursor-pointer transition-colors">
       <div id="sidebarAvatar" class="w-8 h-8 bg-green-light rounded-full flex items-center justify-center text-xs font-bold text-white flex-shrink-0">BS</div>
       <div>
-        <p id="sidebarName" class="text-sm font-semibold text-white leading-tight">Budi Santoso</p>
-        <p id="sidebarRole" class="text-xs text-white/40 leading-tight">🌾 Petani</p>
+        <p id="sidebarName" class="text-sm font-semibold text-white leading-tight"></p>
+        <p id="sidebarRole" class="text-xs text-white/40 leading-tight">🌾 </p>
       </div>
     </div>
-    <button onclick="window.location.href='login.html'"
+    <button onclick="doLogout()"
       class="flex items-center gap-2 w-full px-3 py-2 mt-1 rounded-xl text-xs text-red-400/70
              hover:bg-red-500/10 hover:text-red-400 transition-colors cursor-pointer bg-transparent border-0 font-sans">
       🚪 Keluar dari Akun
@@ -143,7 +167,7 @@
       <div class="absolute inset-0 opacity-[0.03] bg-[url('data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2260%22 height=%2260%22><path fill=%22white%22 d=%22M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z%22/></svg>')]"></div>
       <div class="relative z-10">
         <p class="font-serif italic text-green-pale text-sm mb-1">Selamat datang kembali,</p>
-        <h2 id="welcomeName" class="text-2xl font-bold text-white tracking-tight mb-1">Budi Santoso 👋</h2>
+        <h2 id="welcomeName" class="text-2xl font-bold text-white tracking-tight mb-1"> 👋</h2>
         <p class="text-sm text-white/60">Pantau harga favoritmu — data diperbarui pukul 06.00 WIB</p>
       </div>
       <div class="relative z-10 hidden sm:flex items-center gap-2 bg-white/10 border border-white/15 rounded-full px-4 py-2">
@@ -252,7 +276,6 @@
 </div>
 
 <script>
-const user = { name:'Budi Santoso', role:'petani', avatar:'BS' };
 
 const watchlistData = [
   { icon:'🌾', name:'Beras Premium', region:'Jawa Timur',  price:14500,  change:+1.2, id:'beras'  },
@@ -293,9 +316,22 @@ const days = ['Sen','Sel','Rab','Kam','Jum','Sab','Min'];
 const fmt  = n => 'Rp ' + n.toLocaleString('id-ID');
 
 function initUser() {
-  document.getElementById('sidebarAvatar').textContent = user.avatar;
-  document.getElementById('sidebarName').textContent   = user.username;
-  document.getElementById('welcomeName').textContent   = user.username + ' 👋';
+  const isLoggedIn = localStorage.getItem('isLoggedIn');
+  const username = localStorage.getItem('username');
+  const role = localStorage.getItem('role');
+
+  if (isLoggedIn !== 'true') {
+    window.location.href = 'login.php';
+    return;
+  }
+
+  const initials = username.split(' ').map(n => n[0]).join('').substring(0,2).toUpperCase();
+
+  document.getElementById('sidebarAvatar').textContent = initials;
+  document.getElementById('sidebarName').textContent = username;
+
+  document.getElementById('welcomeName').textContent   = username + ' 👋';
+  
   const now = new Date();
   document.getElementById('topbarDate').textContent =
     now.toLocaleDateString('id-ID',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
@@ -386,6 +422,26 @@ function updateChart() {
       }
     }
   });
+}
+async function doLogout() {
+  try {
+   
+    const response = await fetch('logout.php');
+    const result = await response.json();
+
+    if (result.success) {
+      localStorage.removeItem('isLoggedIn');
+      localStorage.removeItem('username');
+      localStorage.removeItem('role');
+      
+      
+      window.location.href = 'login.php';
+    }
+  } catch (error) {
+    console.error("Gagal logout:", error);
+    localStorage.clear();
+    window.location.href = 'login.php';
+  }
 }
 
 function openSidebar()  { document.getElementById('sidebar').classList.remove('-translate-x-full'); document.getElementById('overlay').classList.remove('hidden'); }

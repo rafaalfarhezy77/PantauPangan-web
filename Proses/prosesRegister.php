@@ -1,4 +1,6 @@
 <?php
+    session_start();
+
     header("Content-Type: application/json");
     include '../Server/koneksi.php';
 
@@ -36,7 +38,7 @@
     } else {
         echo json_encode([
             "success" => false,
-            "message" => "Gagal menyimpan data: " . mysqli_error($conn)
+            "message" => "Gagal menyimpan data: " . mysqli_error($koneksi)
         ]);
     }
     exit;   

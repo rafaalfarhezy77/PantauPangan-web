@@ -388,66 +388,7 @@ function showLoginError(msg) {
 function toTitleCase(str) {
   return str.replace(/\w\S*/g, t => t.charAt(0).toUpperCase() + t.substr(1).toLowerCase());
 }
-async function doLogin() {
-  const email = document.getElementById('loginEmail').value.trim();
-  const password = document.getElementById('loginPassword').value;
 
-  if (!email || !pw)       { showAlert('formAlert','⚠️ Email dan kata sandi wajib diisi.','error'); return; }
-  if (!email.includes('@')){ showAlert('formAlert','⚠️ Format email tidak valid.','error'); return; }
-
-  try {
-    const response = await fetch('login.php', {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({email: email, password: password})
-    });
-
-    const result = await response.json();
-
-    if (result.success) {
-      loginSuccess(result.name, result.role)
-    } else {
-      showAlert('formAlert', '${result.message}', 'error');
-    }
-  } catch (error) {
-    showAlert ('formAlert', 'Gagal Terhubung ke Server', 'error');
-  }
-}
-
-async function doRegister() {
-  const username = document.getElementById('regUsername').value.trim();
-  const email     = document.getElementById('regEmail').value.trim();
-  const pw        = document.getElementById('regPassword').value;
-  const role      = document.getElementById('regRole').value;
-  
-  if (!firstName||!email||!pw)  { showAlert('formAlert','⚠️ Nama, email, dan kata sandi wajib diisi.','error'); return; }
-  if (!email.includes('@'))     { showAlert('formAlert','⚠️ Format email tidak valid.','error'); return; }
-  if (pw.length < 8)            { showAlert('formAlert','⚠️ Kata sandi minimal 8 karakter.','error'); return; }
-  if (!selectedRoleValue)       { showAlert('formAlert','⚠️ Pilih peranmu terlebih dahulu.','error'); return; }
-
-  try {
-    const response = await fetch('register.php', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ 
-        username: username,
-        email: email, 
-        password: password, 
-        role: selectedRoleValue 
-      })
-    });
-    
-    const result = await response.json();
-    
-    if (result.success) {
-      showSuccess('🎉', 'Akun Berhasil Dibuat!', `Halo ${username}! Akunmu sudah aktif. Klik tombol Masuk untuk mulai memantau harga pangan.`);
-    } else {
-      showAlert('formAlert', `❌ ${result.message}`, 'error');
-    }
-  } catch (error) {
-    showAlert('formAlert', '⚠️ Gagal terhubung ke server.', 'error');
-  }
-}
 
 function doGuestLogin() { loginSuccess({ name: 'Tamu', email: 'tamu@pantaupangan.id', role: 'tamu' }); }
 function loginSuccess(user) {
@@ -466,13 +407,25 @@ function loginSuccess(user) {
   document.getElementById('mobileName').textContent = user.name;
   document.getElementById('mobileEmail').textContent = user.email;
 }
-function doLogout() {
-  currentUser = null;
-  document.getElementById('navLoginBtn').style.display = '';
-  document.getElementById('navAvatarWrap').style.display = 'none';
-  document.getElementById('avatarDropdown').classList.remove('open');
-  document.getElementById('mobileLoginSection').style.display = 'block';
-  document.getElementById('mobileUserSection').style.display = 'none';
+async function doLogout() {
+  try {
+   
+    const response = await fetch('logout.php');
+    const result = await response.json();
+
+    if (result.success) {
+      localStorage.removeItem('isLoggedIn');
+      localStorage.removeItem('username');
+      localStorage.removeItem('role');
+      
+      
+      window.location.href = 'login.php';
+    }
+  } catch (error) {
+    console.error("Gagal logout:", error);
+    localStorage.clear();
+    window.location.href = 'login.php';
+  }
 }
 function toggleAvatarDropdown() { document.getElementById('avatarDropdown').classList.toggle('open'); }
 document.addEventListener('click', (e) => {
@@ -493,3 +446,44 @@ document.addEventListener('click', (e) => {
   const btn = document.getElementById('hamburgerBtn');
   if (nav && nav.classList.contains('open') && !nav.contains(e.target) && !btn.contains(e.target)) closeMobileNav();
 });
+
+function checkLoginStatus() {
+  const isLoggedIn = localStorage.getItem('isLoggedIn');
+  const username = localStorage.getItem('username');
+  const role = localStorage.getItem('role');
+
+  if (isLoggedIn === 'true') {
+    // 1. Sembunyikan tombol login (Desktop & Mobile)
+    const btnLogin = document.querySelector('.btn-login');
+    if (btnLogin) btnLogin.style.display = 'none';
+    
+    const mobileLoginSec = document.getElementById('mobileLoginSection');
+    if (mobileLoginSec) mobileLoginSec.style.display = 'none';
+
+    // 2. Buat inisial nama pengguna
+    const initials = username.split(' ').map(n => n[0]).join('').substring(0,2).toUpperCase();
+
+    // 3. Tampilkan Avatar Profil (Desktop)
+    const navAvatarWrap = document.getElementById('navAvatarWrap');
+    if (navAvatarWrap) {
+      navAvatarWrap.style.display = 'flex';
+      navAvatarWrap.style.alignItems = 'center';
+      
+      document.getElementById('navAvatar').textContent = initials;
+      document.getElementById('dropdownName').textContent = username;
+      document.getElementById('dropdownEmail').textContent = `Peran: ${role}`; 
+    }
+
+    // 4. Tampilkan Avatar Profil (Mobile)
+    const mobileUserSec = document.getElementById('mobileUserSection');
+    if (mobileUserSec) {
+      mobileUserSec.style.display = 'block';
+      document.getElementById('mobileAvatar').textContent = initials;
+      document.getElementById('mobileName').textContent = username;
+      document.getElementById('mobileEmail').textContent = `Peran: ${role}`;
+    }
+  }
+}
+
+// Jalankan fungsi ini secara otomatis saat home.html selesai dimuat
+document.addEventListener('DOMContentLoaded', checkLoginStatus);
