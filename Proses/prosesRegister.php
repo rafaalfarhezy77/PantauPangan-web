@@ -29,7 +29,6 @@
     $query = "INSERT INTO users (username, email, password, role) VALUES ('$username', '$email', '$password_hash', '$role')";
     $result = mysqli_query($koneksi, $query);
 
-    header('Content-Type: application/json'); // Beritahu browser ini JSON
     if ($result) {
         echo json_encode([
             "success" => true,

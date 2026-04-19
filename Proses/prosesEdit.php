@@ -12,7 +12,6 @@ if (isset($_POST['update'])) {
     $username = mysqli_real_escape_string($koneksi, $_POST['username']);
     $email = mysqli_real_escape_string($koneksi, $_POST['email']);
     $role = mysqli_real_escape_string($koneksi, $_POST['role']);
-    $admin_sekarang = $_SESSION['username']; // Mengambil nama admin yang sedang login
 
     $admin_sekarang = isset($_SESSION['username']) ? $_SESSION['username'] : 'Admin';
 
@@ -24,9 +23,6 @@ if (isset($_POST['update'])) {
               updated_by = '$admin_sekarang' 
               WHERE id = '$id'";
 
-    if (mysqli_query($koneksi, $query)) {
-        echo "<script>alert('Berhasil diupdate oleh $admin_sekarang'); window.location.href='../admin_dashboard.php';</script>";
-    }
     if (mysqli_query($koneksi, $query)) {
         echo "<script>alert('User berhasil diperbarui oleh $admin_sekarang'); window.location.href='../dashboardAdmin.php';</script>";
     } else {

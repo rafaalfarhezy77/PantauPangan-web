@@ -84,7 +84,7 @@ $query_users = mysqli_query($koneksi, "SELECT * FROM users ORDER BY id DESC");
             <td class="px-6 py-4">
                 
                 <?php if($row['role'] == 'admin'): ?>
-                    <span class="px-2 py-1 px-2 py-1 rounded-md text-[10px] font-bold bg-red-700 text-red-50">ADMIN</span>
+                    <span class="px-2 py-1 rounded-md text-[10px] font-bold bg-red-700 text-red-50">ADMIN</span>
                 <?php else: ?>
                     <span class="px-2 py-1 rounded-md text-[10px] font-bold bg-green-mist text-green-700"><?= strtoupper($row['role']); ?></span>    
                 <?php endif; ?>
