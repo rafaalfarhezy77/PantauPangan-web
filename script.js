@@ -1,6 +1,8 @@
+let berasBPSHistory = [];
+
 // ── DATA ──
 const commodities = [
-  { id:'beras', icon:'🌾', name:'Beras Premium', unit:'per kg', price:14500, change:+1.2, kategori:'pokok' },
+  { id:'beras', icon:'🌾', name:'Beras Premium', unit:'per kg', price:1, change:+1.2, kategori:'pokok' },
   { id:'jagung', icon:'🌽', name:'Jagung Pipilan', unit:'per kg', price:5200, change:-0.8, kategori:'pokok' },
   { id:'kedelai', icon:'🫘', name:'Kedelai Lokal', unit:'per kg', price:9800, change:+0.5, kategori:'pokok' },
   { id:'cabai', icon:'🌶️', name:'Cabai Merah Keriting', unit:'per kg', price:32000, change:+8.4, kategori:'bumbu' },
@@ -13,6 +15,35 @@ const commodities = [
   { id:'daging', icon:'🥩', name:'Daging Sapi', unit:'per kg', price:135000, change:+0.5, kategori:'protein' },
   { id:'ayam', icon:'🍗', name:'Daging Ayam', unit:'per kg', price:32500, change:-1.8, kategori:'protein' },
 ];
+
+async function fetchDataBerasBPS() {
+  try {
+    const response = await fetch('coba_api.php');
+    const dataBPS = await response.json();
+    if (dataBPS.status !== "OK") return;
+
+    const content = dataBPS.datacontent;
+    const keyPrefix = "122770125"; // Premium 2025 [cite: 278]
+    
+    // Ambil data bulan 1 sampai 12 secara berurutan untuk grafik
+    berasBPSHistory = [];
+    for (let m = 1; m <= 12; m++) {
+      const key = keyPrefix + m;
+      if (content[key]) {
+        berasBPSHistory.push(content[key]);
+      }
+    }
+
+    // Update harga terbaru untuk card
+    if (berasBPSHistory.length > 0) {
+      const latestPrice = berasBPSHistory[berasBPSHistory.length - 1];
+      const berasIndex = commodities.findIndex(c => c.id === 'beras');
+      if (berasIndex !== -1) commodities[berasIndex].price = latestPrice;
+    }
+  } catch (error) {
+    console.error("Gagal sinkronisasi history BPS", error);
+  }
+}
 
 const priceHistory = {
   '7H': [14000,14100,13900,14200,14400,14350,14500],
@@ -116,14 +147,21 @@ function selectCommodity(id) {
 
 // ── CHART ──
 function generateChartData(period, commodity) {
-  const c = commodities.find(x=>x.id===commodity);
+  // Jika komoditasnya beras dan kita punya data dari BPS, gunakan data itu
+  if (commodity === 'beras' && berasBPSHistory.length > 0 && period === '1T') {
+    return berasBPSHistory;
+  }
+
+  // Untuk komoditas lain, hilangkan Math.random() agar stabil
+  // Gunakan perhitungan persentase tetap saja
+  const c = commodities.find(x => x.id === commodity);
   const base = c.price;
-  const len = {
-    '7H': 7, '1B': 30, '3B': 13, '1T': 12
-  }[period];
-  return Array.from({length:len},(_,i)=>
-    Math.round(base * (0.9 + 0.1*Math.random() + (i/(len*3))*c.change/100))
-  );
+  const len = { '7H': 7, '1B': 30, '3B': 13, '1T': 12 }[period];
+  
+  return Array.from({length:len}, (_, i) => {
+    // Menghilangkan Math.random() [cite: 233]
+    return Math.round(base * (0.95 + (i / (len * 20)))); 
+  });
 }
 
 function updateChart() {
@@ -224,9 +262,9 @@ function doSearch() {
   const regions = province ? [province] : ['Jawa Barat','Jawa Tengah','Jawa Timur','DKI Jakarta','Bali','Sumatera Utara'];
   const results = regions.map(r => {
     const m = regionPriceMultiplier[r] || 1;
-    const p = Math.round(base * m * (0.97 + Math.random()*0.06));
-    const ch = ((Math.random()-0.4)*6).toFixed(1);
-    return { region: r, price: p, change: parseFloat(ch) };
+    const p = Math.round(base * m);
+    const ch = 0.5;
+    return { region: r, price: p, change: ch };
   });
 
   document.getElementById('searchResultLabel').textContent =
@@ -325,11 +363,21 @@ window.addEventListener('scroll', ()=>{
 });
 
 // ── START ──
-initTicker();
-renderCommodities();
-renderBerita();
-updateChart();
-selectCommodity('beras');
+async function initApp() {
+  // 1. Render elemen yang tidak bergantung pada harga (agar UI tidak kosong)
+  renderBerita();
+  
+  // 2. Tunggu proses tarik data BPS selesai
+  await fetchDataBerasBPS();
+  
+  // 3. Render ulang elemen yang menggunakan harga (Sekarang sudah pakai harga BPS)
+  initTicker();
+  renderCommodities();
+  selectCommodity('beras'); // Otomatis mengupdate chart dengan harga BPS
+}
+
+// Eksekusi fungsi inisialisasi saat script dimuat
+initApp();
 
 // Trigger fade-in for elements already in view
 setTimeout(()=>{
