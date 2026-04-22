@@ -45,6 +45,37 @@ async function fetchDataBerasBPS() {
   }
 }
 
+async function fetchProvinsiBPS() {
+  try {
+    const response = await fetch('provinsi_api.php');
+    if (!response.ok) throw new Error('Gagal memanggil API Provinsi');
+    
+    const result = await response.json();
+    
+    if (result.status === "OK") {
+      // Data provinsi ada di result.data[1] berdasarkan file data_prov.json
+      const provinces = Array.isArray(result.data) 
+        ? result.data.find(item => Array.isArray(item)) 
+        : [];
+      const selectElement = document.getElementById('searchProvince');
+      
+      // Bersihkan pilihan yang sudah ada kecuali "Semua Provinsi"
+      selectElement.innerHTML = '<option value="">Semua Provinsi</option>';
+      
+      provinces.forEach(prov => {
+        const option = document.createElement('option');
+        option.value = prov.domain_name; // Menggunakan nama provinsi untuk pencarian
+        option.textContent = prov.domain_name;
+        selectElement.appendChild(option);
+      });
+      console.log("Daftar Provinsi berhasil dimuat dari BPS.");
+  }
+  } catch (error) {
+    console.error("Gagal memuat provinsi dari API:", error);
+    // Jika gagal, dropdown akan tetap pada status default (hardcode lama)
+  }
+}
+
 const priceHistory = {
   '7H': [14000,14100,13900,14200,14400,14350,14500],
   '1B': Array.from({length:30},(_,i)=>13500+Math.round(Math.sin(i/5)*400+i*20+Math.random()*200)),
@@ -368,7 +399,10 @@ async function initApp() {
   renderBerita();
   
   // 2. Tunggu proses tarik data BPS selesai
-  await fetchDataBerasBPS();
+  await Promise.all([
+    fetchDataBerasBPS(),
+    fetchProvinsiBPS()
+  ]);
   
   // 3. Render ulang elemen yang menggunakan harga (Sekarang sudah pakai harga BPS)
   initTicker();
@@ -387,31 +421,6 @@ setTimeout(()=>{
   });
 }, 100);
 
-// ── SCROLL EFFECTS ──
-window.addEventListener('scroll', ()=>{
-  const nav = document.getElementById('navbar');
-  nav.classList.toggle('scrolled', window.scrollY > 10);
-
-  // Active nav link
-  const sections = ['beranda','cari','harga','berita'];
-  const links = document.querySelectorAll('.nav-links a');
-  sections.forEach((id,i)=>{
-    const el = document.getElementById(id);
-    if (!el) return;
-    const rect = el.getBoundingClientRect();
-    if (rect.top <= 100 && rect.bottom > 100) {
-      links.forEach(l=>l.classList.remove('active'));
-      links[i].classList.add('active');
-    }
-  });
-
-  // Fade-in on scroll
-  document.querySelectorAll('.fade-in:not(.visible)').forEach(el=>{
-    if (el.getBoundingClientRect().top < window.innerHeight - 60) {
-      el.classList.add('visible');
-    }
-  });
-});
 
 // ── LOGIN & AUTH ──
 let currentUser = null;
@@ -533,5 +542,6 @@ function checkLoginStatus() {
   }
 }
 
-// Jalankan fungsi ini secara otomatis saat home.html selesai dimuat
+
+// Jalankan fungsi ini secara otomatis saat home.php selesai dimuat
 document.addEventListener('DOMContentLoaded', checkLoginStatus);
