@@ -1,3 +1,7 @@
+<?php
+session_start()
+?>
+
 <!DOCTYPE html>
 <html lang="id">
 <head>
@@ -48,9 +52,9 @@
   </button>
 
   <div class="flex items-center gap-1.5 text-xs text-gray-400 hidden sm:flex">
-    <a href="home.html" class="hover:text-green-mid transition-colors no-underline text-gray-400">Beranda</a>
+    <a href="index.php" class="hover:text-green-mid transition-colors no-underline text-gray-400">Beranda</a>
     <span>›</span>
-    <a href="home.html#harga" class="hover:text-green-mid transition-colors no-underline text-gray-400">Komoditas</a>
+    <a href="index.php#harga" class="hover:text-green-mid transition-colors no-underline text-gray-400">Komoditas</a>
     <span>›</span>
     <span id="breadcrumb" class="text-green-deep font-semibold">Beras Premium</span>
   </div>
@@ -169,7 +173,7 @@
         <p class="font-bold text-green-deep text-sm">📍 Harga per Provinsi</p>
         <p class="text-xs text-gray-400 mt-0.5">Perbandingan di 10 provinsi utama</p>
       </div>
-      <a href="home.html#cari"
+      <a href="index.php#cari"
          class="text-xs font-semibold text-green-mid bg-green-mist px-3 py-1.5 rounded-full hover:bg-green-pale transition-colors no-underline">
         Cari Provinsi Lain →
       </a>
@@ -377,7 +381,7 @@ function renderRegion() {
 
 function renderNews() {
   document.getElementById('relatedNews').innerHTML = (C.news||[]).map(n=>`
-    <a href="home.html#berita"
+    <a href="index.php#berita"
        class="flex gap-3 px-5 py-4 border-b border-cream-dark last:border-0 hover:bg-cream transition-colors no-underline">
       <div class="w-10 h-10 bg-green-mist rounded-xl flex items-center justify-center text-lg flex-shrink-0">${n.icon}</div>
       <div>
@@ -389,7 +393,7 @@ function renderNews() {
 
 function renderSimilar() {
   document.getElementById('similarGrid').innerHTML = (C.similar||[]).map(s=>`
-    <a href="detail.html?id=${s.id}"
+    <a href="detail.php?id=${s.id}"
        class="block bg-cream border border-cream-dark rounded-xl p-4 text-center hover:border-green-pale hover:shadow-sm hover:-translate-y-0.5 transition-all no-underline">
       <span class="text-3xl block mb-2">${s.icon}</span>
       <p class="text-xs font-semibold text-gray-700 mb-1">${s.name}</p>

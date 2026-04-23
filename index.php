@@ -1,3 +1,10 @@
+<?php
+session_start();
+require './Server/koneksi.php';
+
+$query = mysqli_query($koneksi, "SELECT * FROM users");
+?>
+
 <!DOCTYPE html>
 <html lang="id">
 <head>
@@ -25,7 +32,7 @@
     <li><a href="#berita">Berita <span class="nav-badge">5</span></a></li>
   </ul>
   <div class="nav-right">
-    <a href="login.php" class="btn-login"> <img src="img/login_icon.png" alt=""> Masuk</a>
+    <a href="login.php" class="btn-login" id="navLoginBtn"> <img src="img/login_icon.png" alt=""> Masuk</a>
     <div class="nav-avatar-wrap" id="navAvatarWrap" style="display:none;position:relative">
       <div class="nav-avatar" id="navAvatar" onclick="toggleAvatarDropdown()">TA</div>
       <div class="avatar-dropdown" id="avatarDropdown">
@@ -34,8 +41,6 @@
           <div class="avatar-dropdown-email" id="dropdownEmail"><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="d7a3b6b9beb6a5b0b697b2bab6bebbf9b4b8ba">[email&#160;protected]</a></div>
         </div>
         <a href="dashboard.php">👤 Dashboard</a>
-        <a href="#">⚙️ Pengaturan</a>
-        <a href="#">🔔 Notifikasi Harga</a>
         <button class="logout-btn" onclick="doLogout()">🚪 Keluar</button>
       </div>
     </div>
@@ -207,35 +212,7 @@
       <div class="search-field">
         <label>Provinsi</label>
         <select class="search-input" id="searchProvince">
-          <option value="">Semua Provinsi</option>
-          <option>Aceh</option>
-          <option>Sumatera Utara</option>
-          <option>Sumatera Barat</option>
-          <option>Riau</option>
-          <option>Jambi</option>
-          <option>Sumatera Selatan</option>
-          <option>Bengkulu</option>
-          <option>Lampung</option>
-          <option>DKI Jakarta</option>
-          <option>Jawa Barat</option>
-          <option>Jawa Tengah</option>
-          <option>DI Yogyakarta</option>
-          <option>Jawa Timur</option>
-          <option>Banten</option>
-          <option>Bali</option>
-          <option>Nusa Tenggara Barat</option>
-          <option>Nusa Tenggara Timur</option>
-          <option>Kalimantan Barat</option>
-          <option>Kalimantan Tengah</option>
-          <option>Kalimantan Selatan</option>
-          <option>Kalimantan Timur</option>
-          <option>Sulawesi Utara</option>
-          <option>Sulawesi Tengah</option>
-          <option>Sulawesi Selatan</option>
-          <option>Sulawesi Tenggara</option>
-          <option>Gorontalo</option>
-          <option>Maluku</option>
-          <option>Papua</option>
+          <option value="">Memuat data...</option>
         </select>
       </div>
       <div class="search-field" style="max-width:160px">

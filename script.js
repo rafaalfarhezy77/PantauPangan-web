@@ -2,7 +2,7 @@ let berasBPSHistory = [];
 
 // ── DATA ──
 const commodities = [
-  { id:'beras', icon:'🌾', name:'Beras Premium', unit:'per kg', price:1, change:+1.2, kategori:'pokok' },
+  { id:'beras', icon:'🌾', name:'Beras Premium', unit:'per kg', price:14500, change:+1.2, kategori:'pokok' },
   { id:'jagung', icon:'🌽', name:'Jagung Pipilan', unit:'per kg', price:5200, change:-0.8, kategori:'pokok' },
   { id:'kedelai', icon:'🫘', name:'Kedelai Lokal', unit:'per kg', price:9800, change:+0.5, kategori:'pokok' },
   { id:'cabai', icon:'🌶️', name:'Cabai Merah Keriting', unit:'per kg', price:32000, change:+8.4, kategori:'bumbu' },
@@ -54,9 +54,7 @@ async function fetchProvinsiBPS() {
     
     if (result.status === "OK") {
       // Data provinsi ada di result.data[1] berdasarkan file data_prov.json
-      const provinces = Array.isArray(result.data) 
-        ? result.data.find(item => Array.isArray(item)) 
-        : [];
+      const provinces = result.data[1];
       const selectElement = document.getElementById('searchProvince');
       
       // Bersihkan pilihan yang sudah ada kecuali "Semua Provinsi"
@@ -69,10 +67,19 @@ async function fetchProvinsiBPS() {
         selectElement.appendChild(option);
       });
       console.log("Daftar Provinsi berhasil dimuat dari BPS.");
-  }
+    }
   } catch (error) {
     console.error("Gagal memuat provinsi dari API:", error);
-    // Jika gagal, dropdown akan tetap pada status default (hardcode lama)
+    // Fallback: isi dengan daftar provinsi statis
+    const selectElement = document.getElementById('searchProvince');
+    if (selectElement) {
+      selectElement.innerHTML = '<option value="">Semua Provinsi</option>';
+      provinsiStatis.forEach(p => {
+        const opt = document.createElement('option');
+        opt.value = p; opt.textContent = p;
+        selectElement.appendChild(opt);
+      });
+    }
   }
 }
 
@@ -147,7 +154,7 @@ function renderCommodities() {
       <div class="c-right">
         <div class="c-price">${fmt(c.price)}</div>
         <div class="c-change ${c.change>0?'up':c.change<0?'down':''}">${c.change>0?'▲'+c.change+'%':c.change<0?'▼'+Math.abs(c.change)+'%':'—'}</div>
-        <a href="detail.html?id=${c.id}" onclick="event.stopPropagation()"
+        <a href="detail.php?id=${c.id}" onclick="event.stopPropagation()"
            style="display:inline-block;margin-top:5px;font-size:.7rem;font-weight:600;color:var(--green-mid);
                   background:var(--green-mist);padding:2px 9px;border-radius:20px;text-decoration:none;
                   transition:background .2s"
@@ -421,6 +428,7 @@ setTimeout(()=>{
   });
 }, 100);
 
+// ── SCROLL EFFECTS ──
 
 // ── LOGIN & AUTH ──
 let currentUser = null;
@@ -542,6 +550,5 @@ function checkLoginStatus() {
   }
 }
 
-
-// Jalankan fungsi ini secara otomatis saat home.php selesai dimuat
+// Jalankan fungsi ini secara otomatis saat home.html selesai dimuat
 document.addEventListener('DOMContentLoaded', checkLoginStatus);
