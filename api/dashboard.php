@@ -318,10 +318,6 @@ function initUser() {
     return;
   }
 
-  if (role === 'admin') {
-    window.location.href = 'api/dashboardAdmin.php';
-    return;
-  }
 
   const initials = (username || 'P').split(' ').map(n => n[0]).join('').substring(0,2).toUpperCase();
   const roleEmojis = { 'petani': '🌾', 'pembeli': '🛒', 'tengkulak': '🏪', 'admin': '🛡️', 'umum': '👤' };
