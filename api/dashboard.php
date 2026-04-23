@@ -455,10 +455,49 @@ async function doLogout() {
 function openSidebar()  { document.getElementById('sidebar').classList.remove('-translate-x-full'); document.getElementById('overlay').classList.remove('hidden'); }
 function closeSidebar() { document.getElementById('sidebar').classList.add('-translate-x-full'); document.getElementById('overlay').classList.add('hidden'); }
 
+async function fetchBerasBPS() {
+  try {
+    const response = await fetch('coba_api.php');
+    const dataBPS = await response.json();
+    if (dataBPS.status === 'OK') {
+        const content = dataBPS.datacontent;
+        const keyPrefix = '122770125';
+        let history = [];
+        for (let m = 1; m <= 12; m++) {
+            const key = keyPrefix + m;
+            if (content[key]) history.push(content[key]);
+        }
+        if (history.length > 0) {
+            let chartData = history.slice(-7);
+            while (chartData.length < 7 && chartData.length > 0) {
+                chartData.unshift(chartData[0]);
+            }
+            if (chartData.length === 7) {
+                chartDataMap.beras = chartData;
+            }
+            
+            const latestPrice = history[history.length - 1];
+            const berasItem = watchlistData.find(w => w.id === 'beras');
+            if (berasItem) {
+                berasItem.price = latestPrice;
+                if (history.length > 1) {
+                    const prevPrice = history[history.length - 2];
+                    const change = ((latestPrice - prevPrice) / prevPrice) * 100;
+                    berasItem.change = parseFloat(change.toFixed(1));
+                }
+            }
+        }
+    }
+  } catch (error) {
+    console.error('Gagal sinkronisasi API beras', error);
+  }
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     // Beri sedikit jeda agar Tailwind selesai merender container (mencegah canvas 0px)
-    setTimeout(() => {
-      initUser(); 
+    setTimeout(async () => {
+      initUser();
+      await fetchBerasBPS();
       renderWatchlist(); 
       renderNotif(); 
       renderHistory(); 
