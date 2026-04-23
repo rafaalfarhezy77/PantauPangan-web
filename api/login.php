@@ -568,7 +568,7 @@ function doForgot() {
 }
 
 function goToHome() { window.location.href = '../index.html'; }
-function goToLogin() { window.location.href = 'login.html'; }
+function goToLogin() { window.location.href = 'login.php'; }
 function capitalize(s)   { return s.split(' ').map(w=>w.charAt(0).toUpperCase()+w.slice(1).toLowerCase()).join(' '); }
 </script>
 </body>
