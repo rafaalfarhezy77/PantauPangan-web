@@ -250,8 +250,28 @@ $query = mysqli_query($koneksi, "SELECT * FROM users");
     <!-- Notif + Riwayat -->
     <div class="anim-2 grid grid-cols-1 md:grid-cols-2 gap-5">
 
+      <!-- Notifications -->
       <div class="bg-white border border-cream-dark rounded-2xl overflow-hidden">
         <div class="flex items-center justify-between px-6 py-4 border-b border-cream-dark">
+          <div>
+            <p class="font-bold text-green-deep text-sm">🔔 Notifikasi</p>
+            <p class="text-xs text-gray-400 mt-0.5">Pembaruan harga terbaru</p>
+          </div>
+          <button onclick="markAllRead()"
+            class="text-xs font-semibold text-green-mid bg-green-mist px-3 py-1.5 rounded-full hover:bg-green-pale transition-colors cursor-pointer border-0 font-sans">
+            Baca Semua
+          </button>
+        </div>
+        <div id="notifList" class="custom-scrollbar max-h-[300px] overflow-y-auto"></div>
+      </div>
+
+      <!-- History -->
+      <div class="bg-white border border-cream-dark rounded-2xl overflow-hidden">
+        <div class="flex items-center justify-between px-6 py-4 border-b border-cream-dark">
+          <div>
+            <p class="font-bold text-green-deep text-sm">🕒 Riwayat Cari</p>
+            <p class="text-xs text-gray-400 mt-0.5">Pencarian terakhir Anda</p>
+          </div>
           <button onclick="clearHistory()"
             class="text-xs font-semibold text-green-mid bg-green-mist px-3 py-1.5 rounded-full hover:bg-green-pale transition-colors cursor-pointer border-0 font-sans">
             Hapus
@@ -314,12 +334,16 @@ function initUser() {
     return;
   }
 
-  const initials = username.split(' ').map(n => n[0]).join('').substring(0,2).toUpperCase();
+  const initials = (username || 'P').split(' ').map(n => n[0]).join('').substring(0,2).toUpperCase();
+  const roleEmojis = { 'petani': '🌾', 'pembeli': '🛒', 'tengkulak': '🏪', 'admin': '🛡️', 'umum': '👤' };
+  const safeRole = role || 'umum';
+  const roleEmoji = roleEmojis[safeRole.toLowerCase()] || '👤';
 
   document.getElementById('sidebarAvatar').textContent = initials;
-  document.getElementById('sidebarName').textContent = username;
+  document.getElementById('sidebarName').textContent = username || 'Pengguna';
+  document.getElementById('sidebarRole').innerHTML = `${roleEmoji} ${safeRole.charAt(0).toUpperCase() + safeRole.slice(1)}`;
 
-  document.getElementById('welcomeName').textContent   = username + ' 👋';
+  document.getElementById('welcomeName').textContent   = (username || 'Pengguna') + ' 👋';
   
   const now = new Date();
   document.getElementById('topbarDate').textContent =
@@ -384,10 +408,21 @@ function clearHistory() {
 
 let chartInst = null;
 function updateChart() {
-  const key  = document.getElementById('chartSelect').value;
-  const data = chartDataMap[key]||chartDataMap.beras;
+  if (typeof Chart === 'undefined') {
+    console.error("Chart.js not loaded");
+    return;
+  }
+  const selectEl = document.getElementById('chartSelect');
+  if (!selectEl) return;
+
+  const key  = selectEl.value;
+  const data = chartDataMap[key] || chartDataMap.beras;
   if (chartInst) chartInst.destroy();
-  const ctx  = document.getElementById('dashChart').getContext('2d');
+
+  const canvas = document.getElementById('dashChart');
+  if (!canvas) return;
+
+  const ctx  = canvas.getContext('2d');
   const grad = ctx.createLinearGradient(0,0,0,200);
   grad.addColorStop(0,'rgba(82,183,136,.2)');
   grad.addColorStop(1,'rgba(82,183,136,0)');
@@ -436,7 +471,16 @@ async function doLogout() {
 function openSidebar()  { document.getElementById('sidebar').classList.remove('-translate-x-full'); document.getElementById('overlay').classList.remove('hidden'); }
 function closeSidebar() { document.getElementById('sidebar').classList.add('-translate-x-full'); document.getElementById('overlay').classList.add('hidden'); }
 
-initUser(); renderWatchlist(); renderNotif(); renderHistory(); updateChart();
+document.addEventListener('DOMContentLoaded', () => {
+    // Beri sedikit jeda agar Tailwind selesai merender container (mencegah canvas 0px)
+    setTimeout(() => {
+      initUser(); 
+      renderWatchlist(); 
+      renderNotif(); 
+      renderHistory(); 
+      updateChart();
+    }, 100);
+});
 </script>
 </body>
 </html>
