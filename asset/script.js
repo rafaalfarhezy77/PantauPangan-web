@@ -18,7 +18,7 @@ const commodities = [
 
 async function fetchDataBerasBPS() {
   try {
-    const response = await fetch('coba_api.php');
+    const response = await fetch('api/coba_api.php');
     const dataBPS = await response.json();
     if (dataBPS.status !== "OK") return;
 
@@ -47,7 +47,7 @@ async function fetchDataBerasBPS() {
 
 async function fetchProvinsiBPS() {
   try {
-    const response = await fetch('provinsi_api.php');
+    const response = await fetch('api/provinsi_api.php');
     if (!response.ok) throw new Error('Gagal memanggil API Provinsi');
     
     const result = await response.json();
@@ -154,7 +154,7 @@ function renderCommodities() {
       <div class="c-right">
         <div class="c-price">${fmt(c.price)}</div>
         <div class="c-change ${c.change>0?'up':c.change<0?'down':''}">${c.change>0?'▲'+c.change+'%':c.change<0?'▼'+Math.abs(c.change)+'%':'—'}</div>
-        <a href="detail.php?id=${c.id}" onclick="event.stopPropagation()"
+        <a href="api/detail.php?id=${c.id}" onclick="event.stopPropagation()"
            style="display:inline-block;margin-top:5px;font-size:.7rem;font-weight:600;color:var(--green-mid);
                   background:var(--green-mist);padding:2px 9px;border-radius:20px;text-decoration:none;
                   transition:background .2s"
@@ -475,7 +475,7 @@ function loginSuccess(user) {
 async function doLogout() {
   try {
    
-    const response = await fetch('logout.php');
+    const response = await fetch('api/logout.php');
     const result = await response.json();
 
     if (result.success) {
@@ -484,12 +484,12 @@ async function doLogout() {
       localStorage.removeItem('role');
       
       
-      window.location.href = 'login.php';
+      window.location.href = 'api/login.php';
     }
   } catch (error) {
     console.error("Gagal logout:", error);
     localStorage.clear();
-    window.location.href = 'login.php';
+    window.location.href = 'api/login.php';
   }
 }
 function toggleAvatarDropdown() { document.getElementById('avatarDropdown').classList.toggle('open'); }

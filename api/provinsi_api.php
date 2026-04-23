@@ -1,8 +1,8 @@
 <?php
 header('Content-Type: application/json');
 
-// URL API BPS untuk daftar Provinsi (Domain)
-$url = "https://webapi.bps.go.id/v1/api/domain/type/all/prov/prov/key/411c3f2a3d4060bc797340f28a3cb72b/";
+// URL API BPS untuk daftar Provinsi
+$url = "https://webapi.bps.go.id/v1/api/domain/type/prov/key/411c3f2a3d4060bc797340f28a3cb72b/";
 
 $arrContextOptions = [
     "ssl" => [
