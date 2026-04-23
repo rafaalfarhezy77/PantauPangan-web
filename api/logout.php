@@ -1,6 +1,6 @@
 <?php
 session_start(); 
-include 'Server/koneksi.php';
+require __DIR__ . '/Server/koneksi.php';
 
 $_SESSION = array();
 
@@ -18,5 +18,6 @@ header("Content-Type: application/json");
 echo json_encode(["success" => true, "message" => "Logout berhasil"]);
 exit;
 ?>
+
 
 

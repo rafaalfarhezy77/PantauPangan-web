@@ -1,6 +1,6 @@
 <?php
 session_start();
-require 'Server/koneksi.php';
+require __DIR__ . '/Server/koneksi.php';
 
 $query = mysqli_query($koneksi, "SELECT * FROM users");
 ?>
@@ -440,6 +440,7 @@ initUser(); renderWatchlist(); renderNotif(); renderHistory(); updateChart();
 </script>
 </body>
 </html>
+
 
 
 

@@ -1,6 +1,6 @@
 <?php
 session_start();
-require 'Server/koneksi.php';
+require __DIR__ . '/Server/koneksi.php';
 
 // Validasi Keamanan
 if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
@@ -130,6 +130,7 @@ $query_users = mysqli_query($koneksi, "SELECT * FROM users ORDER BY id DESC");
 
 </body>
 </html>
+
 
 
 

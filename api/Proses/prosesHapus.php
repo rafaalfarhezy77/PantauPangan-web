@@ -1,6 +1,6 @@
 <?php
 session_start();
-require '../Server/koneksi.php';
+require __DIR__ . '/../Server/koneksi.php';
 
 // Validasi Keamanan Lapis Ganda
 if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
@@ -26,4 +26,5 @@ if (isset($_GET['id'])) {
     header("Location: ../dashboardAdmin.php");
 }
 ?>
+
 

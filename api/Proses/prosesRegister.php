@@ -2,7 +2,7 @@
     session_start();
 
     header("Content-Type: application/json");
-    include '../Server/koneksi.php';
+    require __DIR__ . '/../Server/koneksi.php';
 
     // Menangkap data JSON yang dikirim oleh javascript Fetch API
     $data = json_decode(file_get_contents("php://input"), true);
@@ -42,3 +42,4 @@
     }
     exit;   
 ?>
+
