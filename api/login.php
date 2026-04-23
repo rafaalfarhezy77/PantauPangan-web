@@ -502,7 +502,7 @@ function goToHome() { window.location.href = '../index.html'; }
 function goToLogin() { window.location.href = 'login.php'; }
 function goToDashboard() {
   const role = localStorage.getItem('role');
-  window.location.href = role === 'admin' ? 'api/dashboardAdmin.php' : 'api/dashboard.php';
+  window.location.href = role === 'admin' ? 'dashboardAdmin.php' : 'dashboard.php';
 }
 function capitalize(s)   { return s.split(' ').map(w=>w.charAt(0).toUpperCase()+w.slice(1).toLowerCase()).join(' '); }
 </script>
