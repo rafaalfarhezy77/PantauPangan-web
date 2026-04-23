@@ -478,20 +478,7 @@ transition: background .2s, border-color .2s;
 
 .login-guest:hover { background: var(--cream); border-color: var(--green-pale); }
 
-.login-forgot {
-text-align: right;
-margin-top: -8px;
-margin-bottom: 16px;
-}
 
-.login-forgot a {
-font-size: .8rem;
-color: var(--green-mid);
-text-decoration: none;
-font-weight: 500;
-}
-
-.login-forgot a:hover { text-decoration: underline; }
 
 .login-error {
 background: #fce4ec;

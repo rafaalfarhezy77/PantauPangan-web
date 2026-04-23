@@ -184,30 +184,13 @@
         </div>
       </div>
 
-      <div class="flex justify-end mb-5">
-        <button onclick="showForgot()"
-                class="text-xs text-green-mid font-medium hover:text-green-deep transition-colors bg-transparent border-0 cursor-pointer font-sans">
-          Lupa kata sandi?
-        </button>
-      </div>
+
 
       <button onclick="doLogin()"
         class="w-full py-3.5 bg-green-deep text-white font-semibold text-sm rounded-xl
                hover:bg-green-mid transition-colors cursor-pointer border-0 font-sans mb-3">
         Masuk ke Akun →
       </button>
-      <button onclick="doGuestLogin()"
-        class="w-full py-3 bg-white border border-cream-dark text-gray-500 font-medium text-sm rounded-xl
-               hover:border-green-pale hover:text-green-deep transition-colors cursor-pointer font-sans mb-5">
-        👀 Lanjut sebagai Tamu
-      </button>
-
-      <!-- Divider -->
-      <div class="flex items-center gap-3 mb-4">
-        <div class="flex-1 h-px bg-cream-dark"></div>
-        <span class="text-xs text-gray-300 font-medium">atau masuk dengan</span>
-        <div class="flex-1 h-px bg-cream-dark"></div>
-      </div>
 
     </div>
 
@@ -284,47 +267,10 @@
                hover:bg-green-mid transition-colors cursor-pointer border-0 font-sans mb-3">
         Buat Akun →
       </button>
-      <button onclick="doGuestLogin()"
-        class="w-full py-3 bg-white border border-cream-dark text-gray-500 font-medium text-sm rounded-xl
-               hover:border-green-pale hover:text-green-deep transition-colors cursor-pointer font-sans">
-        👀 Lanjut sebagai Tamu
-      </button>
     </div>
   </div><!-- end authPanel -->
 
-  <!-- ── LUPA PASSWORD PANEL ── -->
-  <div id="forgotPanel" class="panel">
-    <button onclick="showAuth()"
-      class="flex items-center gap-1.5 text-sm text-green-mid font-medium mb-7 bg-transparent border-0 cursor-pointer font-sans hover:text-green-deep transition-colors">
-      ← Kembali ke Masuk
-    </button>
-    <div class="mb-7">
-      <p class="font-serif italic text-green-mid text-sm mb-1">Jangan khawatir 🔑</p>
-      <h2 class="text-2xl font-bold text-green-deep tracking-tight mb-1">Reset Kata Sandi</h2>
-      <p class="text-sm text-gray-400">Masukkan emailmu. Kami akan mengirimkan tautan untuk mereset kata sandi.</p>
-    </div>
-    <div id="forgotAlert" class="hidden mb-4 px-4 py-3 rounded-xl text-sm font-medium"></div>
-    <div class="mb-5">
-      <label class="block text-xs font-semibold text-gray-600 mb-1.5">Email Terdaftar</label>
-      <div class="relative">
-        <span class="absolute left-3.5 top-1/2 -translate-y-1/2 text-base pointer-events-none">✉️</span>
-        <input id="forgotEmail" type="email" placeholder="nama@email.com"
-               onkeydown="if(event.key==='Enter') doForgot()"
-               class="w-full pl-10 pr-4 py-3 bg-white border border-cream-dark rounded-xl text-sm
-                      outline-none focus:border-green-light transition-colors font-sans">
-      </div>
-    </div>
-    <button onclick="doForgot()"
-      class="w-full py-3.5 bg-green-deep text-white font-semibold text-sm rounded-xl
-             hover:bg-green-mid transition-colors cursor-pointer border-0 font-sans mb-3">
-      Kirim Tautan Reset →
-    </button>
-    <button onclick="showAuth()"
-      class="w-full py-3 bg-white border border-cream-dark text-gray-500 font-medium text-sm rounded-xl
-             hover:border-green-pale hover:text-green-deep transition-colors cursor-pointer font-sans">
-      Batal
-    </button>
-  </div>
+
 
   <!-- ── SUKSES PANEL ── -->
   <div id="successPanel" class="panel text-center py-6">
@@ -393,20 +339,13 @@ function switchTab(tab) {
 }
 
 // ── PANEL NAV ──
-function showForgot() {
-  document.getElementById('authPanel').classList.remove('show');
-  document.getElementById('forgotPanel').classList.add('show');
-  document.getElementById('successPanel').classList.remove('show');
-}
+
 function showAuth() {
   document.getElementById('authPanel').classList.add('show');
-  document.getElementById('forgotPanel').classList.remove('show');
   document.getElementById('successPanel').classList.remove('show');
-  clearAlert('forgotAlert');
 }
 function showSuccess(icon, title, desc) {
   document.getElementById('authPanel').classList.remove('show');
-  document.getElementById('forgotPanel').classList.remove('show');
   document.getElementById('successPanel').classList.add('show');
   document.getElementById('successIcon').textContent = icon;
   document.getElementById('successTitle').textContent = title;
@@ -414,7 +353,6 @@ function showSuccess(icon, title, desc) {
 }
 function showSuccessReg() {
   document.getElementById('authPanel').classList.remove('show');
-  document.getElementById('forgotPanel').classList.remove('show');
   document.getElementById('successPanelRegister').classList.add('show');
 }
 
@@ -550,7 +488,6 @@ async function doRegister() {
   }
 }
 
-function doGuestLogin()      { loginSuccess('Tamu','tamu'); }
 function socialLogin(p)      { showSuccess('✅',`Masuk dengan ${p}`,`Simulasi login ${p} berhasil!`); }
 
 function loginSuccess(username, role) {
@@ -559,13 +496,7 @@ function loginSuccess(username, role) {
     `Kamu masuk sebagai ${roleLabel[role]||'Pengguna'}. Sekarang kamu bisa memantau harga komoditas pangan terkini.`);
 }
 
-function doForgot() {
-  const email = document.getElementById('forgotEmail').value.trim();
-  if (!email)              { showAlert('forgotAlert','⚠️ Masukkan email terdaftarmu.','error'); return; }
-  if (!email.includes('@')){ showAlert('forgotAlert','⚠️ Format email tidak valid.','error'); return; }
-  showAlert('forgotAlert',`✅ Tautan reset dikirim ke ${email}. Cek inbox-mu.`,'success');
-  setTimeout(() => showAuth(), 3000);
-}
+
 
 function goToHome() { window.location.href = '../index.html'; }
 function goToLogin() { window.location.href = 'login.php'; }

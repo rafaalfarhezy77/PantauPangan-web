@@ -455,7 +455,7 @@ function toTitleCase(str) {
 }
 
 
-function doGuestLogin() { loginSuccess({ name: 'Tamu', email: 'tamu@pantaupangan.id', role: 'tamu' }); }
+
 function loginSuccess(user) {
   currentUser = user;
   closeLoginModal();
