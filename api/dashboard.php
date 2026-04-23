@@ -319,7 +319,7 @@ function initUser() {
   }
 
   if (role === 'admin') {
-    window.location.href = 'dashboardAdmin.php';
+    window.location.href = 'api/dashboardAdmin.php';
     return;
   }
 
