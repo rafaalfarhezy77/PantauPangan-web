@@ -302,15 +302,55 @@ const fmt         = n => 'Rp ' + n.toLocaleString('id-ID');
 let chartInst     = null;
 let currentPeriod = '7H';
 let isWatching    = false;
+let realHistory   = null;
+
+async function fetchBerasBPS() {
+  if (commodityId !== 'beras' && commodityId !== 'beras-med') return;
+  try {
+    const response = await fetch('coba_api.php');
+    const dataBPS = await response.json();
+    if (dataBPS.status === 'OK') {
+        const content = dataBPS.datacontent;
+        const keyPrefix = commodityId === 'beras' ? '122770125' : '122770131'; 
+        let history = [];
+        for (let m = 1; m <= 12; m++) {
+            const key = keyPrefix + m;
+            if (content[key]) history.push(content[key]);
+        }
+        if (history.length > 0) {
+            realHistory = history;
+            const latestPrice = history[history.length - 1];
+            C.price = latestPrice;
+            if (history.length > 1) {
+                const prevPrice = history[history.length - 2];
+                const change = ((latestPrice - prevPrice) / prevPrice) * 100;
+                C.change = parseFloat(change.toFixed(1));
+            }
+        }
+    }
+  } catch (error) {
+    console.error('API Error:', error);
+  }
+}
 
 function genData(period) {
   const len = {'7H':7,'1B':30,'3B':13,'1T':12}[period];
+  
+  if ((commodityId === 'beras' || commodityId === 'beras-med') && realHistory && realHistory.length > 0) {
+      let data = realHistory.slice(-len);
+      while (data.length > 0 && data.length < len) {
+          data.unshift(data[0]);
+      }
+      return data;
+  }
+
   return Array.from({length:len},(_,i)=>
     Math.round(C.price*(0.93+i/(len*4)+Math.random()*0.05))
   );
 }
 
-function initPage() {
+async function initPage() {
+  await fetchBerasBPS();
   document.title = C.name + ' — PantauPangan';
   document.getElementById('breadcrumb').textContent = C.name;
   document.getElementById('heroEmoji').textContent  = C.icon;
