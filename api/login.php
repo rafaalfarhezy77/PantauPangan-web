@@ -437,14 +437,14 @@ async function doLogin() {
     localStorage.setItem('username', result.username);
     localStorage.setItem('role', result.role);
 
+    if (result.role === 'admin') {
+        window.location.href = 'dashboardAdmin.php';
+        return;
+    }
+
     loginSuccess(result.name, result.role)
-    // Ambil elemen judul
     const titleEl = document.getElementById('successTitle');
-    
-    // Ganti teks judul dengan username dari database
     titleEl.textContent = `Berhasil Masuk, ${result.username}!`;
-    
-    // Tampilkan panel sukses
     showSuccess('✅', `Berhasil Masuk, ${result.username}!`, 'Selamat datang kembali di PantauPangan.');
 } else {
       showAlert('formAlert', result.msg || result.message, 'error');
