@@ -101,25 +101,9 @@ $query = mysqli_query($koneksi, "SELECT * FROM users");
       <span class="ml-auto bg-green-light text-white text-[0.65rem] font-bold px-2 py-0.5 rounded-full">5</span>
     </a>
 
-    <p class="text-[0.65rem] font-semibold uppercase tracking-widest text-white/30 px-2 pt-4 pb-1.5">Personalisasi</p>
-
-    <a href="#" class="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm font-medium text-white/60 hover:bg-white/10 hover:text-white transition-colors no-underline">
-      <span class="w-5 text-center text-base">⭐</span>Pantauan Saya
-      <span class="ml-auto bg-green-light text-white text-[0.65rem] font-bold px-2 py-0.5 rounded-full">6</span>
-    </a>
-    <a href="#" class="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm font-medium text-white/60 hover:bg-white/10 hover:text-white transition-colors no-underline">
-      <span class="w-5 text-center text-base">🔔</span>Notifikasi
-      <span class="ml-auto bg-red-500 text-white text-[0.65rem] font-bold px-2 py-0.5 rounded-full">3</span>
-    </a>
-    <a href="#" class="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm font-medium text-white/60 hover:bg-white/10 hover:text-white transition-colors no-underline">
-      <span class="w-5 text-center text-base">📈</span>Riwayat Carian
-    </a>
-
     <p class="text-[0.65rem] font-semibold uppercase tracking-widest text-white/30 px-2 pt-4 pb-1.5">Lainnya</p>
 
-    <a href="#" class="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm font-medium text-white/60 hover:bg-white/10 hover:text-white transition-colors no-underline">
-      <span class="w-5 text-center text-base">⚙️</span>Pengaturan
-    </a>
+    
     <a href="../index.html" class="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm font-medium text-white/60 hover:bg-white/10 hover:text-white transition-colors no-underline">
       <span class="w-5 text-center text-base">🌐</span>Ke Beranda
     </a>
