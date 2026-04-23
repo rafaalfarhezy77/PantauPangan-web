@@ -284,11 +284,11 @@
              hover:bg-green-mid transition-colors cursor-pointer border-0 font-sans mb-3">
       Ke Beranda →
     </button>
-    <a href="dashboard.php"
+    <button onclick="goToDashboard()"
        class="block w-full py-3 bg-white border border-cream-dark text-gray-500 font-medium text-sm rounded-xl
               hover:border-green-pale hover:text-green-deep transition-colors no-underline text-center">
       Buka Dashboard →
-    </a>
+    </button>
   </div>
 
   <div id="successPanelRegister" class="panel text-center py-6">
@@ -500,6 +500,10 @@ function loginSuccess(username, role) {
 
 function goToHome() { window.location.href = '../index.html'; }
 function goToLogin() { window.location.href = 'login.php'; }
+function goToDashboard() {
+  const role = localStorage.getItem('role');
+  window.location.href = role === 'admin' ? 'dashboardAdmin.php' : 'dashboard.php';
+}
 function capitalize(s)   { return s.split(' ').map(w=>w.charAt(0).toUpperCase()+w.slice(1).toLowerCase()).join(' '); }
 </script>
 </body>
