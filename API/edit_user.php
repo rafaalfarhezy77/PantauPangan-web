@@ -1,6 +1,6 @@
 <?php
 session_start();
-require './Server/koneksi.php';
+require '../Server/koneksi.php';
 
 // Validasi Keamanan
 if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {

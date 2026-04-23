@@ -1,6 +1,6 @@
 <?php
 session_start();
-require './Server/koneksi.php';
+require '../Server/koneksi.php';
 
 $query = mysqli_query($koneksi, "SELECT * FROM users");
 ?>
@@ -14,7 +14,7 @@ $query = mysqli_query($koneksi, "SELECT * FROM users");
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&family=Lora:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
-<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="../style.css">
 
 </head>
 <body>
@@ -32,7 +32,7 @@ $query = mysqli_query($koneksi, "SELECT * FROM users");
     <li><a href="#berita">Berita <span class="nav-badge">5</span></a></li>
   </ul>
   <div class="nav-right">
-    <a href="login.php" class="btn-login" id="navLoginBtn"> <img src="img/login_icon.png" alt=""> Masuk</a>
+    <a href="login.php" class="btn-login" id="navLoginBtn"> <img src="../img/login_icon.png" alt=""> Masuk</a>
     <div class="nav-avatar-wrap" id="navAvatarWrap" style="display:none;position:relative">
       <div class="nav-avatar" id="navAvatar" onclick="toggleAvatarDropdown()">TA</div>
       <div class="avatar-dropdown" id="avatarDropdown">
@@ -353,6 +353,6 @@ $query = mysqli_query($koneksi, "SELECT * FROM users");
   </div>
 </div>
 
-<script src="script.js"></script>
+<script src="../script.js"></script>
 </body>
 </html>

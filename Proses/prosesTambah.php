@@ -4,7 +4,7 @@ require '../Server/koneksi.php';
 
 // Validasi Keamanan
 if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
-    header("Location: dashboard.php");
+    header("Location: ../api/dashboard.php");
     exit;
 }
 
@@ -28,7 +28,7 @@ if (isset($_POST['tambah'])) {
     } else {
         $query = "INSERT INTO users (username, email, password, role) VALUES ('$username', '$email', '$password_hash', '$role')";
         if (mysqli_query($koneksi, $query)) {
-            echo "<script>alert('User berhasil ditambahkan!'); window.location.href='dashboardAdmin.php';</script>";
+            echo "<script>alert('User berhasil ditambahkan!'); window.location.href='../api/dashboardAdmin.php';</script>";
             exit;
         } else {
             $pesan = "Terjadi kesalahan: " . mysqli_error($koneksi);
@@ -73,7 +73,7 @@ if (isset($_POST['tambah'])) {
 
   <div class="bg-white border border-cream-dark rounded-2xl shadow-lg p-8 w-full max-w-md">
     <div class="mb-6">
-      <a href="../dashboardAdmin.php" class="text-sm font-semibold text-gray-400 hover:text-green-mid no-underline">← Kembali</a>
+      <a href="../api/dashboardAdmin.php" class="text-sm font-semibold text-gray-400 hover:text-green-mid no-underline">← Kembali</a>
       <h2 class="text-2xl font-bold text-green-deep mt-4">Tambah User Baru</h2>
       <p class="text-xs text-gray-500 mt-1">Tambahkan kredensial akses untuk pengguna atau admin.</p>
     </div>

@@ -9,8 +9,12 @@
   },
   "routes": [
     {
-      "src": "/(index|login|dashboard|dashboardAdmin|detail|edit_user|coba_api|provinsi_api)",
-      "dest": "/$1.php"
+      "src": "/",
+      "dest": "/api/index.php"
+    },
+    {
+      "src": "/(index|login|dashboard|dashboardAdmin|detail|edit_user|coba_api|provinsi_api|logout)",
+      "dest": "/api/$1.php"
     },
     {
       "src": "/Proses/(.*)",

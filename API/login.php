@@ -486,7 +486,7 @@ async function doLogin() {
   if (!email.includes('@')){ showAlert('formAlert','⚠️ Format email tidak valid.','error'); return; }
 
   try {
-    const response = await fetch('Proses/prosesLogin.php', {
+    const response = await fetch('../Proses/prosesLogin.php', {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
       body: JSON.stringify({email: email, password: password})
@@ -527,7 +527,7 @@ async function doRegister() {
   if (!selectedRoleValue)       { showAlert('formAlert','⚠️ Pilih peranmu terlebih dahulu.','error'); return; }
 
   try {
-    const response = await fetch('Proses/prosesRegister.php', {
+    const response = await fetch('../Proses/prosesRegister.php', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ 
@@ -573,3 +573,4 @@ function capitalize(s)   { return s.split(' ').map(w=>w.charAt(0).toUpperCase()+
 </script>
 </body>
 </html>
+

@@ -4,7 +4,7 @@ require '../Server/koneksi.php';
 
 // Validasi Keamanan Lapis Ganda
 if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
-    echo "<script>alert('Akses ilegal!'); window.location.href='dashboard.php';</script>";
+    echo "<script>alert('Akses ilegal!'); window.location.href='../api/dashboard.php';</script>";
     exit;
 }
 
@@ -17,12 +17,12 @@ if (isset($_GET['id'])) {
     $hapus = mysqli_query($koneksi, $query);
 
     if ($hapus) {
-        echo "<script>alert('Berhasil: User telah dihapus permanen.'); window.location.href='../dashboardAdmin.php';</script>";
+        echo "<script>alert('Berhasil: User telah dihapus permanen.'); window.location.href='../api/dashboardAdmin.php';</script>";
     } else {
-        echo "<script>alert('Gagal: Terjadi kesalahan saat menghapus data.'); window.location.href='../dashboardAdmin.php';</script>";
+        echo "<script>alert('Gagal: Terjadi kesalahan saat menghapus data.'); window.location.href='../api/dashboardAdmin.php';</script>";
     }
 } else {
     // Jika diakses tanpa parameter id
-    header("Location: ../dashboardAdmin.php");
+    header("Location: ../api/dashboardAdmin.php");
 }
 ?>
