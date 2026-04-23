@@ -3,7 +3,7 @@ session_start();
 require '../Server/koneksi.php';
 
 if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
-    header("Location: ../api/dashboard.php");
+    header("Location: ../dashboard.php");
     exit;
 }
 
@@ -24,10 +24,11 @@ if (isset($_POST['update'])) {
               WHERE id = '$id'";
 
     if (mysqli_query($koneksi, $query)) {
-        echo "<script>alert('User berhasil diperbarui oleh $admin_sekarang'); window.location.href='../api/dashboardAdmin.php';</script>";
+        echo "<script>alert('User berhasil diperbarui oleh $admin_sekarang'); window.location.href='../dashboardAdmin.php';</script>";
     } else {
-        echo "<script>alert('Gagal memperbarui user'); window.location.href='../api/dashboardAdmin.php';</script>";
+        echo "<script>alert('Gagal memperbarui user'); window.location.href='../dashboardAdmin.php';</script>";
     }
 } else {
-    header("Location: ../api/dashboardAdmin.php");
+    header("Location: ../dashboardAdmin.php");
 }
+

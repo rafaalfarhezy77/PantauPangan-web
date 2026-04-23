@@ -2,23 +2,20 @@
   "functions": {
     "api/**/*.php": {
       "runtime": "vercel-php@0.6.0"
-    },
-    "Proses/*.php": {
-      "runtime": "vercel-php@0.6.0"
     }
   },
   "routes": [
     {
       "src": "/",
-      "dest": "/api/index.php"
+      "dest": "/index.html"
     },
     {
-      "src": "/(index|login|dashboard|dashboardAdmin|detail|edit_user|coba_api|provinsi_api|logout)",
+      "src": "/(login|dashboard|dashboardAdmin|detail|edit_user|coba_api|provinsi_api|logout)",
       "dest": "/api/$1.php"
     },
     {
       "src": "/Proses/(.*)",
-      "dest": "/Proses/$1"
+      "dest": "/api/Proses/$1"
     },
     {
       "src": "/(.*)",

@@ -1,6 +1,6 @@
 <?php
 session_start();
-require '../Server/koneksi.php';
+require 'Server/koneksi.php';
 
 $query = mysqli_query($koneksi, "SELECT * FROM users");
 ?>
@@ -74,7 +74,7 @@ $query = mysqli_query($koneksi, "SELECT * FROM users");
   class="w-60 bg-green-deep h-screen fixed top-0 left-0 flex flex-col z-50
          -translate-x-full md:translate-x-0 transition-transform duration-300">
 
-  <a href="index.php"
+  <a href="../index.html"
      class="flex items-center gap-3 px-5 py-6 border-b border-white/10 no-underline">
     <div class="w-9 h-9 bg-white/10 rounded-xl flex items-center justify-center text-lg">🌾</div>
     <span class="font-bold text-white text-base">Pantau<span class="text-green-pale">Pangan</span></span>
@@ -87,15 +87,15 @@ $query = mysqli_query($koneksi, "SELECT * FROM users");
        class="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm font-medium text-white bg-white/10 no-underline">
       <span class="w-5 text-center text-base">🏠</span>Dashboard
     </a>
-    <a href="index.php#cari"
+    <a href="../index.html#cari"
     class="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm font-medium text-white/60 hover:bg-white/10 hover:text-white transition-colors no-underline">
       <span class="w-5 text-center text-base">🔍</span>Cari Harga
     </a>
-    <a href="index.php#harga"
+    <a href="../index.html#harga"
        class="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm font-medium text-white/60 hover:bg-white/10 hover:text-white transition-colors no-underline">
       <span class="w-5 text-center text-base">📊</span>Grafik Harga
     </a>
-    <a href="index.php#berita"
+    <a href="../index.html#berita"
        class="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm font-medium text-white/60 hover:bg-white/10 hover:text-white transition-colors no-underline">
       <span class="w-5 text-center text-base">📰</span>Berita
       <span class="ml-auto bg-green-light text-white text-[0.65rem] font-bold px-2 py-0.5 rounded-full">5</span>
@@ -120,7 +120,7 @@ $query = mysqli_query($koneksi, "SELECT * FROM users");
     <a href="#" class="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm font-medium text-white/60 hover:bg-white/10 hover:text-white transition-colors no-underline">
       <span class="w-5 text-center text-base">⚙️</span>Pengaturan
     </a>
-    <a href="index.php" class="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm font-medium text-white/60 hover:bg-white/10 hover:text-white transition-colors no-underline">
+    <a href="../index.html" class="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm font-medium text-white/60 hover:bg-white/10 hover:text-white transition-colors no-underline">
       <span class="w-5 text-center text-base">🌐</span>Ke Beranda
     </a>
     <?php if(isset($_SESSION['role']) && $_SESSION['role'] === 'admin'): ?>
@@ -240,7 +240,7 @@ $query = mysqli_query($koneksi, "SELECT * FROM users");
             <p class="font-bold text-green-deep text-sm">⭐ Pantauan Saya</p>
             <p class="text-xs text-gray-400 mt-0.5">6 komoditas aktif</p>
           </div>
-          <a href="index.php#harga"
+          <a href="../index.html#harga"
              class="text-xs font-semibold text-green-mid bg-green-mist px-3 py-1.5 rounded-full hover:bg-green-pale transition-colors no-underline">+ Tambah</a>
         </div>
         <div id="watchlist"></div>
@@ -440,4 +440,7 @@ initUser(); renderWatchlist(); renderNotif(); renderHistory(); updateChart();
 </script>
 </body>
 </html>
+
+
+
 

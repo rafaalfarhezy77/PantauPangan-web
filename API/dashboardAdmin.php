@@ -1,6 +1,6 @@
 <?php
 session_start();
-require '../Server/koneksi.php';
+require 'Server/koneksi.php';
 
 // Validasi Keamanan
 if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
@@ -57,7 +57,7 @@ $query_users = mysqli_query($koneksi, "SELECT * FROM users ORDER BY id DESC");
         <h1 class="text-2xl font-bold text-green-deep">Manajemen Pengguna</h1>
         <p class="text-sm text-gray-500 mt-1">Kelola data user, tambah admin, atau hapus akun.</p>
       </div>
-      <a href="../Proses/prosesTambah.php" class="px-5 py-2.5 bg-green-mid text-white text-sm font-semibold rounded-xl hover:bg-green-deep transition-colors shadow-sm no-underline">
+      <a href="Proses/prosesTambah.php" class="px-5 py-2.5 bg-green-mid text-white text-sm font-semibold rounded-xl hover:bg-green-deep transition-colors shadow-sm no-underline">
         + Tambah User Baru
       </a>
     </div>
@@ -107,7 +107,7 @@ $query_users = mysqli_query($koneksi, "SELECT * FROM users ORDER BY id DESC");
                 <a href="edit_user.php?id=<?= $row['id']; ?>" class="px-3 py-1.5 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 font-semibold text-xs transition-colors no-underline">Edit</a>
 
                 <?php if($row['id'] != $_SESSION['user_id']): ?>
-                    <a href="../Proses/prosesHapus.php?id=<?= $row['id']; ?>" 
+                    <a href="Proses/prosesHapus.php?id=<?= $row['id']; ?>" 
                     onclick="return confirm('Yakin ingin menghapus user ini?');"
                     class="px-3 py-1.5 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 font-semibold text-xs transition-colors no-underline">
                     Hapus
@@ -130,3 +130,6 @@ $query_users = mysqli_query($koneksi, "SELECT * FROM users ORDER BY id DESC");
 
 </body>
 </html>
+
+
+

@@ -52,9 +52,9 @@ session_start()
   </button>
 
   <div class="flex items-center gap-1.5 text-xs text-gray-400 hidden sm:flex">
-    <a href="index.php" class="hover:text-green-mid transition-colors no-underline text-gray-400">Beranda</a>
+    <a href="../index.html" class="hover:text-green-mid transition-colors no-underline text-gray-400">Beranda</a>
     <span>›</span>
-    <a href="index.php#harga" class="hover:text-green-mid transition-colors no-underline text-gray-400">Komoditas</a>
+    <a href="../index.html#harga" class="hover:text-green-mid transition-colors no-underline text-gray-400">Komoditas</a>
     <span>›</span>
     <span id="breadcrumb" class="text-green-deep font-semibold">Beras Premium</span>
   </div>
@@ -65,7 +65,7 @@ session_start()
              px-3.5 py-2 rounded-full hover:border-green-pale hover:text-green-deep transition-all cursor-pointer font-sans">
       ⭐ Pantau
     </button>
-    <a href="dashboard.html"
+    <a href="dashboard.php"
       class="flex items-center gap-1.5 text-xs font-semibold text-gray-500 bg-white border border-cream-dark
              px-3.5 py-2 rounded-full hover:border-green-pale hover:text-green-deep transition-all no-underline">
       📊 Dashboard
@@ -173,7 +173,7 @@ session_start()
         <p class="font-bold text-green-deep text-sm">📍 Harga per Provinsi</p>
         <p class="text-xs text-gray-400 mt-0.5">Perbandingan di 10 provinsi utama</p>
       </div>
-      <a href="index.php#cari"
+      <a href="../index.html#cari"
          class="text-xs font-semibold text-green-mid bg-green-mist px-3 py-1.5 rounded-full hover:bg-green-pale transition-colors no-underline">
         Cari Provinsi Lain →
       </a>
@@ -381,7 +381,7 @@ function renderRegion() {
 
 function renderNews() {
   document.getElementById('relatedNews').innerHTML = (C.news||[]).map(n=>`
-    <a href="index.php#berita"
+    <a href="../index.html#berita"
        class="flex gap-3 px-5 py-4 border-b border-cream-dark last:border-0 hover:bg-cream transition-colors no-underline">
       <div class="w-10 h-10 bg-green-mist rounded-xl flex items-center justify-center text-lg flex-shrink-0">${n.icon}</div>
       <div>
@@ -463,3 +463,7 @@ initPage();
 </script>
 </body>
 </html>
+
+
+
+

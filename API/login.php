@@ -119,7 +119,7 @@
 <div class="w-full lg:w-[460px] flex-shrink-0 bg-cream flex flex-col justify-center px-8 md:px-12 py-10 min-h-screen overflow-y-auto relative">
 
   <!-- Tombol kembali -->
-  <a href="index.php"
+  <a href="../index.html"
      class="absolute top-6 right-6 flex items-center gap-1.5 text-xs font-medium text-gray-400
             bg-white border border-cream-dark px-3.5 py-2 rounded-full
             hover:border-green-pale hover:text-green-deep transition-colors no-underline">
@@ -486,7 +486,7 @@ async function doLogin() {
   if (!email.includes('@')){ showAlert('formAlert','⚠️ Format email tidak valid.','error'); return; }
 
   try {
-    const response = await fetch('../Proses/prosesLogin.php', {
+    const response = await fetch('Proses/prosesLogin.php', {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
       body: JSON.stringify({email: email, password: password})
@@ -527,7 +527,7 @@ async function doRegister() {
   if (!selectedRoleValue)       { showAlert('formAlert','⚠️ Pilih peranmu terlebih dahulu.','error'); return; }
 
   try {
-    const response = await fetch('../Proses/prosesRegister.php', {
+    const response = await fetch('Proses/prosesRegister.php', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ 
@@ -567,10 +567,13 @@ function doForgot() {
   setTimeout(() => showAuth(), 3000);
 }
 
-function goToHome() { window.location.href = 'index.php'; }
+function goToHome() { window.location.href = '../index.html'; }
 function goToLogin() { window.location.href = 'login.html'; }
 function capitalize(s)   { return s.split(' ').map(w=>w.charAt(0).toUpperCase()+w.slice(1).toLowerCase()).join(' '); }
 </script>
 </body>
 </html>
+
+
+
 
