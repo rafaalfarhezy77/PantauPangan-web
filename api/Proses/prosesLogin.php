@@ -19,13 +19,13 @@
         if (password_verify($password, $user['password'])) {
             // Set session
             $_SESSION['user_id'] = $user['id'];
-            $_SESSION['role'] = $user['role'];
+            $_SESSION['role'] = strtolower(trim($user['role']));
             $_SESSION['username'] = $user['username'];
 
             echo json_encode([
                 "success" => true,
                 "username" => $user["username"],
-                "role"=> $user["role"],
+                "role"=> strtolower(trim($user["role"])),
             ]);
         } else {
             echo json_encode(["success" => false,"msg"=> "Kata sandi salah!"]);

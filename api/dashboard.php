@@ -318,11 +318,6 @@ function initUser() {
     return;
   }
 
-  if (role === 'admin') {
-    window.location.href = 'dashboardAdmin.php';
-    return;
-  }
-
 
   const initials = (username || 'P').split(' ').map(n => n[0]).join('').substring(0,2).toUpperCase();
   const roleEmojis = { 'petani': '🌾', 'pembeli': '🛒', 'tengkulak': '🏪', 'admin': '🛡️', 'umum': '👤' };
@@ -440,7 +435,7 @@ function updateChart() {
 async function doLogout() {
   try {
    
-    const response = await fetch('logout.php');
+    const response = await fetch('logout.php', { credentials: 'include' });
     const result = await response.json();
 
     if (result.success) {

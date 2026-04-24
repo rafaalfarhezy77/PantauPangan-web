@@ -1,3 +1,15 @@
+<?php
+session_start();
+// Auto redirect jika sudah login
+if (isset($_SESSION['user_id'])) {
+    if ($_SESSION['role'] === 'admin') {
+        header("Location: dashboardAdmin.php");
+    } else {
+        header("Location: dashboard.php");
+    }
+    exit;
+}
+?>
 <!DOCTYPE html>
 <html lang="id">
 <head>
@@ -427,6 +439,7 @@ async function doLogin() {
     const response = await fetch('Proses/prosesLogin.php', {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
+      credentials: 'include',
       body: JSON.stringify({email: email, password: password})
     });
 
@@ -468,6 +481,7 @@ async function doRegister() {
     const response = await fetch('Proses/prosesRegister.php', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
       body: JSON.stringify({ 
         username: username,
         email: email, 
