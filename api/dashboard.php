@@ -2,6 +2,12 @@
 session_start();
 require __DIR__ . '/Server/koneksi.php';
 
+// Validasi Keamanan Server-side
+if (!isset($_SESSION['user_id'])) {
+    header("Location: login.php");
+    exit;
+}
+
 $query = mysqli_query($koneksi, "SELECT * FROM users");
 ?>
 

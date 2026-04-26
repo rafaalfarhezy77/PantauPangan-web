@@ -3,7 +3,12 @@ session_start();
 require __DIR__ . '/Server/koneksi.php';
 
 // Validasi Keamanan
-if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
+if (!isset($_SESSION['user_id'])) {
+    echo "<script>alert('Sesi Anda telah habis. Silakan login kembali.'); window.location.href='login.php';</script>";
+    exit;
+}
+
+if (strtolower(trim($_SESSION['role'])) !== 'admin') {
     echo "<script>alert('Akses Ditolak! Halaman ini hanya untuk Admin.'); window.location.href='dashboard.php';</script>";
     exit;
 }
