@@ -1,6 +1,6 @@
 <?php
-session_start();
 require __DIR__ . '/Server/koneksi.php';
+session_start();
 
 // Validasi Keamanan
 if (!isset($_SESSION['user_id'])) {

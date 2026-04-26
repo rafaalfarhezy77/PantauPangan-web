@@ -1,8 +1,8 @@
 <?php
+    require __DIR__ . '/../Server/koneksi.php';
     session_start();
 
     header("Content-Type: application/json");
-    require __DIR__ . '/../Server/koneksi.php';
 
     // Menangkap data JSON yang dikirim oleh javascript Fetch API
     $data = json_decode(file_get_contents("php://input"), true);

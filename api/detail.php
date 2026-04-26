@@ -1,5 +1,6 @@
 <?php
-session_start()
+require __DIR__ . '/Server/koneksi.php';
+session_start();
 ?>
 
 <!DOCTYPE html>

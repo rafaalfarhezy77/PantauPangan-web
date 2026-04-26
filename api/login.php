@@ -1,4 +1,5 @@
 <?php
+require __DIR__ . '/Server/koneksi.php';
 session_start();
 // Auto redirect jika sudah login
 if (isset($_SESSION['user_id'])) {
@@ -455,7 +456,7 @@ async function doLogin() {
         return;
     }
 
-    loginSuccess(result.name, result.role)
+    loginSuccess(result.username, result.role)
     const titleEl = document.getElementById('successTitle');
     titleEl.textContent = `Berhasil Masuk, ${result.username}!`;
     showSuccess('✅', `Berhasil Masuk, ${result.username}!`, 'Selamat datang kembali di PantauPangan.');
