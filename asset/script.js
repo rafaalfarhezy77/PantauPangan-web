@@ -1,20 +1,31 @@
 let berasBPSHistory = [];
 
 // ── DATA ──
-const commodities = [
-  { id:'beras', icon:'🌾', name:'Beras Premium', unit:'per kg', price:14500, change:+1.2, kategori:'pokok' },
-  { id:'jagung', icon:'🌽', name:'Jagung Pipilan', unit:'per kg', price:5200, change:-0.8, kategori:'pokok' },
-  { id:'kedelai', icon:'🫘', name:'Kedelai Lokal', unit:'per kg', price:9800, change:+0.5, kategori:'pokok' },
-  { id:'cabai', icon:'🌶️', name:'Cabai Merah Keriting', unit:'per kg', price:32000, change:+8.4, kategori:'bumbu' },
-  { id:'bawang', icon:'🧅', name:'Bawang Merah', unit:'per kg', price:28500, change:-3.1, kategori:'bumbu' },
-  { id:'bawangputih', icon:'🧄', name:'Bawang Putih', unit:'per kg', price:38000, change:+1.0, kategori:'bumbu' },
-  { id:'tomat', icon:'🍅', name:'Tomat', unit:'per kg', price:8500, change:-5.2, kategori:'sayur' },
-  { id:'kentang', icon:'🥔', name:'Kentang', unit:'per kg', price:12000, change:+0.3, kategori:'sayur' },
-  { id:'minyak', icon:'🫙', name:'Minyak Goreng', unit:'per liter', price:17500, change:0, kategori:'pokok' },
-  { id:'telur', icon:'🥚', name:'Telur Ayam', unit:'per kg', price:27000, change:+2.1, kategori:'protein' },
-  { id:'daging', icon:'🥩', name:'Daging Sapi', unit:'per kg', price:135000, change:+0.5, kategori:'protein' },
-  { id:'ayam', icon:'🍗', name:'Daging Ayam', unit:'per kg', price:32500, change:-1.8, kategori:'protein' },
-];
+let commodities = [];
+
+async function fetchKomoditasDB() {
+  try {
+    const response = await fetch('api/api_komoditas.php');
+    const result = await response.json();
+    
+    if (result.status === "success") {
+      // Map data dari database agar formatnya sesuai dengan yang dibaca script lama
+      commodities = result.data.map(item => ({
+        id: item.slug_id,
+        icon: item.icon,
+        name: item.nama,
+        unit: 'per kg', // Bisa lu tambahkan kolom unit di DB nanti kalau mau dinamis
+        price: parseFloat(item.harga_default),
+        change: parseFloat(item.perubahan_default),
+        kategori: item.kategori.toLowerCase().includes('pokok') ? 'pokok' : 
+                  item.kategori.toLowerCase().includes('bumbu') ? 'bumbu' :
+                  item.kategori.toLowerCase().includes('protein') ? 'protein' : 'sayur'
+      }));
+    }
+  } catch (error) {
+    console.error("Gagal memuat komoditas dari Database:", error);
+  }
+}
 
 async function fetchDataBerasBPS() {
   try {
@@ -407,6 +418,7 @@ async function initApp() {
   
   // 2. Tunggu proses tarik data BPS selesai
   await Promise.all([
+    fetchKomoditasDB(),
     fetchDataBerasBPS(),
     fetchProvinsiBPS()
   ]);

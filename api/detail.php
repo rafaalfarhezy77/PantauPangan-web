@@ -219,67 +219,72 @@ session_start();
 </div>
 
 <script>
-const commodityDB = {
-  beras: {
-    icon:'🌾', name:'Beras Premium', cat:'Pangan Pokok', catIcon:'🌾',
-    desc:'Beras kualitas premium yang banyak dikonsumsi masyarakat Indonesia. Harga dipengaruhi musim panen, distribusi, dan kebijakan impor pemerintah.',
-    price:14500, unit:'per kilogram', change:+1.2,
-    info:[
-      {k:'Satuan',v:'Kilogram (kg)'},{k:'Kategori',v:'Pangan Pokok'},
-      {k:'Musim Panen',v:'Apr–Mei & Sep–Okt'},{k:'Sentra Produksi',v:'Jawa Timur, Jawa Barat'},
-      {k:'HET Pemerintah',v:'Rp 14.900/kg'},{k:'HPP Petani',v:'Rp 6.000/kg (GKP)'},
-    ],
-    news:[
-      {icon:'🏛️',title:'Pemerintah Tetapkan HET Beras Premium Rp 14.900/kg',meta:'Bapanas · 6 Mar 2025'},
-      {icon:'📈',title:'Harga Beras Naik Tipis Jelang Ramadan di Seluruh Wilayah',meta:'Kompas · 4 Mar 2025'},
-      {icon:'🌾',title:'Produksi Beras Nasional Diprediksi Surplus 1.2 Juta Ton',meta:'Kontan · 2 Mar 2025'},
-    ],
-    similar:[
-      {icon:'🌾',name:'Beras Medium',price:11500,change:-0.5,id:'beras-med'},
-      {icon:'🌽',name:'Jagung',price:5200,change:-0.8,id:'jagung'},
-      {icon:'🫘',name:'Kedelai',price:9800,change:+0.5,id:'kedelai'},
-      {icon:'🍠',name:'Ubi Kayu',price:3500,change:+1.0,id:'ubi'},
-    ],
-  },
-  cabai: {
-    icon:'🌶️', name:'Cabai Merah Keriting', cat:'Bumbu & Rempah', catIcon:'🌶️',
-    desc:'Komoditas dengan volatilitas harga tertinggi di Indonesia. Sangat sensitif terhadap cuaca dan pola musiman.',
-    price:32000, unit:'per kilogram', change:+8.4,
-    info:[
-      {k:'Satuan',v:'Kilogram (kg)'},{k:'Kategori',v:'Bumbu & Rempah'},
-      {k:'Musim Panen',v:'Sepanjang tahun'},{k:'Sentra Produksi',v:'Jawa Timur, Sulawesi'},
-      {k:'Volatilitas',v:'Sangat Tinggi'},
-    ],
-    news:[
-      {icon:'📈',title:'Harga Cabai Merah Melonjak 40% di Pasar Induk Kramat Jati',meta:'Kontan · 5 Mar 2025'},
-      {icon:'🌧️',title:'Curah Hujan Tinggi Rusak Panen Cabai di Jawa Timur',meta:'Tempo · 3 Mar 2025'},
-    ],
-    similar:[
-      {icon:'🌶️',name:'Cabai Rawit',price:68000,change:+12.1,id:'rawit'},
-      {icon:'🫑',name:'Cabai Hijau',price:18000,change:-2.3,id:'hijau'},
-      {icon:'🧅',name:'Bawang Merah',price:28500,change:-3.1,id:'bawang'},
-      {icon:'🧄',name:'Bawang Putih',price:38000,change:+1.0,id:'putih'},
-    ],
-  },
-  bawang: {
-    icon:'🧅', name:'Bawang Merah', cat:'Bumbu & Rempah', catIcon:'🌶️',
-    desc:'Komoditas strategis komponen bumbu masakan Indonesia. Harga dipengaruhi musim tanam dan stok impor.',
-    price:28500, unit:'per kilogram', change:-3.1,
-    info:[
-      {k:'Satuan',v:'Kilogram (kg)'},{k:'Kategori',v:'Bumbu & Rempah'},
-      {k:'Musim Panen',v:'Feb–Apr & Agt–Okt'},{k:'Sentra Produksi',v:'Brebes, Bima, Nganjuk'},
-    ],
-    news:[
-      {icon:'🌱',title:'Produksi Bawang Merah Bima Diprediksi Naik 15%',meta:'Kompas · 4 Mar 2025'},
-      {icon:'📉',title:'Harga Bawang Merah Turun Akibat Panen Raya di Brebes',meta:'Kontan · 2 Mar 2025'},
-    ],
-    similar:[
-      {icon:'🧄',name:'Bawang Putih',price:38000,change:+1.0,id:'putih'},
-      {icon:'🌶️',name:'Cabai Merah',price:32000,change:+8.4,id:'cabai'},
-      {icon:'🍅',name:'Tomat',price:8500,change:-5.2,id:'tomat'},
-    ],
-  },
-};
+let C = {}; // Kosongkan dulu
+
+async function fetchDetailKomoditas() {
+  try {
+    const response = await fetch('api_komoditas.php');
+    const result = await response.json();
+    
+    if (result.status === "success") {
+      // Cari komoditas berdasarkan slug_id (contoh: ?id=jagung)
+      const dataDB = result.data.find(item => item.slug_id === commodityId) || result.data[0]; 
+      
+      // Susun ulang objek C
+      C = {
+        id: dataDB.slug_id,
+        icon: dataDB.icon,
+        name: dataDB.nama,
+        cat: dataDB.kategori,
+        catIcon: dataDB.icon,
+        desc: dataDB.deskripsi,
+        price: parseFloat(dataDB.harga_default),
+        unit: 'per kilogram',
+        change: parseFloat(dataDB.perubahan_default),
+        info: [
+          {k:'Kategori', v:dataDB.kategori},
+          {k:'Kode BPS', v:dataDB.kode_api_bps || '-'}
+        ],
+        news: [], // Bisa ditambah tabel berita nanti
+        similar: [] 
+      };
+      
+      // Ambil komoditas serupa berdasarkan kategori yang sama
+      C.similar = result.data
+        .filter(item => item.kategori === dataDB.kategori && item.slug_id !== C.id)
+        .slice(0, 4) // Ambil maksimal 4 komoditas serupa
+        .map(s => ({
+          id: s.slug_id,
+          icon: s.icon,
+          name: s.nama,
+          price: parseFloat(s.harga_default),
+          change: parseFloat(s.perubahan_default)
+        }));
+
+      // Tambahkan fetch berita dari database
+      try {
+        const newsResponse = await fetch(`api_berita.php?slug=${commodityId}`);
+        if (newsResponse.ok) {
+          C.news = await newsResponse.json();
+        } else {
+          C.news = [];
+        }
+      } catch (e) {
+        console.error("Gagal load berita", e);
+        C.news = [];
+      }
+      
+      // Jika yang di-klik adalah beras, panggil BPS untuk update harganya
+      if (C.id === 'beras' || C.id === 'beras-med') {
+         await fetchBerasBPS();
+      }
+      
+      initPageElements(); // Panggil fungsi untuk me-render UI
+    }
+  } catch (err) {
+    console.error("Gagal load detail komoditas", err);
+  }
+}
 
 const regionList = [
   {region:'DKI Jakarta',mult:1.08},{region:'Jawa Barat',mult:1.03},
@@ -298,7 +303,6 @@ const chartLabels = {
 
 const params      = new URLSearchParams(window.location.search);
 const commodityId = params.get('id') || 'beras';
-const C           = commodityDB[commodityId] || commodityDB.beras;
 const fmt         = n => 'Rp ' + n.toLocaleString('id-ID');
 let chartInst     = null;
 let currentPeriod = '7H';
@@ -350,8 +354,7 @@ function genData(period) {
   );
 }
 
-async function initPage() {
-  await fetchBerasBPS();
+function initPageElements() {
   document.title = C.name + ' — PantauPangan';
   document.getElementById('breadcrumb').textContent = C.name;
   document.getElementById('heroEmoji').textContent  = C.icon;
@@ -500,7 +503,7 @@ function toggleWatch() {
   }
 }
 
-initPage();
+fetchDetailKomoditas();
 </script>
 </body>
 </html>
