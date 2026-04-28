@@ -276,14 +276,7 @@ $query = mysqli_query($koneksi, "SELECT * FROM users");
 
 <script>
 
-const watchlistData = [
-  { icon:'🌾', name:'Beras Premium', region:'Jawa Timur',  price:14500,  change:+1.2, id:'beras'  },
-  { icon:'🌶️', name:'Cabai Merah',   region:'Jawa Tengah', price:32000,  change:+8.4, id:'cabai'  },
-  { icon:'🧅', name:'Bawang Merah',  region:'Jawa Timur',  price:28500,  change:-3.1, id:'bawang' },
-  { icon:'🥚', name:'Telur Ayam',    region:'Jawa Barat',  price:27000,  change:+2.1, id:'telur'  },
-  { icon:'🫙', name:'Minyak Goreng', region:'DKI Jakarta', price:17500,  change:0,    id:'minyak' },
-  { icon:'🥩', name:'Daging Sapi',   region:'Jawa Timur',  price:135000, change:+0.5, id:'daging' },
-];
+let watchlistData = [];
 
 const notifData = [
   { dot:'bg-red-500',    text:'<strong>Cabai Merah</strong> naik <strong>8.4%</strong> dalam 24 jam terakhir.',      time:'10 menit lalu', unread:true  },
@@ -293,14 +286,7 @@ const notifData = [
   { dot:'bg-gray-300',   text:'Laporan mingguan komoditas pantauanmu sudah tersedia.',                                time:'2 hari lalu',   unread:false },
 ];
 
-const historyData = [
-  { icon:'🌾', commodity:'Beras Premium',  price:'Rp 14.500', region:'Jawa Timur',     time:'Hari ini, 09:14' },
-  { icon:'🌶️', commodity:'Cabai Merah',    price:'Rp 32.000', region:'Jawa Tengah',    time:'Hari ini, 08:30' },
-  { icon:'🧅', commodity:'Bawang Merah',   price:'Rp 28.500', region:'Semua Provinsi', time:'Kemarin'         },
-  { icon:'🥚', commodity:'Telur Ayam',     price:'Rp 27.000', region:'Jawa Barat',     time:'Kemarin'         },
-  { icon:'🫙', commodity:'Minyak Goreng',  price:'Rp 17.500', region:'DKI Jakarta',    time:'2 hari lalu'     },
-  { icon:'🥩', commodity:'Daging Sapi',    price:'Rp 135.000',region:'Jawa Timur',     time:'3 hari lalu'     },
-];
+let historyData = [];
 
 const chartDataMap = {
   beras:  [14000,14100,13900,14200,14400,14350,14500],
@@ -342,7 +328,15 @@ function initUser() {
 }
 
 function renderWatchlist() {
-  document.getElementById('watchlist').innerHTML = watchlistData.map((w,i) => `
+  const container = document.getElementById('watchlist');
+  container.innerHTML = '';
+
+  if (watchlistData.length === 0) {
+    container.innerHTML = '<p class="text-gray-500 text-sm py-6 px-6 text-center">Belum ada komoditas dalam pantauan.</p>';
+    return;
+  }
+
+  container.innerHTML = watchlistData.map((w,i) => `
     <a href="detail.php?id=${w.id}"
        class="flex items-center gap-3 px-5 py-3.5 border-b border-cream-dark last:border-0
               hover:bg-cream transition-colors no-underline text-inherit">
@@ -382,7 +376,15 @@ function readNotif(i)  { notifData[i].unread=false; renderNotif(); }
 function markAllRead() { notifData.forEach(n=>n.unread=false); renderNotif(); }
 
 function renderHistory() {
-  document.getElementById('historyGrid').innerHTML = historyData.map(h => `
+  const container = document.getElementById('historyGrid');
+  container.innerHTML = '';
+
+  if (historyData.length === 0) {
+    container.innerHTML = '<p class="col-span-2 text-center text-gray-500 text-sm py-4">Belum ada riwayat pencarian.</p>';
+    return;
+  }
+
+  container.innerHTML = historyData.map(h => `
     <a href="detail.php"
        class="block bg-cream border border-cream-dark rounded-xl p-3.5 hover:border-green-pale hover:shadow-sm transition-all no-underline">
       <p class="text-xs text-gray-400 mb-1">${h.icon} ${h.commodity}</p>
@@ -500,12 +502,26 @@ async function fetchBerasBPS() {
   }
 }
 
+async function fetchWatchlist() {
+    try {
+        const response = await fetch('api_pantauan.php');
+        const result = await response.json();
+        
+        if (result.status === "success") {
+            watchlistData = result.data; // Sekarang isinya data asli dari DB
+            renderWatchlist(); // Panggil fungsi render yang sudah ada
+        }
+    } catch (error) {
+        console.error("Gagal load pantauan:", error);
+    }
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     // Beri sedikit jeda agar Tailwind selesai merender container (mencegah canvas 0px)
     setTimeout(async () => {
       initUser();
       await fetchBerasBPS();
-      renderWatchlist(); 
+      await fetchWatchlist();
       renderNotif(); 
       renderHistory(); 
       updateChart();
