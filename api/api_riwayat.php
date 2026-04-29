@@ -38,6 +38,8 @@ $query = "
 $result = mysqli_query($koneksi, $query);
 
 $history = [];
+$total_count = 0;
+
 if ($result) {
     while ($row = mysqli_fetch_assoc($result)) {
         $history[] = [
@@ -49,9 +51,18 @@ if ($result) {
             'time' => date('d M Y H:i', strtotime($row['waktu_pencarian']))
         ];
     }
-    echo json_encode(["status" => "success", "data" => $history]);
+    
+    // Ambil total riwayat pencarian
+    $count_query = "SELECT COUNT(*) as total FROM riwayat_user WHERE user_id = '$user_id'";
+    $count_result = mysqli_query($koneksi, $count_query);
+    if ($count_result) {
+        $count_row = mysqli_fetch_assoc($count_result);
+        $total_count = $count_row['total'];
+    }
+
+    echo json_encode(["status" => "success", "data" => $history, "total_count" => $total_count]);
 } else {
     // Fallback: selalu kembalikan JSON agar tidak menyebabkan parse error di frontend
-    echo json_encode(["status" => "error", "message" => "Query gagal: " . mysqli_error($koneksi), "data" => []]);
+    echo json_encode(["status" => "error", "message" => "Query gagal: " . mysqli_error($koneksi), "data" => [], "total_count" => 0]);
 }
 ?>

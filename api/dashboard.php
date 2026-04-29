@@ -193,8 +193,8 @@ $query = mysqli_query($koneksi, "SELECT * FROM users");
       <div class="bg-white border border-cream-dark rounded-2xl p-5 hover:shadow-md hover:-translate-y-0.5 transition-all">
         <div class="w-10 h-10 bg-blue-50 rounded-xl flex items-center justify-center text-xl mb-3">🔍</div>
         <p class="text-[0.7rem] text-gray-400 uppercase tracking-wider mb-1">Total Pencarian</p>
-        <p class="text-2xl font-bold text-green-deep mb-0.5">28</p>
-        <p class="text-xs text-gray-400">bulan ini</p>
+        <p id="totalSearchCount" class="text-2xl font-bold text-green-deep mb-0.5">0</p>
+        <p class="text-xs text-gray-400">keseluruhan</p>
       </div>
     </div>
 
@@ -546,7 +546,12 @@ async function fetchHistoryData() {
         
         if (result.status === "success") {
             historyData = result.data; 
-            renderHistory();           
+            renderHistory();
+            
+            const totalSearchCountEl = document.getElementById('totalSearchCount');
+            if (totalSearchCountEl) {
+                totalSearchCountEl.textContent = result.total_count || 0;
+            }
         }
     } catch (error) {
         console.error("Gagal load riwayat:", error);
