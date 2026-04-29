@@ -50,5 +50,8 @@ if ($result) {
         ];
     }
     echo json_encode(["status" => "success", "data" => $history]);
+} else {
+    // Fallback: selalu kembalikan JSON agar tidak menyebabkan parse error di frontend
+    echo json_encode(["status" => "error", "message" => "Query gagal: " . mysqli_error($koneksi), "data" => []]);
 }
 ?>

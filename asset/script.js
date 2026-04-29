@@ -341,6 +341,7 @@ async function doSearch() {
           await fetch('api/api_riwayat.php', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
+              credentials: 'include', // Wajib agar cookie session PHP ikut terkirim
               body: JSON.stringify({ slug: komoditasData.id })
           });
       } catch (err) {
