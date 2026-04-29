@@ -520,6 +520,7 @@ async function fetchBerasBPS() {
                     const change = ((latestPrice - prevPrice) / prevPrice) * 100;
                     berasItem.change = parseFloat(change.toFixed(1));
                 }
+                renderWatchlist();
             }
         }
     }
@@ -546,8 +547,8 @@ document.addEventListener('DOMContentLoaded', () => {
     // Beri sedikit jeda agar Tailwind selesai merender container (mencegah canvas 0px)
     setTimeout(async () => {
       initUser();
-      await fetchBerasBPS();
       await fetchWatchlist();
+      await fetchBerasBPS();
       renderNotif(); 
       renderHistory(); 
       updateChart();

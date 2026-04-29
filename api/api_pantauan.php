@@ -37,9 +37,10 @@ if ($result) {
         $watchlist[] = [
             'id' => $row['slug_id'],
             'icon' => $row['icon'],
-            'commodity' => $row['nama'],
-            'price' => "Rp " . number_format($row['harga_default'], 0, ',', '.'),
-            'change' => ($row['perubahan_default'] >= 0 ? '+' : '') . $row['perubahan_default'] . "%",
+            'name' => $row['nama'],
+            'region' => 'Nasional',
+            'price' => (float) $row['harga_default'],
+            'change' => (float) $row['perubahan_default'],
             'isUp' => $row['perubahan_default'] >= 0
         ];
     }
