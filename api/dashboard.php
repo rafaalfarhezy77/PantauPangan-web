@@ -149,10 +149,6 @@ $query = mysqli_query($koneksi, "SELECT * FROM users");
     </div>
     <div class="flex items-center gap-3">
       <span id="topbarDate" class="text-xs text-gray-400 hidden sm:block"></span>
-      <button class="relative w-9 h-9 bg-white border border-cream-dark rounded-xl flex items-center justify-center hover:border-green-pale transition-colors">
-        🔔
-        <span class="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full border-2 border-cream"></span>
-      </button>
     </div>
   </header>
 
