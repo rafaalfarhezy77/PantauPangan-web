@@ -489,8 +489,39 @@ function changePeriod(p, btn) {
   updateChart();
 }
 
-function toggleWatch() {
-  isWatching = !isWatching;
+async function toggleWatch() {
+  const btn = document.getElementById('watchBtn');
+  const action = isWatching ? 'remove' : 'add';
+
+  // Disable tombol sementara
+  btn.disabled = true;
+  btn.style.opacity = '0.5';
+
+  try {
+    const response = await fetch('api_toggle_pantauan.php', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ action: action, slug: commodityId })
+    });
+    const result = await response.json();
+
+    if (result.status === 'success') {
+      isWatching = result.is_watching;
+      updateWatchButton();
+    } else {
+      alert('Gagal: ' + (result.message || 'Terjadi kesalahan.'));
+    }
+  } catch (error) {
+    console.error('Gagal toggle pantauan:', error);
+    alert('Terjadi kesalahan jaringan.');
+  } finally {
+    btn.disabled = false;
+    btn.style.opacity = '1';
+  }
+}
+
+function updateWatchButton() {
   const btn = document.getElementById('watchBtn');
   if (isWatching) {
     btn.textContent = '✅ Dipantau';
@@ -503,6 +534,22 @@ function toggleWatch() {
   }
 }
 
+async function checkWatchStatus() {
+  try {
+    const response = await fetch(`api_toggle_pantauan.php?action=check&slug=${commodityId}`, {
+      credentials: 'include'
+    });
+    const result = await response.json();
+    if (result.status === 'success') {
+      isWatching = result.is_watching;
+      updateWatchButton();
+    }
+  } catch (error) {
+    console.error('Gagal cek status pantauan:', error);
+  }
+}
+
+checkWatchStatus();
 fetchDetailKomoditas();
 </script>
 </body>

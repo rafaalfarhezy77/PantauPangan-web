@@ -179,7 +179,7 @@ $query = mysqli_query($koneksi, "SELECT * FROM users");
       <div class="bg-white border border-cream-dark rounded-2xl p-5 hover:shadow-md hover:-translate-y-0.5 transition-all">
         <div class="w-10 h-10 bg-green-mist rounded-xl flex items-center justify-center text-xl mb-3">⭐</div>
         <p class="text-[0.7rem] text-gray-400 uppercase tracking-wider mb-1">Komoditas Dipantau</p>
-        <p class="text-2xl font-bold text-green-deep mb-0.5">6</p>
+        <p id="watchlistCountTop" class="text-2xl font-bold text-green-deep mb-0.5">0</p>
         <p class="text-xs text-gray-400">dari 120+ komoditas</p>
       </div>
       <div class="bg-white border border-cream-dark rounded-2xl p-5 hover:shadow-md hover:-translate-y-0.5 transition-all">
@@ -228,7 +228,7 @@ $query = mysqli_query($koneksi, "SELECT * FROM users");
         <div class="flex items-center justify-between px-6 py-4 border-b border-cream-dark">
           <div>
             <p class="font-bold text-green-deep text-sm">⭐ Pantauan Saya</p>
-            <p class="text-xs text-gray-400 mt-0.5">6 komoditas aktif</p>
+            <p id="watchlistCount" class="text-xs text-gray-400 mt-0.5">0 komoditas aktif</p>
           </div>
           <a href="../index.html#harga"
              class="text-xs font-semibold text-green-mid bg-green-mist px-3 py-1.5 rounded-full hover:bg-green-pale transition-colors no-underline">+ Tambah</a>
@@ -328,6 +328,11 @@ function initUser() {
 }
 
 function renderWatchlist() {
+  const countEl = document.getElementById('watchlistCount');
+  if (countEl) countEl.textContent = watchlistData.length + ' komoditas aktif';
+  const countTopEl = document.getElementById('watchlistCountTop');
+  if (countTopEl) countTopEl.textContent = watchlistData.length;
+
   const container = document.getElementById('watchlist');
   container.innerHTML = '';
 
@@ -357,7 +362,28 @@ function renderWatchlist() {
     </a>`).join('');
 }
 
-function removeWatch(e,i) { e.preventDefault(); e.stopPropagation(); watchlistData.splice(i,1); renderWatchlist(); }
+async function removeWatch(e, i) {
+  e.preventDefault();
+  e.stopPropagation();
+  const item = watchlistData[i];
+  if (!item) return;
+
+  try {
+    const response = await fetch('api_toggle_pantauan.php', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ action: 'remove', slug: item.id })
+    });
+    const result = await response.json();
+    if (result.status === 'success') {
+      watchlistData.splice(i, 1);
+      renderWatchlist();
+    }
+  } catch (error) {
+    console.error('Gagal menghapus pantauan:', error);
+  }
+}
 
 function renderNotif() {
   document.getElementById('notifList').innerHTML = notifData.map((n,i) => `
