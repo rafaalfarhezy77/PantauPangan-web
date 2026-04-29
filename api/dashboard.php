@@ -543,14 +543,28 @@ async function fetchWatchlist() {
     }
 }
 
+async function fetchHistoryData() {
+    try {
+        const response = await fetch('api_riwayat.php');
+        const result = await response.json();
+        
+        if (result.status === "success") {
+            historyData = result.data; 
+            renderHistory();           
+        }
+    } catch (error) {
+        console.error("Gagal load riwayat:", error);
+    }
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     // Beri sedikit jeda agar Tailwind selesai merender container (mencegah canvas 0px)
     setTimeout(async () => {
       initUser();
       await fetchWatchlist();
+      await fetchHistoryData();
       await fetchBerasBPS();
-      renderNotif(); 
-      renderHistory(); 
+      renderNotif();  
       updateChart();
     }, 100);
 });

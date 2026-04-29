@@ -299,7 +299,7 @@ const regionPriceMultiplier = {
   'Papua': 1.25, 'default': 1.0
 };
 
-function doSearch() {
+async function doSearch() {
   const commodity = document.getElementById('searchCommodity').value;
   const province = document.getElementById('searchProvince').value;
 
@@ -316,9 +316,8 @@ function doSearch() {
     return { region: r, price: p, change: ch };
   });
 
-  document.getElementById('searchResultLabel').textContent =
-    `Hasil untuk "${commodity}"${province?' di '+province:' (6 Provinsi Representatif)'} — Diperbarui hari ini`;
-
+  // Tampilkan hasil di UI (Kode aslinya tidak berubah)
+  document.getElementById('searchResultLabel').textContent = `Hasil untuk "${commodity}"${province?' di '+province:' (6 Provinsi Representatif)'} — Diperbarui hari ini`;
   document.getElementById('resultsGrid').innerHTML = results.map(r=>`
     <div class="result-card">
       <div class="result-commodity">${r.region}</div>
@@ -333,8 +332,22 @@ function doSearch() {
   const sr = document.getElementById('searchResults');
   sr.classList.add('visible');
   sr.scrollIntoView({ behavior:'smooth', block:'nearest' });
-}
 
+  // === KODE BARU: Simpan Riwayat ke Database ===
+  const komoditasData = commodities.find(c => c.name === commodity);
+  // Cek apakah user sudah login dan komoditas valid
+  if (komoditasData && localStorage.getItem('isLoggedIn') === 'true') {
+      try {
+          await fetch('api/api_riwayat.php', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ slug: komoditasData.id })
+          });
+      } catch (err) {
+          console.error("Gagal menyimpan riwayat:", err);
+      }
+  }
+}
 function quickSearch(commodity) {
   document.getElementById('searchCommodity').value = commodity;
   doSearch();
