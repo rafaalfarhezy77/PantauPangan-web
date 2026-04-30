@@ -34,9 +34,9 @@ async function fetchDataBerasBPS() {
     if (dataBPS.status !== "OK") return;
 
     const content = dataBPS.datacontent;
-    const keyPrefix = "122770125"; // Premium 2025 [cite: 278]
-    
-    // Ambil data bulan 1 sampai 12 secara berurutan untuk grafik
+    const keyPrefix = "122770125"; // Beras Premium — kode variabel BPS
+
+    // Ambil data bulan 1 sampai 12 secara berurutan
     berasBPSHistory = [];
     for (let m = 1; m <= 12; m++) {
       const key = keyPrefix + m;
@@ -45,11 +45,19 @@ async function fetchDataBerasBPS() {
       }
     }
 
-    // Update harga terbaru untuk card
+    // Update harga & perubahan beras dari data BPS terbaru
     if (berasBPSHistory.length > 0) {
       const latestPrice = berasBPSHistory[berasBPSHistory.length - 1];
       const berasIndex = commodities.findIndex(c => c.id === 'beras');
-      if (berasIndex !== -1) commodities[berasIndex].price = latestPrice;
+      if (berasIndex !== -1) {
+        commodities[berasIndex].price = latestPrice;
+        // Hitung persentase perubahan dari bulan sebelumnya (seperti di detail.php)
+        if (berasBPSHistory.length > 1) {
+          const prevPrice = berasBPSHistory[berasBPSHistory.length - 2];
+          const change = ((latestPrice - prevPrice) / prevPrice) * 100;
+          commodities[berasIndex].change = parseFloat(change.toFixed(1));
+        }
+      }
     }
   } catch (error) {
     console.error("Gagal sinkronisasi history BPS", error);
@@ -210,20 +218,24 @@ function selectCommodity(id) {
 
 // ── CHART ──
 function generateChartData(period, commodity) {
-  // Jika komoditasnya beras dan kita punya data dari BPS, gunakan data itu
-  if (commodity === 'beras' && berasBPSHistory.length > 0 && period === '1T') {
-    return berasBPSHistory;
+  const len = { '7H': 7, '1B': 30, '3B': 13, '1T': 12 }[period];
+
+  // Jika beras dan ada data BPS, gunakan untuk semua period (sama seperti detail.php)
+  if (commodity === 'beras' && berasBPSHistory.length > 0) {
+    // Ambil data dari ujung array (terbaru), lalu pad jika kurang dari panjang period
+    let data = berasBPSHistory.slice(-len);
+    while (data.length > 0 && data.length < len) {
+      data.unshift(data[0]);
+    }
+    return data;
   }
 
-  // Untuk komoditas lain, hilangkan Math.random() agar stabil
-  // Gunakan perhitungan persentase tetap saja
+  // Untuk komoditas lain, gunakan perhitungan persentase deterministik
   const c = commodities.find(x => x.id === commodity);
   const base = c.price;
-  const len = { '7H': 7, '1B': 30, '3B': 13, '1T': 12 }[period];
-  
-  return Array.from({length:len}, (_, i) => {
-    // Menghilangkan Math.random() [cite: 233]
-    return Math.round(base * (0.95 + (i / (len * 20)))); 
+
+  return Array.from({length: len}, (_, i) => {
+    return Math.round(base * (0.95 + (i / (len * 20))));
   });
 }
 
@@ -443,18 +455,21 @@ window.addEventListener('scroll', ()=>{
 async function initApp() {
   // 1. Render elemen yang tidak bergantung pada harga (agar UI tidak kosong)
   renderBerita();
-  
-  // 2. Tunggu proses tarik data BPS selesai
-  await Promise.all([
-    fetchKomoditasDB(),
-    fetchDataBerasBPS(),
-    fetchProvinsiBPS()
-  ]);
-  
-  // 3. Render ulang elemen yang menggunakan harga (Sekarang sudah pakai harga BPS)
+
+  // 2. Ambil data provinsi (tidak bergantung pada komoditas, bisa paralel)
+  fetchProvinsiBPS();
+
+  // 3. Ambil data komoditas dari DB terlebih dahulu
+  await fetchKomoditasDB();
+
+  // 4. Baru ambil data BPS — pastikan array commodities sudah terisi
+  //    agar update harga & change beras berhasil
+  await fetchDataBerasBPS();
+
+  // 5. Render semua elemen dengan data yang sudah lengkap
   initTicker();
   renderCommodities();
-  selectCommodity('beras'); // Otomatis mengupdate chart dengan harga BPS
+  selectCommodity('beras'); // Grafik beras langsung pakai data BPS
 }
 
 // Eksekusi fungsi inisialisasi saat script dimuat
