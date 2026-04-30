@@ -182,6 +182,20 @@ function filterKategori(k, btn) {
   activeKategori = k;
   document.querySelectorAll('#kategoriTabs .tab-btn').forEach(b=>b.classList.remove('active'));
   btn.classList.add('active');
+
+  // Cek apakah komoditas aktif saat ini ada dalam kategori yang dipilih
+  const filtered = k === 'semua' ? commodities : commodities.filter(c => c.kategori === k);
+  const isActiveInCategory = filtered.some(c => c.id === activeCommodityId);
+
+  if (!isActiveInCategory && filtered.length > 0) {
+    // Pilih otomatis komoditas pertama dari kategori baru
+    activeCommodityId = filtered[0].id;
+    const c = filtered[0];
+    document.getElementById('chartCommodityName').textContent = c.icon + ' ' + c.name;
+    document.getElementById('chartPriceNow').textContent = fmt(c.price) + '/' + c.unit.split(' ').pop();
+    updateChart();
+  }
+
   renderCommodities();
 }
 
