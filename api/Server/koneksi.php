@@ -77,8 +77,7 @@ class DatabaseSessionHandler implements SessionHandlerInterface {
     }
 }
 
-// Terapkan handler session ke database
-// Dinonaktifkan untuk mempercepat performa. Session default PHP (berbasis file) jauh lebih cepat.
-// $handler = new DatabaseSessionHandler($koneksi);
-// session_set_save_handler($handler, true);
+// Terapkan handler session ke database (Wajib untuk Vercel Serverless)
+$handler = new DatabaseSessionHandler($koneksi);
+session_set_save_handler($handler, true);
 ?>
