@@ -8,6 +8,7 @@ if (!isset($_SESSION['user_id'])) {
     exit;
 }
 
+$query = mysqli_query($koneksi, "SELECT * FROM users");
 ?>
 
 <!DOCTYPE html>
@@ -19,6 +20,7 @@ if (!isset($_SESSION['user_id'])) {
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&family=Lora:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
 <script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
 <script>
   tailwind.config = {
     theme: {
@@ -268,7 +270,6 @@ if (!isset($_SESSION['user_id'])) {
   </main>
 </div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
 <script>
 
 let watchlistData = [];
@@ -561,17 +562,9 @@ document.addEventListener('DOMContentLoaded', () => {
     // Beri sedikit jeda agar Tailwind selesai merender container (mencegah canvas 0px)
     setTimeout(async () => {
       initUser();
-      
-      // Fetch data secara paralel untuk mempercepat loading
-      await Promise.all([
-          fetchHistoryData(),
-          (async () => {
-              // fetchBerasBPS butuh watchlistData dari fetchWatchlist
-              await fetchWatchlist();
-              await fetchBerasBPS();
-          })()
-      ]);
-      
+      await fetchWatchlist();
+      await fetchHistoryData();
+      await fetchBerasBPS();
       renderNotif();  
       updateChart();
     }, 100);

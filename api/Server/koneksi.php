@@ -77,7 +77,7 @@ class DatabaseSessionHandler implements SessionHandlerInterface {
     }
 }
 
-// Terapkan handler session ke database (Wajib untuk Vercel Serverless)
+// Terapkan handler session ke database
 $handler = new DatabaseSessionHandler($koneksi);
 session_set_save_handler($handler, true);
 ?>
