@@ -11,12 +11,22 @@ $arrContextOptions = [
     ],
 ];
 
+$cacheFile = __DIR__ . '/provinsi_cache.json';
+$cacheTime = 86400; // Cache 1 hari (Provinsi jarang berubah)
+
+if (file_exists($cacheFile) && (time() - filemtime($cacheFile)) < $cacheTime) {
+    echo file_get_contents($cacheFile);
+    exit;
+}
+
 $response = file_get_contents($url, false, stream_context_create($arrContextOptions));
 
 if ($response === FALSE) {
     echo json_encode(["status" => "error", "message" => "Gagal mengambil data provinsi"]);
     exit;
 }
+
+file_put_contents($cacheFile, $response);
 
 echo $response;
 ?>

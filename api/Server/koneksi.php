@@ -78,6 +78,7 @@ class DatabaseSessionHandler implements SessionHandlerInterface {
 }
 
 // Terapkan handler session ke database
-$handler = new DatabaseSessionHandler($koneksi);
-session_set_save_handler($handler, true);
+// Dinonaktifkan untuk mempercepat performa. Session default PHP (berbasis file) jauh lebih cepat.
+// $handler = new DatabaseSessionHandler($koneksi);
+// session_set_save_handler($handler, true);
 ?>

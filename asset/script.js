@@ -456,17 +456,18 @@ async function initApp() {
   // 1. Render elemen yang tidak bergantung pada harga (agar UI tidak kosong)
   renderBerita();
 
-  // 2. Ambil data provinsi (tidak bergantung pada komoditas, bisa paralel)
-  fetchProvinsiBPS();
+  // 2. Ambil data secara paralel (bersamaan) untuk mempercepat loading
+  await Promise.all([
+    fetchProvinsiBPS(),
+    (async () => {
+        // Ambil komoditas dari DB terlebih dahulu
+        await fetchKomoditasDB();
+        // Baru ambil data BPS (butuh array commodities)
+        await fetchDataBerasBPS();
+    })()
+  ]);
 
-  // 3. Ambil data komoditas dari DB terlebih dahulu
-  await fetchKomoditasDB();
-
-  // 4. Baru ambil data BPS — pastikan array commodities sudah terisi
-  //    agar update harga & change beras berhasil
-  await fetchDataBerasBPS();
-
-  // 5. Render semua elemen dengan data yang sudah lengkap
+  // 3. Render semua elemen dengan data yang sudah lengkap
   initTicker();
   renderCommodities();
   selectCommodity('beras'); // Grafik beras langsung pakai data BPS

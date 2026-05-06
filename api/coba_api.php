@@ -13,6 +13,14 @@ $arrContextOptions = [
     ],
 ];
 
+$cacheFile = __DIR__ . '/bps_cache.json';
+$cacheTime = 3600; // Cache 1 jam
+
+if (file_exists($cacheFile) && (time() - filemtime($cacheFile)) < $cacheTime) {
+    echo file_get_contents($cacheFile);
+    exit;
+}
+
 // ambil data
 $response = file_get_contents($url, false, stream_context_create($arrContextOptions));
 
@@ -21,6 +29,8 @@ if ($response === FALSE) {
     echo json_encode(["error" => "Gagal mengambil data"]);
     exit;
 }
+
+file_put_contents($cacheFile, $response);
 
 // kirim ke frontend
 echo $response;
