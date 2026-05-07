@@ -1,8 +1,11 @@
 <?php
 header('Content-Type: application/json');
 
+require_once __DIR__ . '/Server/env.php';
+$apiKey = getenv('BPS_API_KEY');
+
 // URL API BPS untuk daftar Provinsi
-$url = "https://webapi.bps.go.id/v1/api/domain/type/prov/key/411c3f2a3d4060bc797340f28a3cb72b/";
+$url = "https://webapi.bps.go.id/v1/api/domain/type/prov/key/{$apiKey}/";
 
 $arrContextOptions = [
     "ssl" => [

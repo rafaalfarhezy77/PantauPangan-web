@@ -1,10 +1,12 @@
 <?php
+require_once __DIR__ . '/env.php';
+
 // Data dari TiDB Cloud
-$host = 'gateway01.ap-southeast-1.prod.alicloud.tidbcloud.com';
-$port = 4000;
-$user = 'YTzpwxsaVCPGBUc.root';
-$pass = 'YlNcGgXrSk5UBCLg';
-$db   = 'pantau-pangan';
+$host = getenv('DB_HOST');
+$port = getenv('DB_PORT') ?: 4000;
+$user = getenv('DB_USER');
+$pass = getenv('DB_PASS');
+$db   = getenv('DB_NAME');
 
 // Inisialisasi mysqli
 $koneksi = mysqli_init();
