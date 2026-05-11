@@ -167,6 +167,17 @@ session_start();
     </div>
   </div>
 
+  <!-- Prediksi Chart (AI) -->
+  <div class="anim-1 bg-white border border-cream-dark rounded-2xl overflow-hidden">
+    <div class="px-6 py-4 border-b border-cream-dark">
+      <p class="font-bold text-green-deep text-sm">🤖 Prediksi Harga (AI)</p>
+      <p class="text-xs text-gray-400 mt-0.5">Prediksi Tren Harga Beras 7 Hari ke Depan (Regresi Linear)</p>
+    </div>
+    <div class="p-6">
+      <div class="h-64 relative w-full"><canvas id="hargaChart"></canvas></div>
+    </div>
+  </div>
+
   <!-- Tabel Provinsi -->
   <div class="anim-1 bg-white border border-cream-dark rounded-2xl overflow-hidden">
     <div class="flex flex-wrap items-center justify-between gap-3 px-6 py-4 border-b border-cream-dark">
@@ -355,6 +366,7 @@ function genData(period) {
 }
 
 function initPageElements() {
+  renderPrediksiChart(); // Panggil render grafik prediksi
   document.title = C.name + ' — PantauPangan';
   document.getElementById('breadcrumb').textContent = C.name;
   document.getElementById('heroEmoji').textContent  = C.icon;
@@ -446,6 +458,84 @@ function renderSimilar() {
         ${s.change>0?'▲':'▼'} ${Math.abs(s.change)}%
       </p>
     </a>`).join('');
+}
+
+async function renderPrediksiChart() {
+  const wilayah = 'Jakarta'; 
+  try {
+    const response = await fetch(`predict.php?wilayah=${wilayah}`);
+    const data = await response.json();
+    if(data.error) return console.error(data.error);
+
+    const labelHistoris = data.historis.map(d => d.tanggal);
+    const hargaHistoris = data.historis.map(d => d.harga);
+    const labelPrediksi = data.prediksi.map(d => d.tanggal);
+    const hargaPrediksi = data.prediksi.map(d => d.harga);
+
+    const semuaLabel = labelHistoris.concat(labelPrediksi);
+    const arrayPrediksi = Array(labelHistoris.length).fill(null);
+    arrayPrediksi[labelHistoris.length - 1] = hargaHistoris[hargaHistoris.length - 1]; 
+    const dataPrediksiFinal = arrayPrediksi.concat(hargaPrediksi);
+
+    const ctx = document.getElementById('hargaChart').getContext('2d');
+    new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: semuaLabel,
+        datasets: [
+          {
+            label: 'Harga Historis (Asli)',
+            data: hargaHistoris,
+            borderColor: '#2d6a4f',
+            backgroundColor: 'rgba(45, 106, 79, 0.1)',
+            borderWidth: 2,
+            pointRadius: 1,
+            fill: true,
+            tension: 0.1 
+          },
+          {
+            label: 'Prediksi 7 Hari Kedepan',
+            data: dataPrediksiFinal,
+            borderColor: '#e53935',
+            borderWidth: 2,
+            borderDash: [5, 5],
+            pointRadius: 2,
+            pointBackgroundColor: '#e53935',
+            fill: false,
+            tension: 0
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        interaction: { intersect: false, mode: 'index' },
+        plugins: {
+          legend: {
+            display: true, position: 'top',
+            labels: { boxWidth: 12, usePointStyle: true, font: { family: 'Plus Jakarta Sans', size: 11 } }
+          },
+          tooltip: {
+            backgroundColor: '#1a3a2a', titleColor: 'rgba(255,255,255,.6)', bodyColor: 'white',
+            bodyFont: { weight: 'bold', size: 13 }, padding: 12, cornerRadius: 8,
+            callbacks: { label: c => ' Rp ' + c.parsed.y.toLocaleString('id-ID') }
+          }
+        },
+        scales: {
+          x: {
+            grid: { display: false }, border: { display: false },
+            ticks: { font: { size: 11, family: 'Plus Jakarta Sans' }, color: '#9ca3af', maxTicksLimit: 10 }
+          },
+          y: {
+            grid: { color: 'rgba(0,0,0,.04)' }, border: { display: false },
+            ticks: { font: { size: 11, family: 'Plus Jakarta Sans' }, color: '#9ca3af', callback: v => 'Rp ' + (v / 1000) + 'rb' }
+          }
+        }
+      }
+    });
+  } catch (e) {
+    console.error("Gagal load data prediksi:", e);
+  }
 }
 
 function updateChart() {
