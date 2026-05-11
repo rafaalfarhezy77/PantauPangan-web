@@ -1,47 +1,34 @@
 <?php
 header('Content-Type: application/json');
 
-require_once __DIR__ . '/Server/env.php';
-
-// Mengambil DATABASE_URL dari environment agar credential aman
-$database_url = getenv('DATABASE_URL');
-
-if (!$database_url) {
-    echo json_encode(['error' => 'DATABASE_URL tidak dikonfigurasi pada environment.']);
-    exit;
-}
-
-// Parsing database_url
-$parsed_url = parse_url($database_url);
-
-$host = $parsed_url['host'];
-$port = isset($parsed_url['port']) ? $parsed_url['port'] : 4000;
-$user = $parsed_url['user'];
-$pass = $parsed_url['pass'];
-$db   = ltrim($parsed_url['path'], '/');
+// Menggunakan koneksi.php yang sudah dikonfigurasi untuk SSL TiDB Cloud
+require_once __DIR__ . '/Server/koneksi.php';
 
 try {
-    // Pengaturan PDO dengan keamanan dan kompabilitas tambahan
-    $options = [
-        PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-        PDO::MYSQL_ATTR_SSL_VERIFY_SERVER_CERT => false, // TiDB Cloud SSL
-        PDO::ATTR_EMULATE_PREPARES => false, // Mencegah error tipe data pada klausa LIMIT
-    ];
-    
-    $pdo = new PDO("mysql:host=$host;port=$port;dbname=$db", $user, $pass, $options);
-
-    // Keamanan Input: Mencegah XSS jika output json digunakan secara tidak aman
+    // Keamanan Input: Mencegah XSS
     $wilayah = isset($_GET['wilayah']) ? trim(strip_tags($_GET['wilayah'])) : 'Jakarta'; 
     $limit_hari = 30; // Pake data 30 hari ke belakang untuk bahan belajar
 
     // 1. Ambil data historis dari database, urutkan dari yang terlama ke terbaru
-    // Menggunakan bindValue agar tipe data LIMIT terjamin INT (menghindari SQL Error)
-    $stmt = $pdo->prepare("SELECT tanggal, harga FROM harga_harian WHERE komoditas = 'Beras' AND wilayah = :wilayah ORDER BY tanggal ASC LIMIT :limit");
-    $stmt->bindValue(':wilayah', $wilayah, PDO::PARAM_STR);
-    $stmt->bindValue(':limit', $limit_hari, PDO::PARAM_INT);
-    $stmt->execute();
+    $query = "SELECT tanggal, harga FROM harga_harian WHERE slug_komoditas = 'beras' AND wilayah = ? ORDER BY tanggal ASC LIMIT ?";
+    $stmt = mysqli_prepare($koneksi, $query);
     
-    $data_historis = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    if (!$stmt) {
+        throw new Exception("Error prepare statement: " . mysqli_error($koneksi));
+    }
+
+    // Menggunakan tipe "si" (String untuk wilayah, Integer untuk limit_hari)
+    mysqli_stmt_bind_param($stmt, "si", $wilayah, $limit_hari);
+    mysqli_stmt_execute($stmt);
+    
+    $result = mysqli_stmt_get_result($stmt);
+    
+    $data_historis = [];
+    while ($row = mysqli_fetch_assoc($result)) {
+        $data_historis[] = $row;
+    }
+    
+    mysqli_stmt_close($stmt);
 
     if (count($data_historis) == 0) {
         echo json_encode(['error' => 'Data tidak ditemukan untuk wilayah ini.']);
@@ -107,7 +94,7 @@ try {
         'prediksi' => $prediksi
     ]);
 
-} catch (PDOException $e) {
+} catch (Exception $e) {
     // Keamanan Log: Jangan tampilkan pesan error SQL/DB mentah ke endpoint public 
     // agar schema database / konfigurasi server tidak bocor.
     error_log("Database Error di predict.php: " . $e->getMessage());

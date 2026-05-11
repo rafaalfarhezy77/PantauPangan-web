@@ -461,7 +461,7 @@ function renderSimilar() {
 }
 
 async function renderPrediksiChart() {
-  const wilayah = 'Jakarta'; 
+  const wilayah = 'Semua Provinsi'; // Mengambil data Rata-rata Nasional dari database
   try {
     const response = await fetch(`predict.php?wilayah=${wilayah}`);
     const data = await response.json();
