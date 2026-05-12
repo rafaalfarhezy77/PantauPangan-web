@@ -294,16 +294,23 @@ session_start();
 <script>
 let C = {}; // Kosongkan dulu
 
+const params      = new URLSearchParams(window.location.search);
+const commodityId = params.get('id') || 'beras';
+
 async function fetchDetailKomoditas() {
   try {
-    const response = await fetch('api_komoditas.php');
-    const result = await response.json();
+    // Jalankan fetch secara bersamaan (konkuren) agar jauh lebih cepat
+    const [komoditasRes, beritaRes, historyRes] = await Promise.all([
+      fetch('api_komoditas.php'),
+      fetch(`api_berita.php?slug=${commodityId}`).catch(() => null),
+      fetch(`api_history.php?slug=${commodityId}`).catch(() => null)
+    ]);
+    
+    const result = await komoditasRes.json();
     
     if (result.status === "success") {
-      // Cari komoditas berdasarkan slug_id (contoh: ?id=jagung)
       const dataDB = result.data.find(item => item.slug_id === commodityId) || result.data[0]; 
       
-      // Susun ulang objek C
       C = {
         id: dataDB.slug_id,
         icon: dataDB.icon,
@@ -318,14 +325,13 @@ async function fetchDetailKomoditas() {
           {k:'Kategori', v:dataDB.kategori},
           {k:'Kode BPS', v:dataDB.kode_api_bps || '-'}
         ],
-        news: [], // Bisa ditambah tabel berita nanti
+        news: [],
         similar: [] 
       };
       
-      // Ambil komoditas serupa berdasarkan kategori yang sama
       C.similar = result.data
         .filter(item => item.kategori === dataDB.kategori && item.slug_id !== C.id)
-        .slice(0, 4) // Ambil maksimal 4 komoditas serupa
+        .slice(0, 4)
         .map(s => ({
           id: s.slug_id,
           icon: s.icon,
@@ -334,23 +340,34 @@ async function fetchDetailKomoditas() {
           change: parseFloat(s.perubahan_default)
         }));
 
-      // Tambahkan fetch berita dari database
-      try {
-        const newsResponse = await fetch(`api_berita.php?slug=${commodityId}`);
-        if (newsResponse.ok) {
-          C.news = await newsResponse.json();
-        } else {
-          C.news = [];
-        }
-      } catch (e) {
-        console.error("Gagal load berita", e);
-        C.news = [];
+      // Parse berita
+      if (beritaRes && beritaRes.ok) {
+        try { C.news = await beritaRes.json(); } catch(e) {}
       }
       
-      // Ambil riwayat harga historis dari database untuk SEMUA komoditas
-      await fetchHistoryDB();
+      // Parse history
+      if (historyRes && historyRes.ok) {
+        try {
+          const dataDBHistory = await historyRes.json();
+          if (dataDBHistory.status === 'success') {
+            const history = dataDBHistory.data.map(item => item.harga);
+            if (history.length > 0) {
+              realHistory = history;
+              const latestPrice = history[history.length - 1];
+              C.price = latestPrice;
+              if (history.length > 1) {
+                  const prevPrice = history[history.length - 2];
+                  const change = ((latestPrice - prevPrice) / prevPrice) * 100;
+                  C.change = parseFloat(change.toFixed(1));
+              }
+            }
+          }
+        } catch(error) {
+          console.error('Gagal parse history DB:', error);
+        }
+      }
       
-      initPageElements(); // Panggil fungsi untuk me-render UI
+      initPageElements();
     }
   } catch (err) {
     console.error("Gagal load detail komoditas", err);
@@ -364,36 +381,11 @@ const chartLabels = {
   '1T': ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agt','Sep','Okt','Nov','Des'],
 };
 
-const params      = new URLSearchParams(window.location.search);
-const commodityId = params.get('id') || 'beras';
 const fmt         = n => 'Rp ' + n.toLocaleString('id-ID');
 let chartInst     = null;
 let currentPeriod = '7H';
 let isWatching    = false;
 let realHistory   = null;
-
-async function fetchHistoryDB() {
-  try {
-    const response = await fetch(`api_history.php?slug=${commodityId}`);
-    const dataDB = await response.json();
-    if (dataDB.status === 'success') {
-        const history = dataDB.data.map(item => item.harga);
-        if (history.length > 0) {
-            realHistory = history;
-            // Update harga dan persentase berdasarkan data historis riil terbaru
-            const latestPrice = history[history.length - 1];
-            C.price = latestPrice;
-            if (history.length > 1) {
-                const prevPrice = history[history.length - 2];
-                const change = ((latestPrice - prevPrice) / prevPrice) * 100;
-                C.change = parseFloat(change.toFixed(1));
-            }
-        }
-    }
-  } catch (error) {
-    console.error('Gagal fetch history DB:', error);
-  }
-}
 
 function genData(period) {
   const len = {'7H':7,'1B':30,'3B':13,'1T':12}[period];
@@ -649,7 +641,6 @@ function updateChart() {
     }
   });
 
-  const loadingEl = document.getElementById('detailChartLoading');
   if (loadingEl) {
     setTimeout(() => {
       loadingEl.classList.add('hidden');
