@@ -75,40 +75,34 @@ async function fetchDataBerasBPS() {
   }
 }
 
-async function fetchProvinsiBPS() {
+async function fetchProvinsiDB() {
   try {
-    const response = await fetch('api/provinsi_api.php');
-    if (!response.ok) throw new Error('Gagal memanggil API Provinsi');
+    const response = await fetch('api/api_list_provinsi.php');
+    if (!response.ok) throw new Error('Gagal memanggil API list provinsi');
     
     const result = await response.json();
     
-    if (result.status === "OK") {
-      // Data provinsi ada di result.data[1] berdasarkan file data_prov.json
-      const provinces = result.data[1];
+    if (result.status === "success") {
+      const provinces = result.data;
       const selectElement = document.getElementById('searchProvince');
       
-      // Bersihkan pilihan yang sudah ada kecuali "Semua Provinsi"
       selectElement.innerHTML = '<option value="">Semua Provinsi</option>';
       
       provinces.forEach(prov => {
         const option = document.createElement('option');
-        option.value = prov.domain_name; // Menggunakan nama provinsi untuk pencarian
-        option.textContent = prov.domain_name;
+        option.value = prov; 
+        option.textContent = prov;
         selectElement.appendChild(option);
       });
-      console.log("Daftar Provinsi berhasil dimuat dari BPS.");
+      console.log("Daftar Provinsi berhasil dimuat dari Database.");
+    } else {
+      throw new Error(result.message || 'Error format respons API');
     }
   } catch (error) {
-    console.error("Gagal memuat provinsi dari API:", error);
-    // Fallback: isi dengan daftar provinsi statis
+    console.error("Gagal memuat provinsi:", error);
     const selectElement = document.getElementById('searchProvince');
     if (selectElement) {
       selectElement.innerHTML = '<option value="">Semua Provinsi</option>';
-      provinsiStatis.forEach(p => {
-        const opt = document.createElement('option');
-        opt.value = p; opt.textContent = p;
-        selectElement.appendChild(opt);
-      });
     }
   }
 }
@@ -478,7 +472,7 @@ async function initApp() {
   renderBerita();
 
   // 2. Ambil data provinsi (tidak bergantung pada komoditas, bisa paralel)
-  fetchProvinsiBPS();
+  fetchProvinsiDB();
 
   // 3. Ambil data komoditas dari DB terlebih dahulu
   await fetchKomoditasDB();
