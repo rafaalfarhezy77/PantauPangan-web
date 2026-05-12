@@ -9,16 +9,20 @@ try {
     $wilayah = isset($_GET['wilayah']) ? trim(strip_tags($_GET['wilayah'])) : 'Jakarta'; 
     $limit_hari = 30; // Pake data 30 hari ke belakang untuk bahan belajar
 
-    // 1. Ambil data historis dari database, urutkan dari yang terlama ke terbaru
-    $query = "SELECT tanggal, harga FROM harga_harian WHERE slug_komoditas = 'beras' AND wilayah = ? ORDER BY tanggal ASC LIMIT ?";
+    // Set zona waktu ke Indonesia
+    date_default_timezone_set('Asia/Jakarta');
+    $hari_ini = date('Y-m-d');
+
+    // 1. Ambil data historis terbaru dari database (sebelum hari ini, urutkan DESC lalu di-reverse)
+    $query = "SELECT tanggal, harga FROM harga_harian WHERE slug_komoditas = 'beras' AND wilayah = ? AND tanggal < ? ORDER BY tanggal DESC LIMIT ?";
     $stmt = mysqli_prepare($koneksi, $query);
     
     if (!$stmt) {
         throw new Exception("Error prepare statement: " . mysqli_error($koneksi));
     }
 
-    // Menggunakan tipe "si" (String untuk wilayah, Integer untuk limit_hari)
-    mysqli_stmt_bind_param($stmt, "si", $wilayah, $limit_hari);
+    // Menggunakan tipe "ssi" (String wilayah, String hari_ini, Integer limit_hari)
+    mysqli_stmt_bind_param($stmt, "ssi", $wilayah, $hari_ini, $limit_hari);
     mysqli_stmt_execute($stmt);
     
     $result = mysqli_stmt_get_result($stmt);
@@ -27,6 +31,9 @@ try {
     while ($row = mysqli_fetch_assoc($result)) {
         $data_historis[] = $row;
     }
+    
+    // Balik urutan menjadi ASC (terlama ke terbaru) untuk perhitungan regresi
+    $data_historis = array_reverse($data_historis);
     
     mysqli_stmt_close($stmt);
 
@@ -72,13 +79,15 @@ try {
 
     // 4. Prediksi 7 hari ke depan
     $prediksi = [];
-    $tanggal_terakhir = end($labels);
+    
+    // Prediksi selalu dimulai dari HARI INI (berdasarkan tanggal server)
+    $tanggal_terakhir = date('Y-m-d', strtotime('-1 day')); // Kemarin
 
     for ($i = 1; $i <= 7; $i++) {
         $x_prediksi = $n + $i;
         $y_prediksi = round(($m * $x_prediksi) + $c); // y = mx + c
         
-        // Tambah 1 hari dari tanggal terakhir
+        // Tambah $i hari dari kemarin = Hari ini, Besok, Lusa, dst.
         $tgl_baru = date('Y-m-d', strtotime($tanggal_terakhir . " + $i days"));
         
         $prediksi[] = [
