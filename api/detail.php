@@ -169,9 +169,51 @@ session_start();
 
   <!-- Prediksi Chart (AI) -->
   <div class="anim-1 bg-white border border-cream-dark rounded-2xl overflow-hidden">
-    <div class="px-6 py-4 border-b border-cream-dark">
-      <p class="font-bold text-green-deep text-sm">🤖 Prediksi Harga (AI)</p>
-      <p class="text-xs text-gray-400 mt-0.5">Prediksi Tren Harga Beras 7 Hari ke Depan (Regresi Linear)</p>
+    <div class="px-6 py-4 border-b border-cream-dark flex flex-wrap items-center justify-between gap-3">
+      <div>
+        <p class="font-bold text-green-deep text-sm">🤖 Prediksi Harga (AI)</p>
+        <p class="text-xs text-gray-400 mt-0.5">Prediksi Tren Harga Beras 7 Hari ke Depan (Regresi Linear)</p>
+      </div>
+      <select id="prediksiRegion" onchange="renderPrediksiChart(this.value)" class="text-xs font-semibold px-3 py-1.5 rounded-lg bg-cream border border-cream-dark text-gray-600 outline-none focus:border-green-pale focus:ring-1 focus:ring-green-pale transition-all cursor-pointer">
+        <option value="Semua Provinsi">Semua Provinsi</option>
+        <option value="Aceh">Aceh</option>
+        <option value="Sumatera Utara">Sumatera Utara</option>
+        <option value="Sumatera Barat">Sumatera Barat</option>
+        <option value="Riau">Riau</option>
+        <option value="Jambi">Jambi</option>
+        <option value="Sumatera Selatan">Sumatera Selatan</option>
+        <option value="Bengkulu">Bengkulu</option>
+        <option value="Lampung">Lampung</option>
+        <option value="Kepulauan Bangka Belitung">Kepulauan Bangka Belitung</option>
+        <option value="Kepulauan Riau">Kepulauan Riau</option>
+        <option value="DKI Jakarta">DKI Jakarta</option>
+        <option value="Jawa Barat">Jawa Barat</option>
+        <option value="Jawa Tengah">Jawa Tengah</option>
+        <option value="DI Yogyakarta">DI Yogyakarta</option>
+        <option value="Jawa Timur">Jawa Timur</option>
+        <option value="Banten">Banten</option>
+        <option value="Bali">Bali</option>
+        <option value="Nusa Tenggara Barat">Nusa Tenggara Barat</option>
+        <option value="Nusa Tenggara Timur">Nusa Tenggara Timur</option>
+        <option value="Kalimantan Barat">Kalimantan Barat</option>
+        <option value="Kalimantan Tengah">Kalimantan Tengah</option>
+        <option value="Kalimantan Selatan">Kalimantan Selatan</option>
+        <option value="Kalimantan Timur">Kalimantan Timur</option>
+        <option value="Kalimantan Utara">Kalimantan Utara</option>
+        <option value="Sulawesi Utara">Sulawesi Utara</option>
+        <option value="Sulawesi Tengah">Sulawesi Tengah</option>
+        <option value="Sulawesi Selatan">Sulawesi Selatan</option>
+        <option value="Sulawesi Tenggara">Sulawesi Tenggara</option>
+        <option value="Gorontalo">Gorontalo</option>
+        <option value="Sulawesi Barat">Sulawesi Barat</option>
+        <option value="Maluku">Maluku</option>
+        <option value="Maluku Utara">Maluku Utara</option>
+        <option value="Papua Barat">Papua Barat</option>
+        <option value="Papua">Papua</option>
+        <option value="Papua Selatan">Papua Selatan</option>
+        <option value="Papua Tengah">Papua Tengah</option>
+        <option value="Papua Pegunungan">Papua Pegunungan</option>
+      </select>
     </div>
     <div class="p-6">
       <div class="h-64 relative w-full"><canvas id="hargaChart"></canvas></div>
@@ -460,12 +502,15 @@ function renderSimilar() {
     </a>`).join('');
 }
 
-async function renderPrediksiChart() {
-  const wilayah = 'Semua Provinsi'; // Mengambil data Rata-rata Nasional dari database
+let prediksiChartInst = null;
+async function renderPrediksiChart(wilayah = 'Semua Provinsi') {
   try {
     const response = await fetch(`predict.php?wilayah=${wilayah}`);
     const data = await response.json();
-    if(data.error) return console.error(data.error);
+    if(data.error) {
+       alert(data.error);
+       return console.error(data.error);
+    }
 
     const labelHistoris = data.historis.map(d => d.tanggal);
     const hargaHistoris = data.historis.map(d => d.harga);
@@ -477,8 +522,9 @@ async function renderPrediksiChart() {
     arrayPrediksi[labelHistoris.length - 1] = hargaHistoris[hargaHistoris.length - 1]; 
     const dataPrediksiFinal = arrayPrediksi.concat(hargaPrediksi);
 
+    if (prediksiChartInst) prediksiChartInst.destroy();
     const ctx = document.getElementById('hargaChart').getContext('2d');
-    new Chart(ctx, {
+    prediksiChartInst = new Chart(ctx, {
       type: 'line',
       data: {
         labels: semuaLabel,
