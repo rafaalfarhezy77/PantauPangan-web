@@ -171,7 +171,7 @@ session_start();
   <div class="anim-1 bg-white border border-cream-dark rounded-2xl overflow-hidden">
     <div class="px-6 py-4 border-b border-cream-dark flex flex-wrap items-center justify-between gap-3">
       <div>
-        <p class="font-bold text-green-deep text-sm">🤖 Prediksi Harga (AI)</p>
+        <p class="font-bold text-green-deep text-sm">Prediksi Harga</p>
         <p class="text-xs text-gray-400 mt-0.5">Prediksi Tren Harga Beras 7 Hari ke Depan (Regresi Linear)</p>
       </div>
       <select id="prediksiRegion" onchange="renderPrediksiChart(this.value)" class="text-xs font-semibold px-3 py-1.5 rounded-lg bg-cream border border-cream-dark text-gray-600 outline-none focus:border-green-pale focus:ring-1 focus:ring-green-pale transition-all cursor-pointer">
@@ -327,10 +327,8 @@ async function fetchDetailKomoditas() {
         C.news = [];
       }
       
-      // Jika yang di-klik adalah beras, panggil BPS untuk update harganya
-      if (C.id === 'beras' || C.id === 'beras-med') {
-         await fetchBerasBPS();
-      }
+      // Ambil riwayat harga historis dari database untuk SEMUA komoditas
+      await fetchHistoryDB();
       
       initPageElements(); // Panggil fungsi untuk me-render UI
     }
@@ -354,21 +352,15 @@ let currentPeriod = '7H';
 let isWatching    = false;
 let realHistory   = null;
 
-async function fetchBerasBPS() {
-  if (commodityId !== 'beras' && commodityId !== 'beras-med') return;
+async function fetchHistoryDB() {
   try {
-    const response = await fetch('coba_api.php');
-    const dataBPS = await response.json();
-    if (dataBPS.status === 'OK') {
-        const content = dataBPS.datacontent;
-        const keyPrefix = commodityId === 'beras' ? '122770125' : '122770131'; 
-        let history = [];
-        for (let m = 1; m <= 12; m++) {
-            const key = keyPrefix + m;
-            if (content[key]) history.push(content[key]);
-        }
+    const response = await fetch(`api_history.php?slug=${commodityId}`);
+    const dataDB = await response.json();
+    if (dataDB.status === 'success') {
+        const history = dataDB.data.map(item => item.harga);
         if (history.length > 0) {
             realHistory = history;
+            // Update harga dan persentase berdasarkan data historis riil terbaru
             const latestPrice = history[history.length - 1];
             C.price = latestPrice;
             if (history.length > 1) {
@@ -379,15 +371,18 @@ async function fetchBerasBPS() {
         }
     }
   } catch (error) {
-    console.error('API Error:', error);
+    console.error('Gagal fetch history DB:', error);
   }
 }
 
 function genData(period) {
   const len = {'7H':7,'1B':30,'3B':13,'1T':12}[period];
   
-  if ((commodityId === 'beras' || commodityId === 'beras-med') && realHistory && realHistory.length > 0) {
+  if (realHistory && realHistory.length > 0) {
+      // Potong data sepanjang len dari array terkanan (terbaru)
       let data = realHistory.slice(-len);
+      // Jika data kurang dari periode yang diminta (misal butuh 30 hari tapi db cuma ada 10 hari)
+      // Duplikasi nilai tertua agar grafik tidak rusak
       while (data.length > 0 && data.length < len) {
           data.unshift(data[0]);
       }
