@@ -155,7 +155,18 @@ session_start();
           <button class="period-btn text-xs font-semibold px-3 py-1.5 rounded-lg bg-cream text-gray-400 border-0 cursor-pointer font-sans hover:bg-green-mist hover:text-green-deep transition-colors" onclick="changePeriod('1T',this)">1T</button>
         </div>
       </div>
-      <div class="p-6"><div class="h-56 relative"><canvas id="detailChart"></canvas></div></div>
+      <div class="p-6">
+        <div class="h-56 relative w-full">
+          <div id="detailChartLoading" class="absolute inset-0 flex flex-col items-center justify-center bg-white z-10 transition-opacity duration-300">
+            <svg class="animate-spin h-8 w-8 mb-2 text-green-mid" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            <span class="text-xs font-semibold text-gray-500">Memuat grafik...</span>
+          </div>
+          <canvas id="detailChart"></canvas>
+        </div>
+      </div>
     </div>
 
     <!-- Info -->
@@ -216,7 +227,16 @@ session_start();
       </select>
     </div>
     <div class="p-6">
-      <div class="h-64 relative w-full"><canvas id="hargaChart"></canvas></div>
+      <div class="h-64 relative w-full">
+        <div id="prediksiChartLoading" class="absolute inset-0 flex flex-col items-center justify-center bg-white z-10 transition-opacity duration-300">
+          <svg class="animate-spin h-8 w-8 mb-2 text-green-mid" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+          </svg>
+          <span class="text-xs font-semibold text-gray-500">Memuat prediksi...</span>
+        </div>
+        <canvas id="hargaChart"></canvas>
+      </div>
     </div>
   </div>
 
@@ -508,8 +528,14 @@ function renderSimilar() {
 let prediksiChartInst = null;
 async function renderPrediksiChart(wilayah = 'Semua Provinsi') {
   try {
+    const loadingEl = document.getElementById('prediksiChartLoading');
+    if (loadingEl) loadingEl.classList.remove('hidden');
+
     const response = await fetch(`predict.php?wilayah=${wilayah}`);
     const data = await response.json();
+    
+    if (loadingEl) loadingEl.classList.add('hidden');
+
     if(data.error) {
        alert(data.error);
        return console.error(data.error);
@@ -583,11 +609,16 @@ async function renderPrediksiChart(wilayah = 'Semua Provinsi') {
       }
     });
   } catch (e) {
+    const loadingEl = document.getElementById('prediksiChartLoading');
+    if (loadingEl) loadingEl.classList.add('hidden');
     console.error("Gagal load data prediksi:", e);
   }
 }
 
 function updateChart() {
+  const loadingEl = document.getElementById('detailChartLoading');
+  if (loadingEl) loadingEl.classList.remove('hidden');
+
   const data   = genData(currentPeriod);
   const labels = chartLabels[currentPeriod];
   if (chartInst) chartInst.destroy();
@@ -617,6 +648,13 @@ function updateChart() {
       }
     }
   });
+
+  const loadingEl = document.getElementById('detailChartLoading');
+  if (loadingEl) {
+    setTimeout(() => {
+      loadingEl.classList.add('hidden');
+    }, 100); // Beri sedikit jeda agar chart selesai render di background
+  }
 }
 
 function changePeriod(p, btn) {
