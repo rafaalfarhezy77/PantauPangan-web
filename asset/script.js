@@ -21,6 +21,17 @@ async function fetchKomoditasDB() {
                   item.kategori.toLowerCase().includes('bumbu') ? 'bumbu' :
                   item.kategori.toLowerCase().includes('protein') ? 'protein' : 'sayur'
       }));
+
+      const searchCommodity = document.getElementById('searchCommodity');
+      if (searchCommodity) {
+         searchCommodity.innerHTML = '<option value="">Pilih komoditas...</option>';
+         commodities.forEach(c => {
+            const opt = document.createElement('option');
+            opt.value = c.name;
+            opt.textContent = c.name;
+            searchCommodity.appendChild(opt);
+         });
+      }
     }
   } catch (error) {
     console.error("Gagal memuat komoditas dari Database:", error);
@@ -319,55 +330,60 @@ function changePeriod(p, btn) {
 }
 
 // ── SEARCH ──
-const regionPriceMultiplier = {
-  'DKI Jakarta': 1.08, 'Jawa Barat': 1.03, 'Jawa Tengah': 0.98,
-  'Jawa Timur': 0.97, 'Bali': 1.05, 'Kalimantan Timur': 1.12,
-  'Papua': 1.25, 'default': 1.0
-};
-
 async function doSearch() {
   const commodity = document.getElementById('searchCommodity').value;
   const province = document.getElementById('searchProvince').value;
 
   if (!commodity) { alert('Pilih komoditas terlebih dahulu.'); return; }
 
-  const mult = regionPriceMultiplier[province] || regionPriceMultiplier['default'];
-  const base = commodities.find(c=>c.name===commodity)?.price || 15000;
-
-  const regions = province ? [province] : ['Jawa Barat','Jawa Tengah','Jawa Timur','DKI Jakarta','Bali','Sumatera Utara'];
-  const results = regions.map(r => {
-    const m = regionPriceMultiplier[r] || 1;
-    const p = Math.round(base * m);
-    const ch = 0.5;
-    return { region: r, price: p, change: ch };
-  });
-
-  // Tampilkan hasil di UI (Kode aslinya tidak berubah)
-  document.getElementById('searchResultLabel').textContent = `Hasil untuk "${commodity}"${province?' di '+province:' (6 Provinsi Representatif)'} — Diperbarui hari ini`;
-  document.getElementById('resultsGrid').innerHTML = results.map(r=>`
-    <div class="result-card">
-      <div class="result-commodity">${r.region}</div>
-      <div class="result-price">${fmt(r.price)}</div>
-      <div class="result-unit">${commodities.find(c=>c.name===commodity)?.unit||'per kg'}</div>
-      <div class="result-change ${r.change>0?'up':r.change<0?'down':'flat'}">
-        ${r.change>0?'▲':r.change<0?'▼':'—'} ${Math.abs(r.change)}%
-      </div>
-    </div>
-  `).join('');
-
-  const sr = document.getElementById('searchResults');
-  sr.classList.add('visible');
-  sr.scrollIntoView({ behavior:'smooth', block:'nearest' });
-
-  // === KODE BARU: Simpan Riwayat ke Database ===
   const komoditasData = commodities.find(c => c.name === commodity);
-  // Cek apakah user sudah login dan komoditas valid
-  if (komoditasData && localStorage.getItem('isLoggedIn') === 'true') {
+  if (!komoditasData) return;
+
+  try {
+    const response = await fetch(`api/api_harga_provinsi.php?slug=${komoditasData.id}`);
+    const result = await response.json();
+
+    if (result.status === 'success') {
+      let filteredData = result.data;
+      if (province) {
+        filteredData = filteredData.filter(r => r.wilayah === province);
+      } else {
+        // Jika tidak pilih provinsi, ambil 6 teratas (sudah diurutkan dari API)
+        filteredData = filteredData.slice(0, 6);
+      }
+
+      if (filteredData.length === 0) {
+        document.getElementById('searchResultLabel').textContent = `Tidak ada data untuk "${commodity}"${province ? ' di '+province : ''}`;
+        document.getElementById('resultsGrid').innerHTML = '';
+      } else {
+        document.getElementById('searchResultLabel').textContent = `Hasil untuk "${commodity}"${province ? ' di '+province : ' (6 Provinsi Teratas)'} — Diperbarui hari ini`;
+        document.getElementById('resultsGrid').innerHTML = filteredData.map(r => `
+          <div class="result-card">
+            <div class="result-commodity">${r.wilayah}</div>
+            <div class="result-price">${fmt(r.harga)}</div>
+            <div class="result-unit">${komoditasData.unit || 'per kg'}</div>
+            <div class="result-change ${r.perubahan > 0 ? 'up' : r.perubahan < 0 ? 'down' : 'flat'}">
+              ${r.perubahan > 0 ? '▲' : r.perubahan < 0 ? '▼' : '—'} ${Math.abs(r.perubahan)}%
+            </div>
+          </div>
+        `).join('');
+      }
+
+      const sr = document.getElementById('searchResults');
+      sr.classList.add('visible');
+      sr.scrollIntoView({ behavior:'smooth', block:'nearest' });
+    }
+  } catch (e) {
+    console.error("Gagal mencari harga:", e);
+  }
+
+  // Simpan Riwayat ke Database
+  if (localStorage.getItem('isLoggedIn') === 'true') {
       try {
           await fetch('api/api_riwayat.php', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
-              credentials: 'include', // Wajib agar cookie session PHP ikut terkirim
+              credentials: 'include', 
               body: JSON.stringify({ slug: komoditasData.id })
           });
       } catch (err) {
@@ -375,10 +391,15 @@ async function doSearch() {
       }
   }
 }
-function quickSearch(commodity) {
-  document.getElementById('searchCommodity').value = commodity;
-  doSearch();
-  document.getElementById('cari').scrollIntoView({ behavior:'smooth' });
+function quickSearch(keyword) {
+  const matched = commodities.find(c => c.name.toLowerCase().includes(keyword.toLowerCase()));
+  if (matched) {
+    document.getElementById('searchCommodity').value = matched.name;
+    doSearch();
+    document.getElementById('cari').scrollIntoView({ behavior:'smooth' });
+  } else {
+    alert("Data komoditas belum tersedia.");
+  }
 }
 
 // ── BERITA ──
