@@ -339,14 +339,6 @@ async function fetchDetailKomoditas() {
   }
 }
 
-const regionList = [
-  {region:'DKI Jakarta',mult:1.08},{region:'Jawa Barat',mult:1.03},
-  {region:'Jawa Tengah',mult:0.99},{region:'DI Yogyakarta',mult:1.01},
-  {region:'Jawa Timur',mult:0.97},{region:'Bali',mult:1.05},
-  {region:'Sumatera Utara',mult:1.04},{region:'Sumatera Selatan',mult:1.02},
-  {region:'Kalimantan Timur',mult:1.12},{region:'Sulawesi Selatan',mult:1.00},
-];
-
 const chartLabels = {
   '7H': ['Sen','Sel','Rab','Kam','Jum','Sab','Min'],
   '1B': Array.from({length:30},(_,i)=>`H-${30-i}`),
@@ -454,27 +446,43 @@ function renderInfo() {
     </div>`).join('');
 }
 
-function renderRegion() {
-  document.getElementById('regionTableBody').innerHTML = regionList.map((r,i)=>{
-    const price = Math.round(C.price*r.mult*(0.97+Math.random()*.06));
-    const chg   = ((Math.random()-.35)*8).toFixed(1);
-    const isHi  = r.mult>=1.08, isLo = r.mult<=0.97;
-    return `
-      <tr class="border-b border-cream-dark last:border-0 hover:bg-cream transition-colors">
-        <td class="px-5 py-3 text-xs text-gray-400">${i+1}</td>
-        <td class="px-4 py-3 text-sm font-semibold text-gray-800">📍 ${r.region}</td>
-        <td class="px-4 py-3 text-sm font-bold text-green-deep">${fmt(price)}</td>
-        <td class="px-4 py-3 text-xs font-semibold ${parseFloat(chg)>=0?'text-green-700':'text-red-600'}">
-          ${parseFloat(chg)>=0?'▲':''} ${chg}%
-        </td>
-        <td class="px-4 py-3">
-          <span class="inline-flex items-center gap-1 text-[0.7rem] font-semibold px-2.5 py-1 rounded-full
-                       ${isHi?'bg-red-50 text-red-600':isLo?'bg-orange-50 text-orange-600':'bg-green-mist text-green-deep'}">
-            ${isHi?'⚠️ Tinggi':isLo?'📉 Murah':'✅ Normal'}
-          </span>
-        </td>
-      </tr>`;
-  }).join('');
+async function renderRegion() {
+  try {
+    const response = await fetch(`api_harga_provinsi.php?slug=${commodityId}`);
+    const result = await response.json();
+    
+    if (result.status === 'success' && result.data.length > 0) {
+      const avgPrice = result.data.reduce((sum, item) => sum + item.harga, 0) / result.data.length;
+      
+      // Ambil 10 provinsi teratas (yang sudah diurutkan berdasarkan harga tertinggi dari database)
+      document.getElementById('regionTableBody').innerHTML = result.data.slice(0, 10).map((r,i)=>{
+        const price = r.harga;
+        const chg   = r.perubahan.toFixed(1);
+        const isHi  = price > avgPrice * 1.05;
+        const isLo  = price < avgPrice * 0.95;
+        
+        return `
+          <tr class="border-b border-cream-dark last:border-0 hover:bg-cream transition-colors">
+            <td class="px-5 py-3 text-xs text-gray-400">${i+1}</td>
+            <td class="px-4 py-3 text-sm font-semibold text-gray-800">📍 ${r.wilayah}</td>
+            <td class="px-4 py-3 text-sm font-bold text-green-deep">${fmt(price)}</td>
+            <td class="px-4 py-3 text-xs font-semibold ${parseFloat(chg)>=0?'text-green-700':'text-red-600'}">
+              ${parseFloat(chg)>=0?'▲':'▼'} ${Math.abs(chg)}%
+            </td>
+            <td class="px-4 py-3">
+              <span class="inline-flex items-center gap-1 text-[0.7rem] font-semibold px-2.5 py-1 rounded-full
+                           ${isHi?'bg-red-50 text-red-600':isLo?'bg-orange-50 text-orange-600':'bg-green-mist text-green-deep'}">
+                ${isHi?'⚠️ Tinggi':isLo?'📉 Murah':'✅ Normal'}
+              </span>
+            </td>
+          </tr>`;
+      }).join('');
+    } else {
+      document.getElementById('regionTableBody').innerHTML = `<tr><td colspan="5" class="px-5 py-6 text-center text-sm text-gray-400">Data provinsi tidak tersedia.</td></tr>`;
+    }
+  } catch (err) {
+    console.error("Gagal load data provinsi", err);
+  }
 }
 
 function renderNews() {
