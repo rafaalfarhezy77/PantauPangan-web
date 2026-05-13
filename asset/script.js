@@ -43,6 +43,7 @@ async function fetchKomoditasDB() {
           opt.textContent = c.icon + ' ' + c.name;
           prediksiKomEl.appendChild(opt);
         });
+        updatePrediksiKabKota(); // Panggil agar init kab/kota
       }
     }
   } catch (error) {
@@ -329,9 +330,51 @@ function changePeriod(p, btn) {
 }
 
 // ── SEARCH ──
+async function updateSearchKabKota() {
+  const provEl = document.getElementById('searchProvince');
+  const kabEl  = document.getElementById('searchKabKota');
+  const fieldEl = document.getElementById('searchKabKotaField');
+  const slugName = document.getElementById('searchCommodity').value;
+  if (!provEl || !kabEl || !fieldEl) return;
+
+  const provinsi = provEl.value;
+  const komoditasData = slugName ? commodities.find(c => c.name === slugName) : null;
+  
+  if (!provinsi || provinsi === '' || provinsi === 'Semua Provinsi' || !komoditasData) {
+    kabEl.disabled = true;
+    kabEl.innerHTML = '<option value="">Pilih Komoditas & Provinsi</option>';
+    return;
+  }
+
+  kabEl.disabled = false;
+  kabEl.innerHTML = '<option value="">Memuat...</option>';
+
+  try {
+    const res = await fetch(`api/kab_kota_by_provinsi.php?provinsi=${encodeURIComponent(provinsi)}&slug=${encodeURIComponent(komoditasData.id)}`);
+    const json = await res.json();
+    if (json.error) throw new Error(json.error);
+
+    kabEl.innerHTML = '<option value="">Semua Kab/Kota</option>';
+    if (json.kab_kota && json.kab_kota.length > 0) {
+      json.kab_kota.forEach(k => {
+        const opt = document.createElement('option');
+        opt.value = k.nama;
+        opt.textContent = k.nama;
+        kabEl.appendChild(opt);
+      });
+    } else {
+      kabEl.innerHTML = '<option value="">Tidak ada data</option>';
+    }
+  } catch (err) {
+    console.error("Gagal load kab/kota search:", err);
+    kabEl.innerHTML = '<option value="">Gagal memuat</option>';
+  }
+}
+
 async function doSearch() {
   const commodity = document.getElementById('searchCommodity').value;
   const province = document.getElementById('searchProvince').value;
+  const kabKota = document.getElementById('searchKabKota')?.value;
 
   if (!commodity) { alert('Pilih komoditas terlebih dahulu.'); return; }
 
@@ -344,18 +387,27 @@ async function doSearch() {
 
     if (result.status === 'success') {
       let filteredData = result.data;
-      if (province) {
-        filteredData = filteredData.filter(r => r.wilayah === province);
+      
+      if (kabKota && kabKota !== '') {
+        // Jika pilih Kab/Kota spesifik
+        filteredData = filteredData.filter(r => r.wilayah === kabKota);
+        document.getElementById('searchResultLabel').textContent = `Hasil untuk "${commodity}" di ${kabKota} — Diperbarui hari ini`;
+      } else if (province && province !== '') {
+        // Jika pilih Provinsi (tapi tidak pilih Kab/Kota)
+        // Tampilkan agregat provinsinya saja
+        filteredData = filteredData.filter(r => r.wilayah === province && r.tipe_wilayah === 'provinsi');
+        document.getElementById('searchResultLabel').textContent = `Hasil untuk "${commodity}" di ${province} — Diperbarui hari ini`;
       } else {
-        // Jika tidak pilih provinsi, ambil 6 teratas (sudah diurutkan dari API)
+        // Jika tidak pilih provinsi, ambil 6 teratas yang bertipe provinsi
+        filteredData = filteredData.filter(r => r.tipe_wilayah === 'provinsi');
         filteredData = filteredData.slice(0, 6);
+        document.getElementById('searchResultLabel').textContent = `Hasil untuk "${commodity}" (6 Provinsi Teratas) — Diperbarui hari ini`;
       }
 
       if (filteredData.length === 0) {
-        document.getElementById('searchResultLabel').textContent = `Tidak ada data untuk "${commodity}"${province ? ' di '+province : ''}`;
+        document.getElementById('searchResultLabel').textContent = `Tidak ada data untuk "${commodity}"`;
         document.getElementById('resultsGrid').innerHTML = '';
       } else {
-        document.getElementById('searchResultLabel').textContent = `Hasil untuk "${commodity}"${province ? ' di '+province : ' (6 Provinsi Teratas)'} — Diperbarui hari ini`;
         document.getElementById('resultsGrid').innerHTML = filteredData.map(r => `
           <div class="result-card">
             <div class="result-commodity">${r.wilayah}</div>
@@ -508,16 +560,62 @@ function onHomePrediksiChange() {
   renderHomePrediksiChart();
 }
 
+async function updatePrediksiKabKota() {
+  const provEl = document.getElementById('prediksiWilayah');
+  const kabEl  = document.getElementById('prediksiKabKota');
+  const slugEl = document.getElementById('prediksiKomoditas');
+  if (!provEl || !kabEl || !slugEl) return;
+
+  const provinsi = provEl.value;
+  const slug = slugEl.value;
+
+  if (!provinsi || provinsi === 'Semua Provinsi' || !slug) {
+    kabEl.disabled = true;
+    kabEl.innerHTML = '<option value="">Pilih Komoditas & Provinsi</option>';
+    return;
+  }
+
+  kabEl.disabled = false;
+  kabEl.innerHTML = '<option value="">Memuat...</option>';
+
+  try {
+    const res = await fetch(`api/kab_kota_by_provinsi.php?provinsi=${encodeURIComponent(provinsi)}&slug=${encodeURIComponent(slug)}`);
+    const json = await res.json();
+    if (json.error) throw new Error(json.error);
+
+    kabEl.innerHTML = '<option value="">Semua Kab/Kota</option>';
+    if (json.kab_kota && json.kab_kota.length > 0) {
+      json.kab_kota.forEach(k => {
+        const opt = document.createElement('option');
+        opt.value = k.nama;
+        opt.textContent = k.nama;
+        kabEl.appendChild(opt);
+      });
+    } else {
+      kabEl.innerHTML = '<option value="">Tidak ada data</option>';
+    }
+  } catch (err) {
+    console.error("Gagal load kab/kota:", err);
+    kabEl.innerHTML = '<option value="">Gagal memuat</option>';
+  }
+}
+
 async function renderHomePrediksiChart() {
   const slugEl    = document.getElementById('prediksiKomoditas');
   const wilayahEl = document.getElementById('prediksiWilayah');
+  const kabEl     = document.getElementById('prediksiKabKota');
   const periodeEl = document.getElementById('prediksiPeriode');
   const btn       = document.getElementById('prediksiCekBtn');
   if (!slugEl || !wilayahEl || !periodeEl) return;
 
   const slug    = slugEl.value;
-  const wilayah = wilayahEl.value;
+  let wilayah   = wilayahEl.value;
   const hari    = parseInt(periodeEl.value);
+  
+  if (kabEl && kabEl.value && !kabEl.disabled) {
+    wilayah = kabEl.value; // Override dengan kab/kota jika dipilih
+  }
+  
   if (!slug) return;
 
   const loadingEl     = document.getElementById('prediksiLoadingHome');

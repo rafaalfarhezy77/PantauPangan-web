@@ -306,13 +306,13 @@ const GEOJSON_URLS = [
 const map = L.map('map', {
   center: [-2.5, 118],
   zoom: 5,
-  minZoom: 4,
-  maxZoom: 10,
   zoomControl: false,
+  scrollWheelZoom: false,
+  doubleClickZoom: false,
+  touchZoom: false,
+  boxZoom: false,
+  keyboard: false,
 });
-
-// Zoom control kanan atas
-L.control.zoom({ position: 'topright' }).addTo(map);
 
 // Tile layer — CartoDB Positron (clean & light)
 L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
@@ -321,9 +321,22 @@ L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
   maxZoom: 19,
 }).addTo(map);
 
+// ── Kunci Geser Vertikal (Hanya Horizontal) ──
+let dragLat;
+map.on('dragstart', function() {
+  dragLat = map.getCenter().lat;
+});
+map.on('drag', function() {
+  const center = map.getCenter();
+  if (center.lat !== dragLat) {
+    map.setView([dragLat, center.lng], map.getZoom(), {animate: false});
+  }
+});
+
 // ── State ──
 let geojsonLayer = null;
 let selectedLayer = null;
+let currentSlug = 'beras'; // Default komoditas untuk panel peta
 
 // ══════════════════════════════
 // HELPERS
@@ -375,32 +388,81 @@ function buildLegend() {
 // ══════════════════════════════
 // SIDE PANEL
 // ══════════════════════════════
-function openPanel(name, data) {
+async function openPanel(provinceName, staticData) {
   const panel = document.getElementById('sidePanel');
-  const cat = CATEGORIES[data.kategori] || { color: '#6b7280', icon: '📦' };
+  const cat = staticData ? (CATEGORIES[staticData.kategori] || { color: '#6b7280', icon: '📦' }) : { color: '#2d6a4f', icon: '🗺️' };
 
-  document.getElementById('panelTitle').textContent = titleCase(name);
-  document.getElementById('panelSubtitle').textContent = `${data.kabupaten.length} kabupaten/kota terpantau`;
-  
+  // Tampilkan panel dengan loading state dulu
+  document.getElementById('panelTitle').textContent = titleCase(provinceName);
+  document.getElementById('panelSubtitle').textContent = 'Memuat data...';
+
   const badge = document.getElementById('panelBadge');
-  badge.textContent = `${cat.icon} ${data.kategori}`;
+  badge.textContent = staticData ? `${cat.icon} ${staticData.kategori}` : '🗺️ Provinsi';
   badge.style.background = cat.color + '18';
   badge.style.color = cat.color;
 
   const list = document.getElementById('panelList');
-  list.innerHTML = data.kabupaten.map((k, i) =>
-    `<div class="flex items-start gap-3 bg-gray-50 rounded-xl p-3 hover:bg-green-mist/40 transition-colors">
-       <div class="w-7 h-7 rounded-lg bg-white shadow-sm flex items-center justify-center text-xs font-bold text-gray-400 shrink-0">${i + 1}</div>
-       <div>
-         <div class="text-sm font-semibold text-green-deep">${k.nama}</div>
-         <div class="text-xs text-gray-400 mt-0.5">${cat.icon} ${k.komoditas}</div>
-       </div>
-     </div>`
-  ).join('');
+  list.innerHTML = `<div class="flex items-center justify-center py-8 text-gray-400 text-sm">⏳ Memuat kab/kota...</div>`;
 
   panel.classList.remove('hidden');
   panel.firstElementChild.className = panel.firstElementChild.className.replace('panel-exit', '');
   panel.firstElementChild.classList.add('panel-enter');
+
+  // Fetch data real dari API
+  try {
+    const url = `api/kab_kota_by_provinsi.php?provinsi=${encodeURIComponent(provinceName)}&slug=${encodeURIComponent(currentSlug)}`;
+    const res  = await fetch(url);
+    const json = await res.json();
+
+    if (json.error) throw new Error(json.error);
+
+    // Update subtitle dengan info harga provinsi
+    let subtitleText = `${json.total} kab/kota terpantau`;
+    if (json.harga_provinsi) {
+      const hargaFmt = 'Rp ' + json.harga_provinsi.toLocaleString('id-ID');
+      subtitleText += ` · Rata-rata provinsi: ${hargaFmt}`;
+    }
+    document.getElementById('panelSubtitle').textContent = subtitleText;
+
+    if (json.kab_kota.length === 0) {
+      list.innerHTML = `<div class="text-center py-8 text-gray-400 text-sm">📭 Belum ada data kab/kota untuk komoditas ini.</div>`;
+    } else {
+      list.innerHTML = json.kab_kota.map((k, i) => {
+        const hargaFmt = k.harga ? 'Rp ' + k.harga.toLocaleString('id-ID') : '—';
+        const tglFmt   = k.tanggal ? new Date(k.tanggal).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }) : '';
+        return `<div class="flex items-center justify-between gap-3 bg-gray-50 rounded-xl p-3 hover:bg-green-mist/40 transition-colors">
+          <div class="flex items-center gap-2.5 min-w-0">
+            <div class="w-7 h-7 rounded-lg bg-white shadow-sm flex items-center justify-center text-xs font-bold text-gray-400 shrink-0">${i + 1}</div>
+            <div class="min-w-0">
+              <div class="text-sm font-semibold text-green-deep truncate">${k.nama}</div>
+              <div class="text-[10px] text-gray-400 mt-0.5">${tglFmt}</div>
+            </div>
+          </div>
+          <div class="text-right shrink-0">
+            <div class="text-sm font-bold text-green-mid">${hargaFmt}</div>
+            <div class="text-[10px] text-gray-400">/kg</div>
+          </div>
+        </div>`;
+      }).join('');
+    }
+  } catch (err) {
+    // Fallback ke data statis jika API gagal / belum ada data
+    if (staticData && staticData.kabupaten) {
+      list.innerHTML = staticData.kabupaten.map((k, i) =>
+        `<div class="flex items-start gap-3 bg-gray-50 rounded-xl p-3">
+           <div class="w-7 h-7 rounded-lg bg-white shadow-sm flex items-center justify-center text-xs font-bold text-gray-400 shrink-0">${i + 1}</div>
+           <div>
+             <div class="text-sm font-semibold text-green-deep">${k.nama}</div>
+             <div class="text-xs text-gray-400 mt-0.5">${cat.icon} ${k.komoditas}</div>
+           </div>
+         </div>`
+      ).join('');
+      document.getElementById('panelSubtitle').textContent = `${staticData.kabupaten.length} kab/kota (data statis)`;
+    } else {
+      list.innerHTML = `<div class="text-center py-8 text-gray-400 text-sm">⚠️ Gagal memuat data.</div>`;
+      document.getElementById('panelSubtitle').textContent = 'Gagal memuat data dari database';
+    }
+  }
 }
 
 function closePanel() {
@@ -414,6 +476,9 @@ function closePanel() {
     geojsonLayer.resetStyle(selectedLayer);
     selectedLayer = null;
   }
+
+  // Kembalikan map ke posisi statis awal
+  map.setView([-2.5, 118], 5);
 }
 
 function titleCase(str) {
@@ -458,19 +523,14 @@ function onEachFeature(feature, layer) {
       if (selectedLayer !== e.target) geojsonLayer.resetStyle(e.target);
       document.getElementById('hoverBar').classList.add('hidden');
     },
-    click: (e) => {
+    click: async (e) => {
       // Reset previous selection
       if (selectedLayer) geojsonLayer.resetStyle(selectedLayer);
 
-      if (data) {
-        selectedLayer = e.target;
-        e.target.setStyle({ weight: 3, color: '#1a3a2a', fillOpacity: 0.85 });
-        openPanel(normalizeName(rawName), data);
-      } else {
-        selectedLayer = null;
-        closePanel();
-      }
-
+      selectedLayer = e.target;
+      e.target.setStyle({ weight: 3, color: '#1a3a2a', fillOpacity: 0.85 });
+      // Selalu buka panel; API akan handle jika tidak ada data
+      await openPanel(titleCase(normalizeName(rawName)), data);
       map.fitBounds(e.target.getBounds(), { padding: [50, 50], maxZoom: 7 });
     },
   });
@@ -507,13 +567,20 @@ async function loadGeoJSON() {
     onEachFeature: onEachFeature,
   }).addTo(map);
 
-  // Update stats
-  const matched = geojsonData.features.filter(f => findProvinceData(getProvinceName(f.properties))).length;
-  document.getElementById('statProvinsi').textContent = matched;
+  // Update stats dari GeoJSON
+  document.getElementById('statProvinsi').textContent = geojsonData.features.length;
 
-  const allKomoditas = new Set();
-  Object.values(PROVINCE_DATA).forEach(p => p.kabupaten.forEach(k => allKomoditas.add(k.komoditas)));
-  document.getElementById('statKomoditas').textContent = allKomoditas.size;
+  // Update jumlah komoditas dari API
+  fetch('api/api_komoditas.php')
+    .then(r => r.json())
+    .then(d => {
+      if (Array.isArray(d)) document.getElementById('statKomoditas').textContent = d.length;
+    })
+    .catch(() => {
+      const allKomoditas = new Set();
+      Object.values(PROVINCE_DATA).forEach(p => p.kabupaten.forEach(k => allKomoditas.add(k.komoditas)));
+      document.getElementById('statKomoditas').textContent = allKomoditas.size;
+    });
 
   // Fit bounds
   map.fitBounds(geojsonLayer.getBounds(), { padding: [30, 30] });

@@ -10,6 +10,8 @@ try {
     $query = "
         SELECT 
             h1.wilayah, 
+            h1.tipe_wilayah,
+            h1.provinsi_induk,
             h1.harga AS harga_sekarang,
             (SELECT harga FROM harga_harian h3 
              WHERE h3.slug_komoditas = h1.slug_komoditas 
@@ -49,6 +51,8 @@ try {
 
         $data[] = [
             'wilayah' => $row['wilayah'],
+            'tipe_wilayah' => $row['tipe_wilayah'],
+            'provinsi_induk' => $row['provinsi_induk'],
             'harga' => $harga_sekarang,
             'perubahan' => round($perubahan, 1)
         ];

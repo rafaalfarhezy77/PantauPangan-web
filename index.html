@@ -176,14 +176,20 @@
     <div class="search-row">
       <div class="search-field">
         <label>Komoditas</label>
-        <select class="search-input" id="searchCommodity">
+        <select class="search-input" id="searchCommodity" onchange="updateSearchKabKota()">
           <option value="">Memuat komoditas...</option>
         </select>
       </div>
       <div class="search-field">
         <label>Provinsi</label>
-        <select class="search-input" id="searchProvince">
+        <select class="search-input" id="searchProvince" onchange="updateSearchKabKota()">
           <option value="">Memuat data...</option>
+        </select>
+      </div>
+      <div class="search-field" id="searchKabKotaField">
+        <label>Kab/Kota</label>
+        <select class="search-input" id="searchKabKota" disabled>
+          <option value="">Pilih Komoditas & Provinsi</option>
         </select>
       </div>
       <div class="search-field" style="max-width:160px">
@@ -287,11 +293,11 @@
       </div>
       <div class="prediksi-controls">
         <!-- Dropdown Komoditas -->
-        <select id="prediksiKomoditas" class="prediksi-select">
+        <select id="prediksiKomoditas" class="prediksi-select" onchange="updatePrediksiKabKota()">
           <option value="">Memuat...</option>
         </select>
-        <!-- Dropdown Wilayah -->
-        <select id="prediksiWilayah" class="prediksi-select">
+        <!-- Dropdown Wilayah (Provinsi) -->
+        <select id="prediksiWilayah" class="prediksi-select" onchange="updatePrediksiKabKota()">
           <option value="Semua Provinsi">Semua Provinsi</option>
           <option value="Aceh">Aceh</option>
           <option value="Sumatera Utara">Sumatera Utara</option>
@@ -330,6 +336,10 @@
           <option value="Papua Selatan">Papua Selatan</option>
           <option value="Papua Tengah">Papua Tengah</option>
           <option value="Papua Pegunungan">Papua Pegunungan</option>
+        </select>
+        <!-- Dropdown Kab/Kota -->
+        <select id="prediksiKabKota" class="prediksi-select" disabled>
+          <option value="">Pilih Komoditas & Provinsi</option>
         </select>
         <!-- Dropdown Periode -->
         <select id="prediksiPeriode" class="prediksi-select">
