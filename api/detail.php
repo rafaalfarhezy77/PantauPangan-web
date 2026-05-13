@@ -183,9 +183,18 @@ session_start();
     <div class="px-6 py-4 border-b border-cream-dark flex flex-wrap items-center justify-between gap-3">
       <div>
         <p class="font-bold text-green-deep text-sm">Prediksi Harga</p>
-        <p class="text-xs text-gray-400 mt-0.5">Prediksi Tren Harga Beras 7 Hari ke Depan (Regresi Linear)</p>
+        <p id="prediksiSubtitle" class="text-xs text-gray-400 mt-0.5">Prediksi Tren Harga 7 Hari ke Depan (Regresi Linear)</p>
       </div>
-      <select id="prediksiRegion" onchange="renderPrediksiChart(this.value)" class="text-xs font-semibold px-3 py-1.5 rounded-lg bg-cream border border-cream-dark text-gray-600 outline-none focus:border-green-pale focus:ring-1 focus:ring-green-pale transition-all cursor-pointer">
+      <div class="flex flex-wrap gap-2 items-center">
+        <!-- Dropdown Periode Prediksi -->
+        <select id="prediksiHari" onchange="onPrediksiChange()" class="text-xs font-semibold px-3 py-1.5 rounded-lg bg-cream border border-cream-dark text-gray-600 outline-none focus:border-green-pale focus:ring-1 focus:ring-green-pale transition-all cursor-pointer">
+          <option value="7">7 Hari</option>
+          <option value="30">1 Bulan</option>
+          <option value="90">3 Bulan</option>
+          <option value="120">4 Bulan</option>
+        </select>
+        <!-- Dropdown Wilayah -->
+        <select id="prediksiRegion" onchange="onPrediksiChange()" class="text-xs font-semibold px-3 py-1.5 rounded-lg bg-cream border border-cream-dark text-gray-600 outline-none focus:border-green-pale focus:ring-1 focus:ring-green-pale transition-all cursor-pointer">
         <option value="Semua Provinsi">Semua Provinsi</option>
         <option value="Aceh">Aceh</option>
         <option value="Sumatera Utara">Sumatera Utara</option>
@@ -225,6 +234,7 @@ session_start();
         <option value="Papua Tengah">Papua Tengah</option>
         <option value="Papua Pegunungan">Papua Pegunungan</option>
       </select>
+      </div>
     </div>
     <div class="p-6">
       <div class="h-64 relative w-full">
@@ -407,7 +417,10 @@ function genData(period) {
 }
 
 function initPageElements() {
-  renderPrediksiChart(); // Panggil render grafik prediksi
+  renderPrediksiChart(
+    document.getElementById('prediksiRegion').value,
+    parseInt(document.getElementById('prediksiHari').value)
+  );
   document.title = C.name + ' — PantauPangan';
   document.getElementById('breadcrumb').textContent = C.name;
   document.getElementById('heroEmoji').textContent  = C.icon;
@@ -517,20 +530,34 @@ function renderSimilar() {
     </a>`).join('');
 }
 
+// Peta label periode prediksi
+const periodeLabel = { '7':'7 Hari', '30':'1 Bulan', '90':'3 Bulan', '120':'4 Bulan' };
+
+function onPrediksiChange() {
+  const wilayah = document.getElementById('prediksiRegion').value;
+  const hari    = document.getElementById('prediksiHari').value;
+  renderPrediksiChart(wilayah, parseInt(hari));
+}
+
 let prediksiChartInst = null;
-async function renderPrediksiChart(wilayah = 'Semua Provinsi') {
+async function renderPrediksiChart(wilayah = 'Semua Provinsi', hari = 7) {
   try {
     const loadingEl = document.getElementById('prediksiChartLoading');
     if (loadingEl) loadingEl.classList.remove('hidden');
 
-    const response = await fetch(`predict.php?wilayah=${wilayah}`);
+    // Update subtitle secara dinamis
+    const labelPeriode = periodeLabel[String(hari)] || (hari + ' Hari');
+    const subtitleEl = document.getElementById('prediksiSubtitle');
+    if (subtitleEl) subtitleEl.textContent = `Prediksi Tren Harga ${labelPeriode} ke Depan (Regresi Linear)`;
+
+    const response = await fetch(`predict.php?wilayah=${encodeURIComponent(wilayah)}&slug=${encodeURIComponent(commodityId)}&hari=${hari}`);
     const data = await response.json();
-    
+
     if (loadingEl) loadingEl.classList.add('hidden');
 
-    if(data.error) {
-       alert(data.error);
-       return console.error(data.error);
+    if (data.error) {
+      alert(data.error);
+      return console.error(data.error);
     }
 
     const labelHistoris = data.historis.map(d => d.tanggal);
@@ -540,7 +567,7 @@ async function renderPrediksiChart(wilayah = 'Semua Provinsi') {
 
     const semuaLabel = labelHistoris.concat(labelPrediksi);
     const arrayPrediksi = Array(labelHistoris.length).fill(null);
-    arrayPrediksi[labelHistoris.length - 1] = hargaHistoris[hargaHistoris.length - 1]; 
+    arrayPrediksi[labelHistoris.length - 1] = hargaHistoris[hargaHistoris.length - 1];
     const dataPrediksiFinal = arrayPrediksi.concat(hargaPrediksi);
 
     if (prediksiChartInst) prediksiChartInst.destroy();
@@ -558,10 +585,10 @@ async function renderPrediksiChart(wilayah = 'Semua Provinsi') {
             borderWidth: 2,
             pointRadius: 1,
             fill: true,
-            tension: 0.1 
+            tension: 0.1
           },
           {
-            label: 'Prediksi 7 Hari Kedepan',
+            label: `Prediksi ${labelPeriode} ke Depan`,
             data: dataPrediksiFinal,
             borderColor: '#e53935',
             borderWidth: 2,
@@ -585,13 +612,13 @@ async function renderPrediksiChart(wilayah = 'Semua Provinsi') {
           tooltip: {
             backgroundColor: '#1a3a2a', titleColor: 'rgba(255,255,255,.6)', bodyColor: 'white',
             bodyFont: { weight: 'bold', size: 13 }, padding: 12, cornerRadius: 8,
-            callbacks: { label: c => ' Rp ' + c.parsed.y.toLocaleString('id-ID') }
+            callbacks: { label: c => c.parsed.y !== null ? ' Rp ' + c.parsed.y.toLocaleString('id-ID') : '' }
           }
         },
         scales: {
           x: {
             grid: { display: false }, border: { display: false },
-            ticks: { font: { size: 11, family: 'Plus Jakarta Sans' }, color: '#9ca3af', maxTicksLimit: 10 }
+            ticks: { font: { size: 11, family: 'Plus Jakarta Sans' }, color: '#9ca3af', maxTicksLimit: 12 }
           },
           y: {
             grid: { color: 'rgba(0,0,0,.04)' }, border: { display: false },

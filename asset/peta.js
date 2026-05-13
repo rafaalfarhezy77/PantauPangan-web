@@ -37,7 +37,7 @@ const PROVINCE_DATA = {
       { nama: "Kab. Agam", komoditas: "Beras" },
       { nama: "Kab. Tanah Datar", komoditas: "Beras" },
       { nama: "Kab. Solok", komoditas: "Beras" },
-      { nama: "Kab. Pesisir Selatan", komoditas: "Jagung" },
+        { nama: "Kab. Pesisir Selatan", komoditas: "Gula Pasir" },
     ]
   },
   "RIAU": {
@@ -75,7 +75,7 @@ const PROVINCE_DATA = {
   "LAMPUNG": {
     kategori: "Pangan Pokok",
     kabupaten: [
-      { nama: "Kab. Lampung Tengah", komoditas: "Jagung" },
+        { nama: "Kab. Lampung Tengah", komoditas: "Gula Pasir" },
       { nama: "Kab. Lampung Timur", komoditas: "Beras" },
       { nama: "Kab. Tanggamus", komoditas: "Kopi Robusta" },
     ]
@@ -146,7 +146,7 @@ const PROVINCE_DATA = {
     kabupaten: [
       { nama: "Kab. Serang", komoditas: "Beras" },
       { nama: "Kab. Pandeglang", komoditas: "Beras" },
-      { nama: "Kab. Lebak", komoditas: "Jagung" },
+        { nama: "Kab. Lebak", komoditas: "Gula Pasir" },
     ]
   },
   "BALI": {
@@ -160,16 +160,16 @@ const PROVINCE_DATA = {
   "NUSA TENGGARA BARAT": {
     kategori: "Pangan Pokok",
     kabupaten: [
-      { nama: "Kab. Lombok Timur", komoditas: "Jagung" },
-      { nama: "Kab. Sumbawa", komoditas: "Jagung" },
+        { nama: "Kab. Lombok Timur", komoditas: "Gula Pasir" },
+        { nama: "Kab. Sumbawa", komoditas: "Gula Pasir" },
       { nama: "Kab. Bima", komoditas: "Bawang Merah" },
     ]
   },
   "NUSA TENGGARA TIMUR": {
     kategori: "Pangan Pokok",
     kabupaten: [
-      { nama: "Kab. Kupang", komoditas: "Jagung" },
-      { nama: "Kab. Timor Tengah Selatan", komoditas: "Jagung" },
+        { nama: "Kab. Kupang", komoditas: "Gula Pasir" },
+        { nama: "Kab. Timor Tengah Selatan", komoditas: "Gula Pasir" },
       { nama: "Kab. Manggarai", komoditas: "Kopi" },
     ]
   },
@@ -214,7 +214,7 @@ const PROVINCE_DATA = {
     kategori: "Perkebunan",
     kabupaten: [
       { nama: "Kab. Minahasa", komoditas: "Cengkeh" },
-      { nama: "Kab. Bolaang Mongondow", komoditas: "Jagung" },
+        { nama: "Kab. Bolaang Mongondow", komoditas: "Gula Pasir" },
     ]
   },
   "SULAWESI TENGAH": {
@@ -244,8 +244,8 @@ const PROVINCE_DATA = {
   "GORONTALO": {
     kategori: "Pangan Pokok",
     kabupaten: [
-      { nama: "Kab. Gorontalo", komoditas: "Jagung" },
-      { nama: "Kab. Boalemo", komoditas: "Jagung" },
+        { nama: "Kab. Gorontalo", komoditas: "Gula Pasir" },
+        { nama: "Kab. Boalemo", komoditas: "Gula Pasir" },
     ]
   },
   "SULAWESI BARAT": {

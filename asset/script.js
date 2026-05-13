@@ -32,6 +32,18 @@ async function fetchKomoditasDB() {
             searchCommodity.appendChild(opt);
          });
       }
+
+      // Populate dropdown prediksi komoditas di halaman utama
+      const prediksiKomEl = document.getElementById('prediksiKomoditas');
+      if (prediksiKomEl) {
+        prediksiKomEl.innerHTML = '';
+        commodities.forEach(c => {
+          const opt = document.createElement('option');
+          opt.value = c.id;
+          opt.textContent = c.icon + ' ' + c.name;
+          prediksiKomEl.appendChild(opt);
+        });
+      }
     }
   } catch (error) {
     console.error("Gagal memuat komoditas dari Database:", error);
@@ -124,13 +136,12 @@ const newsData = [
 
 const tickerData = [
   { name:'Beras Premium', price:'Rp 14.500', change:'+1.2%', up:true },
-  { name:'Jagung', price:'Rp 5.200', change:'-0.8%', up:false },
+  { name:'Gula Pasir', price:'Rp 17.500', change:'+0.5%', up:true },
   { name:'Cabai Merah', price:'Rp 32.000', change:'+8.4%', up:true },
   { name:'Bawang Merah', price:'Rp 28.500', change:'-3.1%', up:false },
   { name:'Telur Ayam', price:'Rp 27.000', change:'+2.1%', up:true },
   { name:'Daging Sapi', price:'Rp 135.000', change:'+0.5%', up:true },
   { name:'Minyak Goreng', price:'Rp 17.500', change:'0.0%', up:null },
-  { name:'Kedelai', price:'Rp 9.800', change:'+0.5%', up:true },
   { name:'Kentang', price:'Rp 12.000', change:'+0.3%', up:true },
   { name:'Tomat', price:'Rp 8.500', change:'-5.2%', up:false },
   { name:'Bawang Putih', price:'Rp 38.000', change:'+1.0%', up:true },
@@ -474,6 +485,8 @@ async function initApp() {
   // 4. Render semua elemen dengan data yang sudah lengkap
   initTicker();
   await selectCommodity('beras'); // Render grafik beras menggunakan DB history
+
+  // 5. Prediksi tidak dimuat otomatis — user menekan tombol Cek Prediksi
 }
 
 // Eksekusi fungsi inisialisasi saat script dimuat
@@ -486,6 +499,151 @@ setTimeout(()=>{
       el.classList.add('visible');
   });
 }, 100);
+
+// ── PREDIKSI HARGA (HALAMAN UTAMA) ──
+const periodeLabelHome = { '7':'7 Hari', '30':'1 Bulan', '90':'3 Bulan', '120':'4 Bulan' };
+let homePrediksiChartInst = null;
+
+function onHomePrediksiChange() {
+  renderHomePrediksiChart();
+}
+
+async function renderHomePrediksiChart() {
+  const slugEl    = document.getElementById('prediksiKomoditas');
+  const wilayahEl = document.getElementById('prediksiWilayah');
+  const periodeEl = document.getElementById('prediksiPeriode');
+  const btn       = document.getElementById('prediksiCekBtn');
+  if (!slugEl || !wilayahEl || !periodeEl) return;
+
+  const slug    = slugEl.value;
+  const wilayah = wilayahEl.value;
+  const hari    = parseInt(periodeEl.value);
+  if (!slug) return;
+
+  const loadingEl     = document.getElementById('prediksiLoadingHome');
+  const placeholderEl = document.getElementById('prediksiPlaceholderHome');
+  const canvasEl      = document.getElementById('homePrediksiChart');
+  const subtitleEl    = document.getElementById('prediksiSubtitleHome');
+  const labelPeriode  = periodeLabelHome[String(hari)] || (hari + ' Hari');
+  const komoditasNama = slugEl.options[slugEl.selectedIndex]?.textContent || slug;
+
+  // Tampilkan loading, sembunyikan placeholder dan chart
+  if (placeholderEl) placeholderEl.style.display = 'none';
+  if (canvasEl)      canvasEl.style.display      = 'none';
+  if (loadingEl)     loadingEl.style.display      = 'flex';
+
+  // Nonaktifkan tombol sementara
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ Memproses...'; }
+
+  if (subtitleEl) subtitleEl.textContent = `Prediksi Tren Harga ${komoditasNama} ${labelPeriode} ke Depan (Regresi Linear)`;
+
+  try {
+    const res  = await fetch(`api/predict.php?slug=${encodeURIComponent(slug)}&wilayah=${encodeURIComponent(wilayah)}&hari=${hari}`);
+    const data = await res.json();
+
+    if (loadingEl) loadingEl.style.display = 'none';
+
+    if (data.error) {
+      // Tampilkan placeholder kembali jika error
+      if (placeholderEl) {
+        placeholderEl.innerHTML = `<span class="prediksi-placeholder-icon">⚠️</span><p>${data.error}</p>`;
+        placeholderEl.style.display = 'flex';
+      }
+      if (btn) { btn.disabled = false; btn.textContent = '🔍 Cek Prediksi'; }
+      return;
+    }
+
+    // Tampilkan canvas
+    if (canvasEl) canvasEl.style.display = 'block';
+
+    const labelHistoris  = data.historis.map(d => d.tanggal);
+    const hargaHistoris  = data.historis.map(d => d.harga);
+    const labelPrediksi  = data.prediksi.map(d => d.tanggal);
+    const hargaPrediksi  = data.prediksi.map(d => d.harga);
+    const semuaLabel     = labelHistoris.concat(labelPrediksi);
+    const arrPrediksi    = Array(labelHistoris.length).fill(null);
+    arrPrediksi[labelHistoris.length - 1] = hargaHistoris[hargaHistoris.length - 1];
+    const dataPrediksiFinal = arrPrediksi.concat(hargaPrediksi);
+
+    if (homePrediksiChartInst) homePrediksiChartInst.destroy();
+    const ctx = canvasEl.getContext('2d');
+    const grad = ctx.createLinearGradient(0, 0, 0, 280);
+    grad.addColorStop(0, 'rgba(45,106,79,.18)');
+    grad.addColorStop(1, 'rgba(45,106,79,0)');
+
+    homePrediksiChartInst = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: semuaLabel,
+        datasets: [
+          {
+            label: 'Harga Historis',
+            data: hargaHistoris,
+            borderColor: '#2d6a4f',
+            backgroundColor: grad,
+            borderWidth: 2.5,
+            pointRadius: 1,
+            fill: true,
+            tension: 0.3
+          },
+          {
+            label: `Prediksi ${labelPeriode}`,
+            data: dataPrediksiFinal,
+            borderColor: '#e53935',
+            borderWidth: 2,
+            borderDash: [5, 5],
+            pointRadius: 2,
+            pointBackgroundColor: '#e53935',
+            fill: false,
+            tension: 0
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        interaction: { intersect: false, mode: 'index' },
+        plugins: {
+          legend: {
+            display: true,
+            position: 'top',
+            labels: { boxWidth: 12, usePointStyle: true, font: { family: 'Plus Jakarta Sans', size: 11 } }
+          },
+          tooltip: {
+            backgroundColor: '#1a3a2a',
+            titleColor: 'rgba(255,255,255,.6)',
+            bodyColor: 'white',
+            bodyFont: { weight: 'bold', size: 13 },
+            padding: 12,
+            cornerRadius: 8,
+            callbacks: { label: c => c.parsed.y !== null ? ' Rp ' + c.parsed.y.toLocaleString('id-ID') : '' }
+          }
+        },
+        scales: {
+          x: {
+            grid: { display: false },
+            border: { display: false },
+            ticks: { font: { size: 11, family: 'Plus Jakarta Sans' }, color: '#8a8a8a', maxTicksLimit: 12 }
+          },
+          y: {
+            grid: { color: 'rgba(0,0,0,.05)' },
+            border: { display: false },
+            ticks: { font: { size: 11, family: 'Plus Jakarta Sans' }, color: '#8a8a8a', callback: v => 'Rp ' + new Intl.NumberFormat('id-ID').format(v / 1000) + 'rb' }
+          }
+        }
+      }
+    });
+  } catch (e) {
+    if (loadingEl) loadingEl.style.display = 'none';
+    if (placeholderEl) {
+      placeholderEl.innerHTML = `<span class="prediksi-placeholder-icon">⚠️</span><p>Gagal memuat data prediksi.</p>`;
+      placeholderEl.style.display = 'flex';
+    }
+    console.error('Gagal render prediksi home:', e);
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = '🔍 Cek Prediksi'; }
+  }
+}
 
 // ── SCROLL EFFECTS ──
 

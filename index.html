@@ -7,7 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&family=Lora:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
-<link rel="stylesheet" href="asset/style.css">
+<link rel="stylesheet" href="asset/style.css?v=2">
 
 </head>
 <body>
@@ -21,7 +21,7 @@
   <ul class="nav-links">
     <li><a href="#beranda" class="active">Beranda</a></li>
     <li><a href="#cari">Cari Harga</a></li>
-    <li><a href="#harga">Grafik Harga</a></li>
+    <li><a href="#harga">Grafik &amp; Prediksi</a></li>
     <li><a href="#berita">Berita <span class="nav-badge">5</span></a></li>
     <li><a href="#peta">Peta</a></li>
   </ul>
@@ -49,7 +49,7 @@
   <ul>
     <li><a href="#beranda" class="active" onclick="closeMobileNav()"><span class="mobile-nav-icon">🏠</span> Beranda</a></li>
     <li><a href="#cari" onclick="closeMobileNav()"><span class="mobile-nav-icon">🔍</span> Cari Harga</a></li>
-    <li><a href="#harga" onclick="closeMobileNav()"><span class="mobile-nav-icon">📊</span> Grafik Harga</a></li>
+    <li><a href="#harga" onclick="closeMobileNav()"><span class="mobile-nav-icon">📊</span> Grafik &amp; Prediksi</a></li>
     <li><a href="#berita" onclick="closeMobileNav()"><span class="mobile-nav-icon">📰</span> Berita <span class="nav-badge">5</span></a></li>
     <li><a href="#peta" onclick="closeMobileNav()"><span class="mobile-nav-icon">🗺️</span> Peta</a></li>
   </ul>
@@ -230,15 +230,16 @@
 <section id="harga">
   <div class="harga-header">
     <div>
-      <div class="section-label">Grafik & Data</div>
-      <h2 class="section-title">Pantau Pergerakan Harga</h2>
-      <p class="section-subtitle" style="margin-bottom:0">Klik komoditas untuk melihat tren harga.</p>
+      <div class="section-label">Grafik &amp; Prediksi Harga</div>
+      <h2 class="section-title">Pantau &amp; Prediksi Pergerakan Harga</h2>
+      <p class="section-subtitle" style="margin-bottom:0">Klik komoditas untuk melihat tren harga dan prediksinya.</p>
     </div>
     <div class="komoditas-tabs" id="kategoriTabs">
       <button class="tab-btn active" onclick="filterKategori('semua',this)">Semua</button>
       <button class="tab-btn" onclick="filterKategori('pokok',this)">Pangan Pokok</button>
       <button class="tab-btn" onclick="filterKategori('protein',this)">Protein</button>
       <button class="tab-btn" onclick="filterKategori('bumbu',this)">Bumbu</button>
+      <button class="tab-btn" onclick="filterKategori('sayur',this)">Sayuran</button>
     </div>
   </div>
 
@@ -276,6 +277,89 @@
       </div>
     </div>
   </div>
+
+  <!-- PREDIKSI HARGA -->
+  <div class="prediksi-panel" id="prediksiPanel">
+    <div class="prediksi-header">
+      <div>
+        <div class="prediksi-title">📈 Prediksi Harga</div>
+        <div class="prediksi-subtitle" id="prediksiSubtitleHome">Prediksi Tren Harga 7 Hari ke Depan (Regresi Linear)</div>
+      </div>
+      <div class="prediksi-controls">
+        <!-- Dropdown Komoditas -->
+        <select id="prediksiKomoditas" class="prediksi-select">
+          <option value="">Memuat...</option>
+        </select>
+        <!-- Dropdown Wilayah -->
+        <select id="prediksiWilayah" class="prediksi-select">
+          <option value="Semua Provinsi">Semua Provinsi</option>
+          <option value="Aceh">Aceh</option>
+          <option value="Sumatera Utara">Sumatera Utara</option>
+          <option value="Sumatera Barat">Sumatera Barat</option>
+          <option value="Riau">Riau</option>
+          <option value="Jambi">Jambi</option>
+          <option value="Sumatera Selatan">Sumatera Selatan</option>
+          <option value="Bengkulu">Bengkulu</option>
+          <option value="Lampung">Lampung</option>
+          <option value="Kepulauan Bangka Belitung">Kepulauan Bangka Belitung</option>
+          <option value="Kepulauan Riau">Kepulauan Riau</option>
+          <option value="DKI Jakarta">DKI Jakarta</option>
+          <option value="Jawa Barat">Jawa Barat</option>
+          <option value="Jawa Tengah">Jawa Tengah</option>
+          <option value="DI Yogyakarta">DI Yogyakarta</option>
+          <option value="Jawa Timur">Jawa Timur</option>
+          <option value="Banten">Banten</option>
+          <option value="Bali">Bali</option>
+          <option value="Nusa Tenggara Barat">Nusa Tenggara Barat</option>
+          <option value="Nusa Tenggara Timur">Nusa Tenggara Timur</option>
+          <option value="Kalimantan Barat">Kalimantan Barat</option>
+          <option value="Kalimantan Tengah">Kalimantan Tengah</option>
+          <option value="Kalimantan Selatan">Kalimantan Selatan</option>
+          <option value="Kalimantan Timur">Kalimantan Timur</option>
+          <option value="Kalimantan Utara">Kalimantan Utara</option>
+          <option value="Sulawesi Utara">Sulawesi Utara</option>
+          <option value="Sulawesi Tengah">Sulawesi Tengah</option>
+          <option value="Sulawesi Selatan">Sulawesi Selatan</option>
+          <option value="Sulawesi Tenggara">Sulawesi Tenggara</option>
+          <option value="Gorontalo">Gorontalo</option>
+          <option value="Sulawesi Barat">Sulawesi Barat</option>
+          <option value="Maluku">Maluku</option>
+          <option value="Maluku Utara">Maluku Utara</option>
+          <option value="Papua Barat">Papua Barat</option>
+          <option value="Papua">Papua</option>
+          <option value="Papua Selatan">Papua Selatan</option>
+          <option value="Papua Tengah">Papua Tengah</option>
+          <option value="Papua Pegunungan">Papua Pegunungan</option>
+        </select>
+        <!-- Dropdown Periode -->
+        <select id="prediksiPeriode" class="prediksi-select">
+          <option value="7">7 Hari</option>
+          <option value="30">1 Bulan</option>
+          <option value="90">3 Bulan</option>
+          <option value="120">4 Bulan</option>
+        </select>
+        <!-- Tombol Cek -->
+        <button id="prediksiCekBtn" onclick="renderHomePrediksiChart()" class="prediksi-cek-btn">🔍 Cek Prediksi</button>
+      </div>
+    </div>
+    <div class="prediksi-chart-wrap">
+      <!-- Placeholder sebelum tombol ditekan -->
+      <div id="prediksiPlaceholderHome" class="prediksi-placeholder">
+        <span class="prediksi-placeholder-icon">📈</span>
+        <p>Pilih komoditas, wilayah, dan periode,<br>lalu tekan <strong>Cek Prediksi</strong>.</p>
+      </div>
+      <!-- Loading spinner, tersembunyi secara default -->
+      <div id="prediksiLoadingHome" class="prediksi-loading" style="display:none;">
+        <svg class="prediksi-spinner" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+        </svg>
+        <span>Menghitung prediksi...</span>
+      </div>
+      <canvas id="homePrediksiChart" style="display:none;"></canvas>
+    </div>
+  </div>
+
 </section>
 
 <!-- BERITA -->
@@ -335,7 +419,7 @@
   </div>
 </div>
 
-<script src="asset/script.js"></script>
+<script src="asset/script.js?v=2"></script>
 </body>
 </html>
 
