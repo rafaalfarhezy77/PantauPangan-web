@@ -633,10 +633,10 @@ async function renderHomePrediksiChart() {
   // Nonaktifkan tombol sementara
   if (btn) { btn.disabled = true; btn.textContent = '⏳ Memproses...'; }
 
-  if (subtitleEl) subtitleEl.textContent = `Prediksi Tren Harga ${komoditasNama} ${labelPeriode} ke Depan (Regresi Linear)`;
+  if (subtitleEl) subtitleEl.textContent = `Prediksi Tren Harga ${komoditasNama} ${labelPeriode} ke Depan (Memuat...)`;
 
   try {
-    const res  = await fetch(`api/predict.php?slug=${encodeURIComponent(slug)}&wilayah=${encodeURIComponent(wilayah)}&hari=${hari}`);
+    const res  = await fetch(`api/predict_prophet.php?slug=${encodeURIComponent(slug)}&wilayah=${encodeURIComponent(wilayah)}&hari=${hari}`);
     const data = await res.json();
 
     if (loadingEl) loadingEl.style.display = 'none';
@@ -663,39 +663,81 @@ async function renderHomePrediksiChart() {
     arrPrediksi[labelHistoris.length - 1] = hargaHistoris[hargaHistoris.length - 1];
     const dataPrediksiFinal = arrPrediksi.concat(hargaPrediksi);
 
+    if (subtitleEl) {
+        if (data.algoritma && data.algoritma.includes('prophet')) {
+             subtitleEl.textContent = `Prediksi Tren Harga ${komoditasNama} ${labelPeriode} ke Depan (Prophet AI)`;
+        } else {
+             subtitleEl.textContent = `Prediksi Tren Harga ${komoditasNama} ${labelPeriode} ke Depan (Regresi Linear)`;
+        }
+    }
+
     if (homePrediksiChartInst) homePrediksiChartInst.destroy();
     const ctx = canvasEl.getContext('2d');
     const grad = ctx.createLinearGradient(0, 0, 0, 280);
     grad.addColorStop(0, 'rgba(45,106,79,.18)');
     grad.addColorStop(1, 'rgba(45,106,79,0)');
 
+    const datasets = [
+      {
+        label: 'Harga Historis',
+        data: hargaHistoris,
+        borderColor: '#2d6a4f',
+        backgroundColor: grad,
+        borderWidth: 2.5,
+        pointRadius: 1,
+        fill: true,
+        tension: 0.3
+      },
+      {
+        label: `Prediksi ${labelPeriode}`,
+        data: dataPrediksiFinal,
+        borderColor: '#e53935',
+        borderWidth: 2,
+        borderDash: [5, 5],
+        pointRadius: 2,
+        pointBackgroundColor: '#e53935',
+        fill: false,
+        tension: 0
+      }
+    ];
+
+    if (data.algoritma && data.algoritma.includes('prophet') && data.prediksi[0].harga_min) {
+        const arrMin = Array(labelHistoris.length).fill(null);
+        arrMin[labelHistoris.length - 1] = hargaHistoris[hargaHistoris.length - 1];
+        const hargaMinFinal = arrMin.concat(data.prediksi.map(d => d.harga_min));
+
+        const arrMax = Array(labelHistoris.length).fill(null);
+        arrMax[labelHistoris.length - 1] = hargaHistoris[hargaHistoris.length - 1];
+        const hargaMaxFinal = arrMax.concat(data.prediksi.map(d => d.harga_max));
+
+        datasets.push({
+            label: 'Margin Atas',
+            data: hargaMaxFinal,
+            borderColor: 'rgba(229,57,53,0.2)',
+            backgroundColor: 'rgba(229,57,53,0.05)',
+            fill: 1,
+            borderDash: [2, 4],
+            pointRadius: 0,
+            tension: 0
+        });
+
+        datasets.push({
+            label: 'Margin Bawah',
+            data: hargaMinFinal,
+            borderColor: 'rgba(229,57,53,0.2)',
+            backgroundColor: 'rgba(229,57,53,0.05)',
+            fill: 1,
+            borderDash: [2, 4],
+            pointRadius: 0,
+            tension: 0
+        });
+    }
+
     homePrediksiChartInst = new Chart(ctx, {
       type: 'line',
       data: {
         labels: semuaLabel,
-        datasets: [
-          {
-            label: 'Harga Historis',
-            data: hargaHistoris,
-            borderColor: '#2d6a4f',
-            backgroundColor: grad,
-            borderWidth: 2.5,
-            pointRadius: 1,
-            fill: true,
-            tension: 0.3
-          },
-          {
-            label: `Prediksi ${labelPeriode}`,
-            data: dataPrediksiFinal,
-            borderColor: '#e53935',
-            borderWidth: 2,
-            borderDash: [5, 5],
-            pointRadius: 2,
-            pointBackgroundColor: '#e53935',
-            fill: false,
-            tension: 0
-          }
-        ]
+        datasets: datasets
       },
       options: {
         responsive: true,
