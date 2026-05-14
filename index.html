@@ -24,7 +24,7 @@
     <li><a href="#peta">Peta</a></li>
     <li><a href="#harga">Grafik &amp; Prediksi</a></li>
     <li><a href="#inflasi">Prediksi Inflasi</a></li>
-    <li><a href="#berita">Berita <span class="nav-badge">5</span></a></li>
+    <li><a href="#berita">Berita</a></li>
   </ul>
   <div class="nav-right">
     <a href="api/login.php" class="btn-login" id="navLoginBtn"> <img src="img/login_icon.png" alt=""> Masuk</a>
@@ -53,7 +53,7 @@
     <li><a href="#peta" onclick="closeMobileNav()"><span class="mobile-nav-icon">🗺️</span> Peta</a></li>
     <li><a href="#harga" onclick="closeMobileNav()"><span class="mobile-nav-icon">📊</span> Grafik &amp; Prediksi</a></li>
     <li><a href="#inflasi" onclick="closeMobileNav()"><span class="mobile-nav-icon">📉</span> Prediksi Inflasi</a></li>
-    <li><a href="#berita" onclick="closeMobileNav()"><span class="mobile-nav-icon">📰</span> Berita <span class="nav-badge">5</span></a></li>
+    <li><a href="#berita" onclick="closeMobileNav()"><span class="mobile-nav-icon">📰</span> Berita</a></li>
   </ul>
   <div class="mobile-nav-divider"></div>
   <div id="mobileLoginSection">
@@ -621,6 +621,7 @@
     <div class="news-category" id="modalCategory"></div>
     <div class="modal-title" id="modalTitle"></div>
     <div class="modal-source" id="modalSource"></div>
+    <img id="modalImage" style="width: 100%; aspect-ratio: 4 / 3; object-fit: cover; border-radius: 12px; margin: 15px 0;" src="" alt="News Cover">
     <div class="modal-body" id="modalBody"></div>
     <button class="modal-close" onclick="document.getElementById('newsModal').classList.remove('open')">Tutup</button>
   </div>

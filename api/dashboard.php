@@ -104,7 +104,6 @@ $query = mysqli_query($koneksi, "SELECT * FROM users");
     <a href="../index.html#berita"
        class="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm font-medium text-white/60 hover:bg-white/10 hover:text-white transition-colors no-underline">
       <span class="w-5 text-center text-base">📰</span>Berita
-      <span class="ml-auto bg-green-light text-white text-[0.65rem] font-bold px-2 py-0.5 rounded-full">5</span>
     </a>
 
     <p class="text-[0.65rem] font-semibold uppercase tracking-widest text-white/30 px-2 pt-4 pb-1.5">Lainnya</p>
@@ -124,6 +123,12 @@ $query = mysqli_query($koneksi, "SELECT * FROM users");
     <a href="dashboardKomoditas.php" 
        class="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm font-medium text-amber-300 hover:bg-white/10 hover:text-white transition-colors no-underline">
       <span class="w-5 text-center text-base">📦</span>Import Data CSV
+    </a>
+    <?php elseif(isset($_SESSION['role']) && $_SESSION['role'] === 'admin-berita'): ?>
+    <p class="text-[0.65rem] font-semibold uppercase tracking-widest text-white/30 px-2 pt-4 pb-1.5">Panel Berita</p>
+    <a href="dashboardBerita.php" 
+       class="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm font-medium text-blue-300 hover:bg-white/10 hover:text-white transition-colors no-underline">
+      <span class="w-5 text-center text-base">📰</span>Kelola Berita
     </a>
     <?php endif; ?>
   </nav>
@@ -314,7 +319,7 @@ function initUser() {
 
 
   const initials = (username || 'P').split(' ').map(n => n[0]).join('').substring(0,2).toUpperCase();
-  const roleEmojis = { 'petani': '🌾', 'pembeli': '🛒', 'tengkulak': '🏪', 'admin': '🛡️', 'superadmin': '👑', 'admin-komoditas': '📦', 'umum': '👤' };
+  const roleEmojis = { 'petani': '🌾', 'pembeli': '🛒', 'tengkulak': '🏪', 'admin': '🛡️', 'superadmin': '👑', 'admin-komoditas': '📦', 'admin-berita': '📰', 'umum': '👤' };
   const safeRole = role || 'umum';
   const roleEmoji = roleEmojis[safeRole.toLowerCase()] || '👤';
 

@@ -73,6 +73,7 @@ if (!$user) {
             <option value="tengkulak" <?= $user['role'] == 'tengkulak' ? 'selected' : ''; ?>>🏪 Tengkulak</option>
             <option value="umum" <?= $user['role'] == 'umum' ? 'selected' : ''; ?>>👤 Umum</option>
             <option value="admin-komoditas" <?= $user['role'] == 'admin-komoditas' ? 'selected' : ''; ?>>📦 Admin Komoditas</option>
+            <option value="admin-berita" <?= $user['role'] == 'admin-berita' ? 'selected' : ''; ?>>📰 Admin Berita</option>
             <option value="superadmin" <?= $user['role'] == 'superadmin' ? 'selected' : ''; ?>>👑 SuperAdmin</option>
           </select>
         </div>

@@ -94,6 +94,8 @@ $query_users = mysqli_query($koneksi, "SELECT * FROM users ORDER BY id DESC");
                     <span class="px-2 py-1 rounded-md text-[10px] font-bold bg-red-700 text-red-50">👑 SUPERADMIN</span>
                 <?php elseif($row['role'] == 'admin-komoditas'): ?>
                     <span class="px-2 py-1 rounded-md text-[10px] font-bold bg-amber-100 text-amber-700">📦 ADMIN KOMODITAS</span>
+                <?php elseif($row['role'] == 'admin-berita'): ?>
+                    <span class="px-2 py-1 rounded-md text-[10px] font-bold bg-blue-100 text-blue-700">📰 ADMIN BERITA</span>
                 <?php else: ?>
                     <span class="px-2 py-1 rounded-md text-[10px] font-bold bg-green-mist text-green-700"><?= strtoupper($row['role']); ?></span>    
                 <?php endif; ?>

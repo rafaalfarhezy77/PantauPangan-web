@@ -140,13 +140,19 @@ const labels = {
   '1T': ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agt','Sep','Okt','Nov','Des'],
 };
 
-const newsData = [
-  { cat:'Kebijakan', icon:'🏛️', title:'Pemerintah Tetapkan HET Beras untuk Stabilkan Harga di Seluruh Wilayah', source:'Bapanas · 6 Mar 2025', featured:true, emoji:'🌾', body:'Badan Pangan Nasional (Bapanas) menetapkan Harga Eceran Tertinggi (HET) beras medium sebesar Rp 12.500 per kilogram dan beras premium Rp 15.400 per kilogram berlaku mulai awal Maret 2025. Kebijakan ini bertujuan melindungi konsumen dari lonjakan harga menjelang Ramadan dan Lebaran.' },
-  { cat:'Harga', icon:'📈', title:'Harga Cabai Rawit Merah Melonjak 40% di Pasar Induk Kramat Jati', source:'Kontan · 5 Mar 2025', body:'Harga cabai rawit merah di Pasar Induk Kramat Jati, Jakarta, naik signifikan hingga Rp 68.000 per kilogram akibat curah hujan tinggi yang merusak panen di sentra produksi Jawa Timur dan Jawa Tengah.' },
-  { cat:'Produksi', icon:'🌱', title:'Produksi Bawang Merah Bima Musim Ini Diprediksi Naik 15 Persen', source:'Kompas · 4 Mar 2025', body:'Dinas Pertanian Kabupaten Bima mencatat peningkatan luas tanam bawang merah sebesar 20% dibanding tahun lalu. Dengan kondisi cuaca yang mendukung, produksi diperkirakan meningkat 15% dan berdampak positif pada stabilitas harga.' },
-  { cat:'Distribusi', icon:'🚚', title:'Tol Trans Jawa Pangkas Biaya Distribusi Pangan hingga 18 Persen', source:'Bisnis Indonesia · 3 Mar 2025', body:'Kementerian Perhubungan melaporkan efisiensi distribusi pangan dari Jawa Timur ke Jawa Barat meningkat signifikan setelah pengoperasian penuh ruas Tol Trans Jawa. Biaya logistik turun rata-rata 18% dan waktu tempuh berkurang 30%.' },
-  { cat:'Teknologi', icon:'💡', title:'Petani Milenial Sulsel Gunakan AI untuk Prediksi Harga Jual Optimal', source:'Tempo · 2 Mar 2025', body:'Kelompok tani milenial di Sulawesi Selatan mulai memanfaatkan aplikasi berbasis kecerdasan buatan untuk memprediksi waktu jual optimal komoditas pangan. Hasilnya, pendapatan petani meningkat rata-rata 22% dalam satu musim tanam.' },
-];
+let newsData = [];
+
+async function fetchBeritaDB() {
+  try {
+    const res = await fetch('api/api_berita.php');
+    const json = await res.json();
+    if (json.status === 'success' && json.data.length > 0) {
+      newsData = json.data;
+    }
+  } catch (err) {
+    console.error("Gagal load berita:", err);
+  }
+}
 
 const tickerData = [
   { name:'Beras Premium', price:'Rp 14.500', change:'+1.2%', up:true },
@@ -507,28 +513,32 @@ function quickSearch(keyword) {
 
 // ── BERITA ──
 function renderBerita() {
-  const featured = newsData.find(n=>n.featured);
-  const rest = newsData.filter(n=>!n.featured);
+  if (!newsData || newsData.length === 0) {
+    document.getElementById('beritaGrid').innerHTML = '<p style="color:var(--text-light)">Belum ada berita yang tersedia.</p>';
+    return;
+  }
+  
+  const featured = newsData.find(n=>n.featured) || newsData[0];
+  const rest = newsData.filter(n=> n !== featured).slice(0, 4);
 
   document.getElementById('beritaGrid').innerHTML = `
     <div class="news-featured" onclick="openModal(${newsData.indexOf(featured)})">
-      <div class="news-featured-bg"></div>
-      <div class="news-featured-emoji">${featured.emoji}</div>
-      <div class="news-featured-content">
-        <span class="news-category">${featured.cat}</span>
-        <div class="news-featured-title">${featured.title}</div>
-        <div class="news-meta">
-          <span>${featured.source}</span>
+      <div class="news-featured-bg" style="background-image: url('${featured.image}'); background-size: cover; background-position: center;"></div>
+      <div class="news-featured-content" style="background: linear-gradient(to top, rgba(26,58,42,0.95), transparent);">
+        <span class="news-category" style="background: rgba(255,255,255,0.2); backdrop-filter: blur(4px);">${featured.cat}</span>
+        <div class="news-featured-title" style="text-shadow: 0 2px 4px rgba(0,0,0,0.5);">${featured.title}</div>
+        <div class="news-meta" style="color: rgba(255,255,255,0.8);">
+          <span>${featured.source} · ${featured.date}</span>
         </div>
       </div>
     </div>
     <div class="news-list">
       ${rest.map((n,i)=>`
         <div class="news-card" onclick="openModal(${newsData.indexOf(n)})">
-          <div class="news-card-icon">${n.icon}</div>
+          <img src="${n.image}" style="width: 80px; height: 60px; border-radius: 12px; object-fit: cover; flex-shrink: 0;" alt="News Cover">
           <div>
             <div class="news-card-title">${n.title}</div>
-            <div class="news-card-meta">${n.source} · <span class="news-category" style="font-size:.7rem;padding:2px 7px">${n.cat}</span></div>
+            <div class="news-card-meta">${n.source} · ${n.date} · <span class="news-category" style="font-size:.7rem;padding:2px 7px">${n.cat}</span></div>
           </div>
         </div>
       `).join('')}
@@ -540,7 +550,8 @@ function openModal(idx) {
   const n = newsData[idx];
   document.getElementById('modalCategory').textContent = n.cat;
   document.getElementById('modalTitle').textContent = n.title;
-  document.getElementById('modalSource').textContent = n.source;
+  document.getElementById('modalSource').textContent = n.source + ' · ' + n.date;
+  document.getElementById('modalImage').src = n.image;
   document.getElementById('modalBody').textContent = n.body;
   document.getElementById('newsModal').classList.add('open');
 }
@@ -577,7 +588,8 @@ window.addEventListener('scroll', ()=>{
 
 // ── START ──
 async function initApp() {
-  // 1. Render elemen yang tidak bergantung pada harga (agar UI tidak kosong)
+  // 1. Ambil data berita
+  await fetchBeritaDB();
   renderBerita();
 
   // 2. Ambil data provinsi (tidak bergantung pada komoditas, bisa paralel)

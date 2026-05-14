@@ -7,6 +7,8 @@ if (isset($_SESSION['user_id'])) {
         header("Location: dashboardAdmin.php");
     } elseif ($_SESSION['role'] === 'admin-komoditas') {
         header("Location: dashboardKomoditas.php");
+    } elseif ($_SESSION['role'] === 'admin-berita') {
+        header("Location: dashboardBerita.php");
     } else {
         header("Location: dashboard.php");
     }
@@ -461,6 +463,10 @@ async function doLogin() {
         window.location.href = 'dashboardKomoditas.php';
         return;
     }
+    if (result.role === 'admin-berita') {
+        window.location.href = 'dashboardBerita.php';
+        return;
+    }
 
     loginSuccess(result.username, result.role)
     const titleEl = document.getElementById('successTitle');
@@ -525,6 +531,7 @@ function goToDashboard() {
   const role = localStorage.getItem('role');
   if (role === 'superadmin') window.location.href = 'dashboardAdmin.php';
   else if (role === 'admin-komoditas') window.location.href = 'dashboardKomoditas.php';
+  else if (role === 'admin-berita') window.location.href = 'dashboardBerita.php';
   else window.location.href = 'dashboard.php';
 }
 function capitalize(s)   { return s.split(' ').map(w=>w.charAt(0).toUpperCase()+w.slice(1).toLowerCase()).join(' '); }

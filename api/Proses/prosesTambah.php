@@ -105,6 +105,7 @@ if (isset($_POST['tambah'])) {
             <option value="pembeli">🛒 Pembeli</option>
             <option value="tengkulak">🏪 Tengkulak</option>
             <option value="admin-komoditas">📦 Admin Komoditas</option>
+            <option value="admin-berita">📰 Admin Berita</option>
             <option value="superadmin">👑 SuperAdmin</option>
           </select>
         </div>
