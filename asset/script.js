@@ -45,6 +45,19 @@ async function fetchKomoditasDB() {
         });
         updatePrediksiKabKota(); // Panggil agar init kab/kota
       }
+
+      // Populate dropdown prediksi inflasi komoditas
+      const inflasiKomoEl = document.getElementById('inflasiKomoditas');
+      if (inflasiKomoEl) {
+        inflasiKomoEl.innerHTML = '';
+        commodities.forEach(c => {
+          const opt = document.createElement('option');
+          opt.value = c.id;
+          opt.textContent = c.icon + ' ' + c.name;
+          inflasiKomoEl.appendChild(opt);
+        });
+        updateInflasiKabKota();
+      }
     }
   } catch (error) {
     console.error("Gagal memuat komoditas dari Database:", error);
@@ -925,7 +938,7 @@ function setInflasiPeriod(val, btn) {
 
 function toggleInflasiFaktor(key) {
   inflasiFaktor[key] = !inflasiFaktor[key];
-  const item  = document.getElementById('inflasiFactory' + key.charAt(0).toUpperCase() + key.slice(1));
+  const item  = document.getElementById('inflasiFactor' + key.charAt(0).toUpperCase() + key.slice(1));
   const check = document.getElementById('inflasiCheck'  + key.charAt(0).toUpperCase() + key.slice(1));
   const activeClass = { raya: 'active-raya', cuaca: 'active-cuaca', bbm: 'active-bbm' }[key];
 
@@ -953,8 +966,13 @@ function inflasiShowState(state) {
 
 async function runInflasiPrediksi() {
   const slug    = document.getElementById('inflasiKomoditas').value;
-  const wilayah = document.getElementById('inflasiProvinsi').value;
+  let wilayah   = document.getElementById('inflasiProvinsi').value;
+  const kabEl   = document.getElementById('inflasiKabKota');
   const btn     = document.getElementById('inflasiRunBtn');
+
+  if (kabEl && kabEl.value && !kabEl.disabled) {
+    wilayah = kabEl.value; // Override dengan kab/kota jika dipilih
+  }
 
   if (!slug) { alert('Pilih komoditas terlebih dahulu.'); return; }
 
@@ -1178,19 +1196,46 @@ function renderInflasiKontribusi(data) {
   document.getElementById('inflasiKontribusiRows').innerHTML = rows;
 }
 
-// Isi dropdown komoditas inflasi setelah fetchKomoditasDB selesai
-const _origFetchKomo = fetchKomoditasDB;
-fetchKomoditasDB = async function() {
-  await _origFetchKomo();
-  const inflasiKomoEl = document.getElementById('inflasiKomoditas');
-  if (inflasiKomoEl && commodities.length > 0) {
-    inflasiKomoEl.innerHTML = '';
-    commodities.forEach(c => {
-      const opt = document.createElement('option');
-      opt.value = c.id;
-      opt.textContent = c.icon + ' ' + c.name;
-      inflasiKomoEl.appendChild(opt);
-    });
+// ============================================================
+// ── UPDATE KAB/KOTA INFLASI ──
+// ============================================================
+async function updateInflasiKabKota() {
+  const provEl = document.getElementById('inflasiProvinsi');
+  const kabEl  = document.getElementById('inflasiKabKota');
+  const slugEl = document.getElementById('inflasiKomoditas');
+  if (!provEl || !kabEl || !slugEl) return;
+
+  const provinsi = provEl.value;
+  const slug = slugEl.value;
+
+  if (!provinsi || provinsi === 'Semua Provinsi' || !slug) {
+    kabEl.disabled = true;
+    kabEl.innerHTML = '<option value="">Pilih Komoditas & Provinsi</option>';
+    return;
   }
-};
+
+  kabEl.disabled = false;
+  kabEl.innerHTML = '<option value="">Memuat...</option>';
+
+  try {
+    const res = await fetch(`api/kab_kota_by_provinsi.php?provinsi=${encodeURIComponent(provinsi)}&slug=${encodeURIComponent(slug)}`);
+    const json = await res.json();
+    if (json.error) throw new Error(json.error);
+
+    kabEl.innerHTML = '<option value="">Semua Kab/Kota</option>';
+    if (json.kab_kota && json.kab_kota.length > 0) {
+      json.kab_kota.forEach(k => {
+        const opt = document.createElement('option');
+        opt.value = k.nama;
+        opt.textContent = k.nama;
+        kabEl.appendChild(opt);
+      });
+    } else {
+      kabEl.innerHTML = '<option value="">Tidak ada data</option>';
+    }
+  } catch (err) {
+    console.error("Gagal load kab/kota inflasi:", err);
+    kabEl.innerHTML = '<option value="">Gagal memuat</option>';
+  }
+}
 

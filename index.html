@@ -390,12 +390,12 @@
 
       <div class="inflasi-form-group">
         <label class="inflasi-form-label">Komoditas</label>
-        <select class="inflasi-form-select" id="inflasiKomoditas"></select>
+        <select class="inflasi-form-select" id="inflasiKomoditas" onchange="updateInflasiKabKota()"></select>
       </div>
 
       <div class="inflasi-form-group">
         <label class="inflasi-form-label">Provinsi</label>
-        <select class="inflasi-form-select" id="inflasiProvinsi">
+        <select class="inflasi-form-select" id="inflasiProvinsi" onchange="updateInflasiKabKota()">
           <option value="Semua Provinsi">Semua Provinsi (Nasional)</option>
           <option value="Aceh">Aceh</option>
           <option value="Sumatera Utara">Sumatera Utara</option>
@@ -431,6 +431,13 @@
           <option value="Maluku Utara">Maluku Utara</option>
           <option value="Papua Barat">Papua Barat</option>
           <option value="Papua">Papua</option>
+        </select>
+      </div>
+
+      <div class="inflasi-form-group">
+        <label class="inflasi-form-label">Kabupaten/Kota</label>
+        <select class="inflasi-form-select" id="inflasiKabKota" disabled>
+          <option value="">Pilih Komoditas & Provinsi</option>
         </select>
       </div>
 
