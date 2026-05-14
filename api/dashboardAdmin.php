@@ -8,8 +8,8 @@ if (!isset($_SESSION['user_id'])) {
     exit;
 }
 
-if (strtolower(trim($_SESSION['role'])) !== 'admin') {
-    echo "<script>alert('Akses Ditolak! Halaman ini hanya untuk Admin.'); window.location.href='dashboard.php';</script>";
+if (strtolower(trim($_SESSION['role'])) !== 'superadmin') {
+    echo "<script>alert('Akses Ditolak! Halaman ini hanya untuk SuperAdmin.'); window.location.href='dashboard.php';</script>";
     exit;
 }
 
@@ -49,10 +49,12 @@ $query_users = mysqli_query($koneksi, "SELECT * FROM users ORDER BY id DESC");
   <nav class="sticky top-0 z-50 bg-green-deep h-16 flex items-center justify-between px-6 md:px-10 shadow-md">
     <div class="flex items-center gap-3">
       <div class="w-9 h-9 bg-white/10 rounded-xl flex items-center justify-center text-lg">🛡️</div>
-      <span class="font-bold text-white text-lg">Admin<span class="text-green-pale">Panel</span></span>
+      <span class="font-bold text-white text-lg">Super<span class="text-green-pale">Admin</span></span>
+      <span class="hidden sm:inline-flex items-center gap-1 ml-2 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-red-900/60 text-red-200">👑 SuperAdmin</span>
     </div>
     <div class="flex items-center gap-4">
-      <a href="dashboard.php" class="text-sm text-green-pale hover:text-white transition-colors no-underline">Kembali ke Dashboard</a>
+      <span class="text-sm text-green-pale hidden sm:block">👤 <?= htmlspecialchars($_SESSION['username']) ?></span>
+      <a href="dashboard.php" class="text-sm text-green-pale hover:text-white transition-colors no-underline">← Dashboard</a>
     </div>
   </nav>
 
@@ -60,7 +62,7 @@ $query_users = mysqli_query($koneksi, "SELECT * FROM users ORDER BY id DESC");
     <div class="flex flex-wrap items-center justify-between gap-4 mb-8">
       <div>
         <h1 class="text-2xl font-bold text-green-deep">Manajemen Pengguna</h1>
-        <p class="text-sm text-gray-500 mt-1">Kelola data user, tambah admin, atau hapus akun.</p>
+        <p class="text-sm text-gray-500 mt-1">Kelola data user, tambah admin, atau hapus akun. Role <strong>SuperAdmin</strong> memiliki akses penuh.</p>
       </div>
       <a href="Proses/prosesTambah.php" class="px-5 py-2.5 bg-green-mid text-white text-sm font-semibold rounded-xl hover:bg-green-deep transition-colors shadow-sm no-underline">
         + Tambah User Baru
@@ -88,8 +90,10 @@ $query_users = mysqli_query($koneksi, "SELECT * FROM users ORDER BY id DESC");
             </td>
             <td class="px-6 py-4">
                 
-                <?php if($row['role'] == 'admin'): ?>
-                    <span class="px-2 py-1 rounded-md text-[10px] font-bold bg-red-700 text-red-50">ADMIN</span>
+                <?php if($row['role'] == 'superadmin'): ?>
+                    <span class="px-2 py-1 rounded-md text-[10px] font-bold bg-red-700 text-red-50">👑 SUPERADMIN</span>
+                <?php elseif($row['role'] == 'admin-komoditas'): ?>
+                    <span class="px-2 py-1 rounded-md text-[10px] font-bold bg-amber-100 text-amber-700">📦 ADMIN KOMODITAS</span>
                 <?php else: ?>
                     <span class="px-2 py-1 rounded-md text-[10px] font-bold bg-green-mist text-green-700"><?= strtoupper($row['role']); ?></span>    
                 <?php endif; ?>

@@ -3,7 +3,7 @@ require __DIR__ . '/Server/koneksi.php';
 session_start();
 
 // Validasi Keamanan
-if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
+if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'superadmin') {
     header("Location: dashboard.php");
     exit;
 }
@@ -72,7 +72,8 @@ if (!$user) {
             <option value="pembeli" <?= $user['role'] == 'pembeli' ? 'selected' : ''; ?>>🛒 Pembeli</option>
             <option value="tengkulak" <?= $user['role'] == 'tengkulak' ? 'selected' : ''; ?>>🏪 Tengkulak</option>
             <option value="umum" <?= $user['role'] == 'umum' ? 'selected' : ''; ?>>👤 Umum</option>
-            <option value="admin" <?= $user['role'] == 'admin' ? 'selected' : ''; ?>>🛡️ Admin</option>
+            <option value="admin-komoditas" <?= $user['role'] == 'admin-komoditas' ? 'selected' : ''; ?>>📦 Admin Komoditas</option>
+            <option value="superadmin" <?= $user['role'] == 'superadmin' ? 'selected' : ''; ?>>👑 SuperAdmin</option>
           </select>
         </div>
       </div>

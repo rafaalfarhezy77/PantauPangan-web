@@ -3,7 +3,7 @@ require __DIR__ . '/../Server/koneksi.php';
 session_start();
 
 // Validasi Keamanan
-if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
+if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'superadmin') {
     header("Location: ../dashboard.php");
     exit;
 }
@@ -104,7 +104,8 @@ if (isset($_POST['tambah'])) {
             <option value="petani">🌾 Petani</option>
             <option value="pembeli">🛒 Pembeli</option>
             <option value="tengkulak">🏪 Tengkulak</option>
-            <option value="admin">🛡️ Admin</option>
+            <option value="admin-komoditas">📦 Admin Komoditas</option>
+            <option value="superadmin">👑 SuperAdmin</option>
           </select>
         </div>
       </div>

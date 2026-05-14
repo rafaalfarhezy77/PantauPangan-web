@@ -113,11 +113,17 @@ $query = mysqli_query($koneksi, "SELECT * FROM users");
     <a href="../index.html" class="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm font-medium text-white/60 hover:bg-white/10 hover:text-white transition-colors no-underline">
       <span class="w-5 text-center text-base">🌐</span>Ke Beranda
     </a>
-    <?php if(isset($_SESSION['role']) && $_SESSION['role'] === 'admin'): ?>
-    <p class="text-[0.65rem] font-semibold uppercase tracking-widest text-white/30 px-2 pt-4 pb-1.5">Khusus Admin</p>
+    <?php if(isset($_SESSION['role']) && $_SESSION['role'] === 'superadmin'): ?>
+    <p class="text-[0.65rem] font-semibold uppercase tracking-widest text-white/30 px-2 pt-4 pb-1.5">Khusus SuperAdmin</p>
     <a href="dashboardAdmin.php" 
        class="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm font-medium text-green-pale hover:bg-white/10 hover:text-white transition-colors no-underline">
       <span class="w-5 text-center text-base">🛡️</span>Admin Panel
+    </a>
+    <?php elseif(isset($_SESSION['role']) && $_SESSION['role'] === 'admin-komoditas'): ?>
+    <p class="text-[0.65rem] font-semibold uppercase tracking-widest text-white/30 px-2 pt-4 pb-1.5">Panel Komoditas</p>
+    <a href="dashboardKomoditas.php" 
+       class="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm font-medium text-amber-300 hover:bg-white/10 hover:text-white transition-colors no-underline">
+      <span class="w-5 text-center text-base">📦</span>Import Data CSV
     </a>
     <?php endif; ?>
   </nav>
@@ -308,7 +314,7 @@ function initUser() {
 
 
   const initials = (username || 'P').split(' ').map(n => n[0]).join('').substring(0,2).toUpperCase();
-  const roleEmojis = { 'petani': '🌾', 'pembeli': '🛒', 'tengkulak': '🏪', 'admin': '🛡️', 'umum': '👤' };
+  const roleEmojis = { 'petani': '🌾', 'pembeli': '🛒', 'tengkulak': '🏪', 'admin': '🛡️', 'superadmin': '👑', 'admin-komoditas': '📦', 'umum': '👤' };
   const safeRole = role || 'umum';
   const roleEmoji = roleEmojis[safeRole.toLowerCase()] || '👤';
 

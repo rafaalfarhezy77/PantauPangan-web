@@ -3,8 +3,10 @@ require __DIR__ . '/Server/koneksi.php';
 session_start();
 // Auto redirect jika sudah login
 if (isset($_SESSION['user_id'])) {
-    if ($_SESSION['role'] === 'admin') {
+    if ($_SESSION['role'] === 'superadmin') {
         header("Location: dashboardAdmin.php");
+    } elseif ($_SESSION['role'] === 'admin-komoditas') {
+        header("Location: dashboardKomoditas.php");
     } else {
         header("Location: dashboard.php");
     }
@@ -451,8 +453,12 @@ async function doLogin() {
     localStorage.setItem('username', result.username);
     localStorage.setItem('role', result.role);
 
-    if (result.role === 'admin') {
+    if (result.role === 'superadmin') {
         window.location.href = 'dashboardAdmin.php';
+        return;
+    }
+    if (result.role === 'admin-komoditas') {
+        window.location.href = 'dashboardKomoditas.php';
         return;
     }
 
@@ -517,7 +523,9 @@ function goToHome() { window.location.href = '../index.html'; }
 function goToLogin() { window.location.href = 'login.php'; }
 function goToDashboard() {
   const role = localStorage.getItem('role');
-  window.location.href = role === 'admin' ? 'dashboardAdmin.php' : 'dashboard.php';
+  if (role === 'superadmin') window.location.href = 'dashboardAdmin.php';
+  else if (role === 'admin-komoditas') window.location.href = 'dashboardKomoditas.php';
+  else window.location.href = 'dashboard.php';
 }
 function capitalize(s)   { return s.split(' ').map(w=>w.charAt(0).toUpperCase()+w.slice(1).toLowerCase()).join(' '); }
 </script>
