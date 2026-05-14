@@ -1416,3 +1416,431 @@ animation: fadeUp .3s ease;
 ::-webkit-scrollbar { width: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: var(--green-pale); border-radius: 3px; }
+
+/* ── PREDIKSI INFLASI SECTION ── */
+#inflasi {
+  padding: 80px 5%;
+  background: var(--cream-dark);
+}
+
+.inflasi-layout {
+  display: grid;
+  grid-template-columns: 300px 1fr;
+  gap: 24px;
+  align-items: start;
+}
+
+@media (max-width: 960px) {
+  .inflasi-layout { grid-template-columns: 1fr; }
+}
+
+/* Form Card */
+.inflasi-form-card {
+  background: white;
+  border-radius: var(--radius);
+  padding: 24px;
+  box-shadow: var(--shadow-sm);
+  border: 1.5px solid var(--cream-dark);
+}
+
+.inflasi-form-title {
+  font-size: .95rem;
+  font-weight: 700;
+  color: var(--green-deep);
+  margin-bottom: 18px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.inflasi-form-group {
+  margin-bottom: 16px;
+}
+
+.inflasi-form-label {
+  display: block;
+  font-size: .73rem;
+  font-weight: 600;
+  color: var(--text-light);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 7px;
+}
+
+.inflasi-form-select {
+  width: 100%;
+  padding: 10px 14px;
+  border: 1.5px solid var(--cream-dark);
+  border-radius: var(--radius-sm);
+  font-family: inherit;
+  font-size: .88rem;
+  color: var(--text-dark);
+  background: var(--cream);
+  outline: none;
+  transition: border-color .2s, box-shadow .2s;
+  appearance: none;
+  background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%232d6a4f%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E");
+  background-repeat: no-repeat;
+  background-position: right .85rem top 50%;
+  background-size: .6em auto;
+  padding-right: 2.2rem;
+  cursor: pointer;
+}
+
+.inflasi-form-select:focus {
+  border-color: var(--green-light);
+  box-shadow: 0 0 0 3px rgba(82,183,136,.15);
+  background-color: white;
+}
+
+/* Periode tombol */
+.inflasi-period-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 6px;
+}
+
+.inflasi-period-btn {
+  padding: 9px 4px;
+  border: 1.5px solid var(--cream-dark);
+  border-radius: var(--radius-sm);
+  font-size: .8rem;
+  font-family: inherit;
+  color: var(--text-mid);
+  cursor: pointer;
+  text-align: center;
+  background: white;
+  transition: all .15s;
+  font-weight: 500;
+}
+
+.inflasi-period-btn.active {
+  background: var(--green-mist);
+  border-color: var(--green-light);
+  color: var(--green-deep);
+  font-weight: 700;
+}
+
+.inflasi-divider {
+  border: none;
+  border-top: 1px solid var(--cream-dark);
+  margin: 18px 0;
+}
+
+/* Faktor Cards */
+.inflasi-faktor-label {
+  font-size: .73rem;
+  font-weight: 600;
+  color: var(--text-light);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 10px;
+  display: block;
+}
+
+.inflasi-faktor-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.inflasi-faktor-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  border: 1.5px solid var(--cream-dark);
+  cursor: pointer;
+  background: white;
+  transition: all .15s;
+}
+
+.inflasi-faktor-item.active-raya  { border-color: #c89c2b; background: #fdf6e3; }
+.inflasi-faktor-item.active-cuaca { border-color: #4a90d9; background: #eaf3fc; }
+.inflasi-faktor-item.active-bbm   { border-color: #c0392b; background: #fdecea; }
+
+.inflasi-faktor-icon {
+  width: 34px; height: 34px;
+  border-radius: 9px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.1rem;
+  flex-shrink: 0;
+}
+
+.fi-raya-bg  { background: #fdf6e3; }
+.fi-cuaca-bg { background: #eaf3fc; }
+.fi-bbm-bg   { background: #fdecea; }
+
+.inflasi-faktor-info { flex: 1; }
+.inflasi-faktor-name {
+  font-size: .85rem;
+  font-weight: 600;
+  color: var(--text-dark);
+}
+.inflasi-faktor-sub {
+  font-size: .73rem;
+  color: var(--text-light);
+}
+
+.inflasi-faktor-check {
+  width: 18px; height: 18px;
+  border-radius: 5px;
+  border: 1.5px solid var(--cream-dark);
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  font-size: .7rem;
+  transition: all .15s;
+}
+.inflasi-faktor-check.checked {
+  background: var(--green-mid);
+  border-color: var(--green-mid);
+  color: white;
+}
+
+.inflasi-run-btn {
+  width: 100%;
+  margin-top: 18px;
+  padding: 12px;
+  background: var(--green-mid);
+  color: white;
+  border: none;
+  border-radius: var(--radius-sm);
+  font-size: .92rem;
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: background .2s, transform .15s;
+}
+.inflasi-run-btn:hover:not(:disabled) { background: var(--green-deep); transform: translateY(-1px); }
+.inflasi-run-btn:disabled { opacity: .65; cursor: not-allowed; }
+
+/* Result Column */
+.inflasi-result-col {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* Placeholder */
+.inflasi-placeholder {
+  background: white;
+  border-radius: var(--radius);
+  border: 1.5px dashed var(--cream-dark);
+  padding: 60px 32px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  text-align: center;
+  color: var(--text-light);
+  font-size: .9rem;
+  line-height: 1.6;
+}
+
+.inflasi-placeholder-icon { font-size: 3rem; }
+
+/* Metric Cards */
+.inflasi-metrics-card {
+  background: white;
+  border-radius: var(--radius);
+  padding: 22px 24px;
+  box-shadow: var(--shadow-sm);
+  border: 1.5px solid var(--cream-dark);
+}
+
+.inflasi-result-meta {
+  font-size: .78rem;
+  color: var(--text-light);
+  margin-bottom: 14px;
+}
+.inflasi-result-meta span { color: var(--text-dark); font-weight: 600; }
+
+.inflasi-metrics-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+
+.inflasi-metric-box {
+  background: var(--cream);
+  border-radius: var(--radius-sm);
+  padding: 14px 16px;
+}
+
+.inflasi-metric-lbl {
+  font-size: .73rem;
+  color: var(--text-light);
+  margin-bottom: 4px;
+  text-transform: uppercase;
+  letter-spacing: .7px;
+}
+
+.inflasi-metric-val {
+  font-size: 1.6rem;
+  font-weight: 700;
+  line-height: 1.1;
+}
+
+.inflasi-metric-val.danger { color: #c0392b; }
+.inflasi-metric-val.warn   { color: #b7770d; }
+.inflasi-metric-val.ok     { color: var(--green-mid); }
+
+.inflasi-metric-sub {
+  font-size: .73rem;
+  color: var(--text-light);
+  margin-top: 3px;
+}
+
+/* Status Banner */
+.inflasi-banner {
+  border-radius: var(--radius-sm);
+  padding: 14px 16px;
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  border: 1.5px solid;
+  margin-top: 12px;
+}
+
+.inflasi-banner.danger { background: #fdecea; border-color: #f5b7b1; }
+.inflasi-banner.warn   { background: #fdf6e3; border-color: #f9d171; }
+.inflasi-banner.ok     { background: var(--green-mist); border-color: var(--green-pale); }
+
+.inflasi-banner-icon { font-size: 1.3rem; margin-top: 1px; }
+.inflasi-banner-title { font-size: .9rem; font-weight: 700; color: var(--text-dark); }
+.inflasi-banner-text  { font-size: .8rem; color: var(--text-mid); line-height: 1.6; margin-top: 2px; }
+
+/* Chart Card (re-use existing chart panel style) */
+.inflasi-chart-card {
+  background: white;
+  border-radius: var(--radius);
+  padding: 22px 24px;
+  box-shadow: var(--shadow-sm);
+  border: 1.5px solid var(--cream-dark);
+}
+
+.inflasi-chart-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.inflasi-chart-title {
+  font-size: .92rem;
+  font-weight: 700;
+  color: var(--green-deep);
+}
+
+.inflasi-chart-sub {
+  font-size: .75rem;
+  color: var(--text-light);
+  margin-top: 2px;
+}
+
+.inflasi-chart-legend {
+  display: flex;
+  gap: 14px;
+}
+
+.inflasi-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: .75rem;
+  color: var(--text-light);
+}
+
+.inflasi-legend-dot {
+  width: 10px; height: 10px;
+  border-radius: 3px;
+}
+
+.inflasi-chart-wrap {
+  height: 220px;
+  position: relative;
+}
+
+/* Faktor Kontribusi Card */
+.inflasi-kontribusi-card {
+  background: white;
+  border-radius: var(--radius);
+  padding: 22px 24px;
+  box-shadow: var(--shadow-sm);
+  border: 1.5px solid var(--cream-dark);
+}
+
+.inflasi-kontribusi-title {
+  font-size: .92rem;
+  font-weight: 700;
+  color: var(--green-deep);
+  margin-bottom: 14px;
+}
+
+.inflasi-faktor-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 11px 0;
+  border-bottom: 1px solid var(--cream-dark);
+}
+
+.inflasi-faktor-row:last-child { border-bottom: none; }
+
+.inflasi-faktor-row-icon {
+  width: 34px; height: 34px;
+  border-radius: 9px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1rem;
+  flex-shrink: 0;
+}
+
+.inflasi-faktor-row-body { flex: 1; }
+.inflasi-faktor-row-name { font-size: .85rem; font-weight: 600; color: var(--text-dark); }
+.inflasi-faktor-row-desc { font-size: .73rem; color: var(--text-light); margin-top: 1px; }
+
+.inflasi-faktor-row-impact { text-align: right; min-width: 80px; }
+.inflasi-faktor-pct { font-size: .95rem; font-weight: 700; }
+.inflasi-faktor-pct.danger { color: #c0392b; }
+.inflasi-faktor-pct.warn   { color: #b7770d; }
+.inflasi-faktor-pct.blue   { color: #2471a3; }
+.inflasi-faktor-pct.ok     { color: var(--green-mid); }
+.inflasi-faktor-lbl { font-size: .7rem; color: var(--text-light); margin-top: 1px; }
+
+.inflasi-bar-bg {
+  height: 4px;
+  background: var(--cream-dark);
+  border-radius: 2px;
+  margin-top: 5px;
+  width: 80px;
+}
+
+.inflasi-bar-fill {
+  height: 4px;
+  border-radius: 2px;
+  transition: width .5s ease;
+}
+
+/* Loading state */
+.inflasi-loading {
+  background: white;
+  border-radius: var(--radius);
+  padding: 60px 32px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  color: var(--text-light);
+  font-size: .88rem;
+  font-weight: 600;
+}
+

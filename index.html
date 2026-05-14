@@ -22,6 +22,7 @@
     <li><a href="#beranda" class="active">Beranda</a></li>
     <li><a href="#cari">Cari Harga</a></li>
     <li><a href="#harga">Grafik &amp; Prediksi</a></li>
+    <li><a href="#inflasi">Prediksi Inflasi</a></li>
     <li><a href="#berita">Berita <span class="nav-badge">5</span></a></li>
     <li><a href="#peta">Peta</a></li>
   </ul>
@@ -50,6 +51,7 @@
     <li><a href="#beranda" class="active" onclick="closeMobileNav()"><span class="mobile-nav-icon">🏠</span> Beranda</a></li>
     <li><a href="#cari" onclick="closeMobileNav()"><span class="mobile-nav-icon">🔍</span> Cari Harga</a></li>
     <li><a href="#harga" onclick="closeMobileNav()"><span class="mobile-nav-icon">📊</span> Grafik &amp; Prediksi</a></li>
+    <li><a href="#inflasi" onclick="closeMobileNav()"><span class="mobile-nav-icon">📉</span> Prediksi Inflasi</a></li>
     <li><a href="#berita" onclick="closeMobileNav()"><span class="mobile-nav-icon">📰</span> Berita <span class="nav-badge">5</span></a></li>
     <li><a href="#peta" onclick="closeMobileNav()"><span class="mobile-nav-icon">🗺️</span> Peta</a></li>
   </ul>
@@ -370,6 +372,187 @@
     </div>
   </div>
 
+</section>
+
+<!-- PREDIKSI INFLASI -->
+<section id="inflasi">
+  <div style="margin-bottom:36px">
+    <div class="section-label">Analisis Cerdas</div>
+    <h2 class="section-title">Prediksi Inflasi Harga Pangan</h2>
+    <p class="section-subtitle">Proyeksi kenaikan harga berdasarkan tren historis, hari raya, cuaca, dan harga BBM menggunakan model AI Facebook Prophet.</p>
+  </div>
+
+  <div class="inflasi-layout">
+
+    <!-- FORM PARAMETER -->
+    <div class="inflasi-form-card">
+      <div class="inflasi-form-title">⚙️ Parameter Prediksi</div>
+
+      <div class="inflasi-form-group">
+        <label class="inflasi-form-label">Komoditas</label>
+        <select class="inflasi-form-select" id="inflasiKomoditas"></select>
+      </div>
+
+      <div class="inflasi-form-group">
+        <label class="inflasi-form-label">Provinsi</label>
+        <select class="inflasi-form-select" id="inflasiProvinsi">
+          <option value="Semua Provinsi">Semua Provinsi (Nasional)</option>
+          <option value="Aceh">Aceh</option>
+          <option value="Sumatera Utara">Sumatera Utara</option>
+          <option value="Sumatera Barat">Sumatera Barat</option>
+          <option value="Riau">Riau</option>
+          <option value="Jambi">Jambi</option>
+          <option value="Sumatera Selatan">Sumatera Selatan</option>
+          <option value="Bengkulu">Bengkulu</option>
+          <option value="Lampung">Lampung</option>
+          <option value="Kepulauan Bangka Belitung">Kep. Bangka Belitung</option>
+          <option value="Kepulauan Riau">Kepulauan Riau</option>
+          <option value="DKI Jakarta">DKI Jakarta</option>
+          <option value="Jawa Barat">Jawa Barat</option>
+          <option value="Jawa Tengah">Jawa Tengah</option>
+          <option value="DI Yogyakarta">DI Yogyakarta</option>
+          <option value="Jawa Timur">Jawa Timur</option>
+          <option value="Banten">Banten</option>
+          <option value="Bali">Bali</option>
+          <option value="Nusa Tenggara Barat">Nusa Tenggara Barat</option>
+          <option value="Nusa Tenggara Timur">Nusa Tenggara Timur</option>
+          <option value="Kalimantan Barat">Kalimantan Barat</option>
+          <option value="Kalimantan Tengah">Kalimantan Tengah</option>
+          <option value="Kalimantan Selatan">Kalimantan Selatan</option>
+          <option value="Kalimantan Timur">Kalimantan Timur</option>
+          <option value="Kalimantan Utara">Kalimantan Utara</option>
+          <option value="Sulawesi Utara">Sulawesi Utara</option>
+          <option value="Sulawesi Tengah">Sulawesi Tengah</option>
+          <option value="Sulawesi Selatan">Sulawesi Selatan</option>
+          <option value="Sulawesi Tenggara">Sulawesi Tenggara</option>
+          <option value="Gorontalo">Gorontalo</option>
+          <option value="Sulawesi Barat">Sulawesi Barat</option>
+          <option value="Maluku">Maluku</option>
+          <option value="Maluku Utara">Maluku Utara</option>
+          <option value="Papua Barat">Papua Barat</option>
+          <option value="Papua">Papua</option>
+        </select>
+      </div>
+
+      <div class="inflasi-form-group">
+        <label class="inflasi-form-label">Periode Prediksi</label>
+        <div class="inflasi-period-grid">
+          <button class="inflasi-period-btn" id="inflasiP7" onclick="setInflasiPeriod(7,this)">7 Hari</button>
+          <button class="inflasi-period-btn active" id="inflasiP30" onclick="setInflasiPeriod(30,this)">1 Bulan</button>
+          <button class="inflasi-period-btn" id="inflasiP120" onclick="setInflasiPeriod(120,this)">4 Bulan</button>
+        </div>
+      </div>
+
+      <hr class="inflasi-divider">
+
+      <span class="inflasi-faktor-label">⚠️ Faktor Penyebab Inflasi</span>
+      <div class="inflasi-faktor-list">
+
+        <div class="inflasi-faktor-item active-raya" id="inflasiFactorRaya" onclick="toggleInflasiFaktor('raya')">
+          <div class="inflasi-faktor-icon fi-raya-bg">🎉</div>
+          <div class="inflasi-faktor-info">
+            <div class="inflasi-faktor-name">Hari Raya Besar</div>
+            <div class="inflasi-faktor-sub">Lebaran, Natal, Imlek, Nyepi</div>
+          </div>
+          <div class="inflasi-faktor-check checked" id="inflasiCheckRaya">✓</div>
+        </div>
+
+        <div class="inflasi-faktor-item" id="inflasiFactorCuaca" onclick="toggleInflasiFaktor('cuaca')">
+          <div class="inflasi-faktor-icon fi-cuaca-bg">🌧️</div>
+          <div class="inflasi-faktor-info">
+            <div class="inflasi-faktor-name">Cuaca Ekstrem</div>
+            <div class="inflasi-faktor-sub">Kemarau, banjir, La Niña</div>
+          </div>
+          <div class="inflasi-faktor-check" id="inflasiCheckCuaca"></div>
+        </div>
+
+        <div class="inflasi-faktor-item" id="inflasiFactorBbm" onclick="toggleInflasiFaktor('bbm')">
+          <div class="inflasi-faktor-icon fi-bbm-bg">⛽</div>
+          <div class="inflasi-faktor-info">
+            <div class="inflasi-faktor-name">Kenaikan Harga BBM</div>
+            <div class="inflasi-faktor-sub">Berdampak ke biaya distribusi</div>
+          </div>
+          <div class="inflasi-faktor-check" id="inflasiCheckBbm"></div>
+        </div>
+
+      </div>
+
+      <button class="inflasi-run-btn" id="inflasiRunBtn" onclick="runInflasiPrediksi()">📉 Jalankan Prediksi Inflasi</button>
+    </div>
+
+    <!-- RESULT COLUMN -->
+    <div class="inflasi-result-col" id="inflasiResultCol">
+
+      <!-- Placeholder awal -->
+      <div class="inflasi-placeholder" id="inflasiPlaceholder">
+        <div class="inflasi-placeholder-icon">📉</div>
+        <p>Pilih komoditas, wilayah, dan faktor inflasi,<br>lalu tekan <strong>Jalankan Prediksi Inflasi</strong>.</p>
+      </div>
+
+      <!-- Loading -->
+      <div class="inflasi-loading" id="inflasiLoading" style="display:none">
+        <svg class="prediksi-spinner" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+        </svg>
+        <span>Menghitung prediksi inflasi...</span>
+      </div>
+
+      <!-- Metric Card -->
+      <div class="inflasi-metrics-card" id="inflasiMetricsCard" style="display:none">
+        <div class="inflasi-result-meta" id="inflasiResultMeta">—</div>
+        <div class="inflasi-metrics-row">
+          <div class="inflasi-metric-box">
+            <div class="inflasi-metric-lbl">Prediksi Inflasi</div>
+            <div class="inflasi-metric-val" id="inflasiMetricInflasi">—</div>
+            <div class="inflasi-metric-sub" id="inflasiMetricInflasiSub">—</div>
+          </div>
+          <div class="inflasi-metric-box">
+            <div class="inflasi-metric-lbl">Estimasi Harga Akhir</div>
+            <div class="inflasi-metric-val warn" id="inflasiMetricHarga">—</div>
+            <div class="inflasi-metric-sub" id="inflasiMetricHargaSub">—</div>
+          </div>
+          <div class="inflasi-metric-box">
+            <div class="inflasi-metric-lbl">Tingkat Keyakinan</div>
+            <div class="inflasi-metric-val ok" id="inflasiMetricConf">—</div>
+            <div class="inflasi-metric-sub">model AI Prophet</div>
+          </div>
+        </div>
+        <div class="inflasi-banner" id="inflasiStatusBanner" style="display:none">
+          <div class="inflasi-banner-icon" id="inflasiStatusIcon">ℹ️</div>
+          <div>
+            <div class="inflasi-banner-title" id="inflasiStatusTitle">—</div>
+            <div class="inflasi-banner-text" id="inflasiStatusText">—</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Chart Card -->
+      <div class="inflasi-chart-card" id="inflasiChartCard" style="display:none">
+        <div class="inflasi-chart-header">
+          <div>
+            <div class="inflasi-chart-title">Proyeksi Pergerakan Harga</div>
+            <div class="inflasi-chart-sub" id="inflasiChartSub">Historis + Prediksi</div>
+          </div>
+          <div class="inflasi-chart-legend">
+            <div class="inflasi-legend-item"><div class="inflasi-legend-dot" style="background:var(--green-light)"></div>Historis</div>
+            <div class="inflasi-legend-item"><div class="inflasi-legend-dot" style="background:#e67e22"></div>Prediksi</div>
+            <div class="inflasi-legend-item"><div class="inflasi-legend-dot" style="background:rgba(230,126,34,.2)"></div>Rentang</div>
+          </div>
+        </div>
+        <div class="inflasi-chart-wrap">
+          <canvas id="inflasiChart"></canvas>
+        </div>
+      </div>
+
+      <!-- Kontribusi Faktor -->
+      <div class="inflasi-kontribusi-card" id="inflasiKontribusiCard" style="display:none">
+        <div class="inflasi-kontribusi-title">Kontribusi Faktor terhadap Inflasi</div>
+        <div id="inflasiKontribusiRows"></div>
+      </div>
+
+    </div>
+  </div>
 </section>
 
 <!-- BERITA -->

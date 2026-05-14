@@ -909,3 +909,288 @@ function checkLoginStatus() {
 
 // Jalankan fungsi ini secara otomatis saat home.html selesai dimuat
 document.addEventListener('DOMContentLoaded', checkLoginStatus);
+
+// ============================================================
+// ── PREDIKSI INFLASI ──
+// ============================================================
+let inflasiPeriod = 30;
+let inflasiFaktor = { raya: true, cuaca: false, bbm: false };
+let inflasiChartInst = null;
+
+function setInflasiPeriod(val, btn) {
+  inflasiPeriod = val;
+  document.querySelectorAll('.inflasi-period-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+function toggleInflasiFaktor(key) {
+  inflasiFaktor[key] = !inflasiFaktor[key];
+  const item  = document.getElementById('inflasiFactory' + key.charAt(0).toUpperCase() + key.slice(1));
+  const check = document.getElementById('inflasiCheck'  + key.charAt(0).toUpperCase() + key.slice(1));
+  const activeClass = { raya: 'active-raya', cuaca: 'active-cuaca', bbm: 'active-bbm' }[key];
+
+  if (!item || !check) return;
+
+  if (inflasiFaktor[key]) {
+    item.classList.add(activeClass);
+    check.classList.add('checked');
+    check.textContent = '✓';
+  } else {
+    item.classList.remove(activeClass);
+    check.classList.remove('checked');
+    check.textContent = '';
+  }
+}
+
+function inflasiShowState(state) {
+  // state: 'placeholder' | 'loading' | 'result'
+  document.getElementById('inflasiPlaceholder').style.display   = state === 'placeholder' ? 'flex'  : 'none';
+  document.getElementById('inflasiLoading').style.display        = state === 'loading'     ? 'flex'  : 'none';
+  document.getElementById('inflasiMetricsCard').style.display    = state === 'result'      ? 'block' : 'none';
+  document.getElementById('inflasiChartCard').style.display      = state === 'result'      ? 'block' : 'none';
+  document.getElementById('inflasiKontribusiCard').style.display = state === 'result'      ? 'block' : 'none';
+}
+
+async function runInflasiPrediksi() {
+  const slug    = document.getElementById('inflasiKomoditas').value;
+  const wilayah = document.getElementById('inflasiProvinsi').value;
+  const btn     = document.getElementById('inflasiRunBtn');
+
+  if (!slug) { alert('Pilih komoditas terlebih dahulu.'); return; }
+
+  inflasiShowState('loading');
+  btn.disabled = true;
+  btn.textContent = '⏳ Menghitung...';
+
+  const params = new URLSearchParams({
+    slug, wilayah,
+    hari: inflasiPeriod,
+    faktor_raya:  inflasiFaktor.raya,
+    faktor_cuaca: inflasiFaktor.cuaca,
+    faktor_bbm:   inflasiFaktor.bbm,
+  });
+
+  try {
+    // Panggil lewat PHP proxy (agar Railway URL tidak exposed, konsisten dengan endpoint /predict)
+    const res  = await fetch(`api/predict_inflasi.php?${params}`);
+    const data = await res.json();
+
+    if (data.error) {
+      inflasiShowState('placeholder');
+      document.getElementById('inflasiPlaceholder').innerHTML =
+        `<div class="inflasi-placeholder-icon">⚠️</div><p>${data.error}<br><small>${data.detail||''}</small></p>`;
+      return;
+    }
+
+    renderInflasiResult(data);
+    inflasiShowState('result');
+
+  } catch (e) {
+    console.error('Inflasi fetch error:', e);
+    inflasiShowState('placeholder');
+    document.getElementById('inflasiPlaceholder').innerHTML =
+      `<div class="inflasi-placeholder-icon">⚠️</div><p>Gagal menghubungi server prediksi.</p>`;
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '📉 Jalankan Prediksi Inflasi';
+  }
+}
+
+function renderInflasiResult(data) {
+  const komoEl = document.getElementById('inflasiKomoditas');
+  const komoNama = komoEl.options[komoEl.selectedIndex]?.textContent || data.slug;
+  const periodeLabel = { 7: '7 hari', 30: '1 bulan', 120: '4 bulan' }[data.hari_prediksi] || data.hari_prediksi + ' hari';
+
+  // --- Meta ---
+  document.getElementById('inflasiResultMeta').innerHTML =
+    `Komoditas: <span>${komoNama}</span> &nbsp;|&nbsp; Wilayah: <span>${data.wilayah}</span> &nbsp;|&nbsp; Periode: <span>${periodeLabel} ke depan</span>`;
+
+  // --- Metrics ---
+  const pct = data.total_inflasi_pct;
+  const valEl = document.getElementById('inflasiMetricInflasi');
+  valEl.textContent = (pct >= 0 ? '+' : '') + pct.toFixed(1).replace('.', ',') + '%';
+  valEl.className = 'inflasi-metric-val ' + (pct >= 20 ? 'danger' : pct >= 10 ? 'warn' : 'ok');
+
+  document.getElementById('inflasiMetricInflasiSub').textContent = 'dalam ' + periodeLabel;
+  document.getElementById('inflasiMetricHarga').textContent = 'Rp ' + data.harga_akhir_prediksi.toLocaleString('id-ID');
+  document.getElementById('inflasiMetricHargaSub').textContent = 'dari Rp ' + data.harga_awal.toLocaleString('id-ID') + ' saat ini';
+  document.getElementById('inflasiMetricConf').textContent = data.confidence + '%';
+
+  // --- Status Banner ---
+  const banner    = document.getElementById('inflasiStatusBanner');
+  const iconEl    = document.getElementById('inflasiStatusIcon');
+  const titleEl   = document.getElementById('inflasiStatusTitle');
+  const textEl    = document.getElementById('inflasiStatusText');
+  banner.style.display = 'flex';
+
+  const faktors = [];
+  if (data.faktor_aktif?.hari_raya) faktors.push('hari raya');
+  if (data.faktor_aktif?.cuaca)    faktors.push('cuaca ekstrem');
+  if (data.faktor_aktif?.bbm)      faktors.push('kenaikan BBM');
+  const faktStr = faktors.length ? faktors.join(', ') : 'pola musiman';
+
+  if (pct >= 20) {
+    banner.className = 'inflasi-banner danger';
+    iconEl.textContent = '🚨';
+    titleEl.textContent = 'Bahaya — Inflasi Sangat Tinggi';
+    textEl.textContent = `${komoNama} di ${data.wilayah} diprediksi naik ${pct.toFixed(1).replace('.', ',')}% dalam ${periodeLabel}, dipengaruhi ${faktStr}. Segera lakukan operasi pasar dan koordinasi stok antar wilayah.`;
+  } else if (pct >= 10) {
+    banner.className = 'inflasi-banner warn';
+    iconEl.textContent = '⚠️';
+    titleEl.textContent = 'Waspada — Inflasi Cukup Signifikan';
+    textEl.textContent = `${komoNama} di ${data.wilayah} diprediksi naik ${pct.toFixed(1).replace('.', ',')}% dalam ${periodeLabel}, dipengaruhi ${faktStr}. Pemantauan distribusi dan stok pasar perlu diintensifkan.`;
+  } else if (pct > 0) {
+    banner.className = 'inflasi-banner warn';
+    iconEl.textContent = '📊';
+    titleEl.textContent = 'Normal — Inflasi dalam Batas Wajar';
+    textEl.textContent = `${komoNama} di ${data.wilayah} diprediksi naik ${pct.toFixed(1).replace('.', ',')}% dalam ${periodeLabel}. Tidak ada tindakan mendesak, cukup pantau rutin.`;
+  } else {
+    banner.className = 'inflasi-banner ok';
+    iconEl.textContent = '✅';
+    titleEl.textContent = 'Aman — Harga Diprediksi Stabil atau Turun';
+    textEl.textContent = `${komoNama} di ${data.wilayah} diprediksi tidak mengalami kenaikan signifikan dalam ${periodeLabel}.`;
+  }
+
+  // --- Chart (gunakan Chart.js yang sama seperti prediksi harga) ---
+  renderInflasiChart(data, komoNama, periodeLabel);
+
+  // --- Kontribusi Faktor ---
+  renderInflasiKontribusi(data);
+}
+
+function renderInflasiChart(data, komoNama, periodeLabel) {
+  document.getElementById('inflasiChartSub').textContent =
+    `Historis 4 minggu terakhir + proyeksi ${periodeLabel}`;
+
+  if (inflasiChartInst) inflasiChartInst.destroy();
+  const ctx = document.getElementById('inflasiChart').getContext('2d');
+
+  // Buat data dari historis_agregat + prediksi bar
+  const labels   = data.historis_agregat.map(h => h.label).concat(['Prediksi']);
+  const actuals  = data.historis_agregat.map(h => h.pct);
+  const predArr  = Array(data.historis_agregat.length).fill(null).concat([data.total_inflasi_pct]);
+  const isRed    = data.total_inflasi_pct >= 10;
+
+  const gradGreen = ctx.createLinearGradient(0, 0, 0, 220);
+  gradGreen.addColorStop(0, 'rgba(82,183,136,.25)');
+  gradGreen.addColorStop(1, 'rgba(82,183,136,0)');
+
+  inflasiChartInst = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [
+        {
+          label: 'Historis (%)',
+          data: actuals.concat([null]),
+          backgroundColor: 'rgba(82,183,136,0.7)',
+          borderColor: '#52b788',
+          borderWidth: 1.5,
+          borderRadius: 5,
+          order: 1
+        },
+        {
+          label: 'Prediksi (%)',
+          data: predArr,
+          backgroundColor: isRed ? 'rgba(192,57,43,0.75)' : 'rgba(183,119,13,0.75)',
+          borderColor: isRed ? '#c0392b' : '#b7770d',
+          borderWidth: 1.5,
+          borderRadius: 5,
+          order: 1
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          display: true,
+          position: 'top',
+          labels: { boxWidth: 12, usePointStyle: true, font: { family: 'Plus Jakarta Sans', size: 11 } }
+        },
+        tooltip: {
+          backgroundColor: '#1a3a2a',
+          titleColor: 'rgba(255,255,255,.6)',
+          bodyColor: 'white',
+          bodyFont: { weight: 'bold', size: 13 },
+          padding: 12,
+          cornerRadius: 8,
+          callbacks: {
+            label: c => c.parsed.y !== null ? ` ${c.parsed.y >= 0 ? '+' : ''}${c.parsed.y.toFixed(1).replace('.', ',')}%` : ''
+          }
+        }
+      },
+      scales: {
+        x: {
+          grid: { display: false },
+          border: { display: false },
+          ticks: { font: { size: 11, family: 'Plus Jakarta Sans' }, color: '#8a8a8a' }
+        },
+        y: {
+          grid: { color: 'rgba(0,0,0,.05)' },
+          border: { display: false },
+          ticks: {
+            font: { size: 11, family: 'Plus Jakarta Sans' },
+            color: '#8a8a8a',
+            callback: v => (v >= 0 ? '+' : '') + v.toFixed(1) + '%'
+          }
+        }
+      }
+    }
+  });
+}
+
+function renderInflasiKontribusi(data) {
+  const k = data.kontribusi;
+  const total = Object.values(k).reduce((a, b) => a + Math.abs(b), 0) || 1;
+
+  const faktorsConfig = [
+    { key: 'hari_raya',   icon: '🎉', name: 'Hari Raya Besar',          desc: 'Permintaan melonjak menjelang hari raya keagamaan',   cls: 'fi-raya-bg',  pctCls: 'danger', barColor: '#e74c3c', aktif: data.faktor_aktif?.hari_raya },
+    { key: 'cuaca',       icon: '🌧️', name: 'Cuaca Ekstrem',             desc: 'Gangguan panen akibat curah hujan tinggi / kemarau', cls: 'fi-cuaca-bg', pctCls: 'blue',   barColor: '#2471a3', aktif: data.faktor_aktif?.cuaca },
+    { key: 'bbm',         icon: '⛽',  name: 'Kenaikan Harga BBM',        desc: 'Biaya distribusi dan logistik meningkat',           cls: 'fi-bbm-bg',  pctCls: 'danger', barColor: '#e74c3c', aktif: data.faktor_aktif?.bbm },
+    { key: 'musiman',     icon: '📈',  name: 'Faktor Musiman & Tren',     desc: 'Pola historis dan siklus produksi komoditas',       cls: '',            pctCls: 'warn',   barColor: '#f39c12', aktif: true },
+  ];
+
+  const rows = faktorsConfig
+    .filter(f => f.aktif && k[f.key] !== undefined)
+    .map(f => {
+      const val  = k[f.key];
+      const pct  = val >= 0 ? '+' + val.toFixed(1).replace('.', ',') + '%' : val.toFixed(1).replace('.', ',') + '%';
+      const barW = Math.round(Math.abs(val) / total * 100);
+      return `
+        <div class="inflasi-faktor-row">
+          <div class="inflasi-faktor-row-icon ${f.cls}">${f.icon}</div>
+          <div class="inflasi-faktor-row-body">
+            <div class="inflasi-faktor-row-name">${f.name}</div>
+            <div class="inflasi-faktor-row-desc">${f.desc}</div>
+          </div>
+          <div class="inflasi-faktor-row-impact">
+            <div class="inflasi-faktor-pct ${f.pctCls}">${pct}</div>
+            <div class="inflasi-faktor-lbl">kontribusi</div>
+            <div class="inflasi-bar-bg">
+              <div class="inflasi-bar-fill" style="width:${barW}%;background:${f.barColor}"></div>
+            </div>
+          </div>
+        </div>`;
+    }).join('');
+
+  document.getElementById('inflasiKontribusiRows').innerHTML = rows;
+}
+
+// Isi dropdown komoditas inflasi setelah fetchKomoditasDB selesai
+const _origFetchKomo = fetchKomoditasDB;
+fetchKomoditasDB = async function() {
+  await _origFetchKomo();
+  const inflasiKomoEl = document.getElementById('inflasiKomoditas');
+  if (inflasiKomoEl && commodities.length > 0) {
+    inflasiKomoEl.innerHTML = '';
+    commodities.forEach(c => {
+      const opt = document.createElement('option');
+      opt.value = c.id;
+      opt.textContent = c.icon + ' ' + c.name;
+      inflasiKomoEl.appendChild(opt);
+    });
+  }
+};
+
