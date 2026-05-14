@@ -231,9 +231,15 @@ function filterKategori(k, btn) {
 }
 
 async function selectCommodity(id) {
+  const loading = document.getElementById('chartLoading');
+  if (loading) loading.style.display = 'flex';
+  
   activeCommodityId = id;
   const c = commodities.find(x=>x.id===id);
-  if (!c) return;
+  if (!c) {
+    if (loading) loading.style.display = 'none';
+    return;
+  }
   document.getElementById('chartCommodityName').textContent = c.icon+' '+c.name;
   
   await fetchHistoryDB(id);
@@ -241,6 +247,25 @@ async function selectCommodity(id) {
   
   renderCommodities();
   updateChart();
+  
+  if (loading) {
+    setTimeout(() => { loading.style.display = 'none'; }, 300);
+  }
+}
+
+function changePeriod(p, btn) {
+  const loading = document.getElementById('chartLoading');
+  currentPeriod = p;
+  document.querySelectorAll('.period-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  
+  if (loading) loading.style.display = 'flex';
+  
+  // Berikan sedikit jeda agar animasi loading terlihat
+  setTimeout(() => {
+    updateChart();
+    if (loading) loading.style.display = 'none';
+  }, 400);
 }
 
 // ── CHART ──
@@ -385,6 +410,7 @@ async function updateSearchKabKota() {
 }
 
 async function doSearch() {
+  const btn = document.getElementById('searchBtn');
   const commodity = document.getElementById('searchCommodity').value;
   const province = document.getElementById('searchProvince').value;
   const kabKota = document.getElementById('searchKabKota')?.value;
@@ -393,6 +419,12 @@ async function doSearch() {
 
   const komoditasData = commodities.find(c => c.name === commodity);
   if (!komoditasData) return;
+
+  // Loading state
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = '<span class="btn-spinner"></span> Mencari...';
+  }
 
   try {
     const response = await fetch(`api/api_harga_provinsi.php?slug=${komoditasData.id}`);
@@ -407,7 +439,6 @@ async function doSearch() {
         document.getElementById('searchResultLabel').textContent = `Hasil untuk "${commodity}" di ${kabKota} — Diperbarui hari ini`;
       } else if (province && province !== '') {
         // Jika pilih Provinsi (tapi tidak pilih Kab/Kota)
-        // Tampilkan agregat provinsinya saja
         filteredData = filteredData.filter(r => r.wilayah === province && r.tipe_wilayah === 'provinsi');
         document.getElementById('searchResultLabel').textContent = `Hasil untuk "${commodity}" di ${province} — Diperbarui hari ini`;
       } else {
@@ -437,22 +468,30 @@ async function doSearch() {
       sr.classList.add('visible');
       sr.scrollIntoView({ behavior:'smooth', block:'nearest' });
     }
+
+    // Simpan Riwayat ke Database (hanya jika sukses)
+    if (localStorage.getItem('isLoggedIn') === 'true') {
+        try {
+            await fetch('api/api_riwayat.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include', 
+                body: JSON.stringify({ slug: komoditasData.id })
+            });
+        } catch (err) {
+            console.error("Gagal menyimpan riwayat:", err);
+        }
+    }
+
   } catch (e) {
     console.error("Gagal mencari harga:", e);
-  }
-
-  // Simpan Riwayat ke Database
-  if (localStorage.getItem('isLoggedIn') === 'true') {
-      try {
-          await fetch('api/api_riwayat.php', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              credentials: 'include', 
-              body: JSON.stringify({ slug: komoditasData.id })
-          });
-      } catch (err) {
-          console.error("Gagal menyimpan riwayat:", err);
-      }
+    alert("Terjadi kesalahan saat mencari harga. Silakan coba lagi.");
+  } finally {
+    // Reset button state
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = 'Cari Harga';
+    }
   }
 }
 function quickSearch(keyword) {
@@ -516,7 +555,7 @@ window.addEventListener('scroll', ()=>{
   nav.classList.toggle('scrolled', window.scrollY > 10);
 
   // Active nav link
-  const sections = ['beranda','cari','harga','berita'];
+  const sections = ['beranda','cari','peta','harga','inflasi','berita'];
   const links = document.querySelectorAll('.nav-links a');
   sections.forEach((id,i)=>{
     const el = document.getElementById(id);
@@ -644,7 +683,10 @@ async function renderHomePrediksiChart() {
   if (loadingEl)     loadingEl.style.display      = 'flex';
 
   // Nonaktifkan tombol sementara
-  if (btn) { btn.disabled = true; btn.textContent = '⏳ Memproses...'; }
+  if (btn) { 
+    btn.disabled = true; 
+    btn.innerHTML = '<span class="btn-spinner"></span> Menghitung...'; 
+  }
 
   if (subtitleEl) subtitleEl.textContent = `Prediksi Tren Harga ${komoditasNama} ${labelPeriode} ke Depan (Memuat...)`;
 
@@ -660,7 +702,7 @@ async function renderHomePrediksiChart() {
         placeholderEl.innerHTML = `<span class="prediksi-placeholder-icon">⚠️</span><p>${data.error}</p>`;
         placeholderEl.style.display = 'flex';
       }
-      if (btn) { btn.disabled = false; btn.textContent = '🔍 Cek Prediksi'; }
+      if (btn) { btn.disabled = false; btn.innerHTML = '🔍 Cek Prediksi'; }
       return;
     }
 
@@ -794,7 +836,7 @@ async function renderHomePrediksiChart() {
     }
     console.error('Gagal render prediksi home:', e);
   } finally {
-    if (btn) { btn.disabled = false; btn.textContent = '🔍 Cek Prediksi'; }
+    if (btn) { btn.disabled = false; btn.innerHTML = '🔍 Cek Prediksi'; }
   }
 }
 

@@ -3,7 +3,7 @@ header('Content-Type: application/json');
 require_once __DIR__ . '/Server/koneksi.php';
 
 try {
-    $query = "SELECT DISTINCT wilayah FROM harga_harian WHERE wilayah != 'Semua Provinsi' AND wilayah != 'Nasional' ORDER BY wilayah ASC";
+    $query = "SELECT DISTINCT wilayah FROM harga_harian WHERE wilayah != 'Semua Provinsi' AND wilayah != 'Nasional' AND tipe_wilayah = 'provinsi' ORDER BY wilayah ASC";
     $result = mysqli_query($koneksi, $query);
 
     if (!$result) {

@@ -2,9 +2,17 @@
 require_once __DIR__ . '/api/Server/koneksi.php';
 
 // ============================================================
-// OVERRIDE SLUG via argumen CLI
-// Contoh: php import_csv.php beras
+// OVERRIDE SLUG DAN OPSI UPDATE via argumen CLI
+// Contoh: php import_csv.php beras --update
 // ============================================================
+$force_update = false;
+if (isset($argv)) {
+    $force_update = in_array('--update', $argv);
+    // Hapus '--update' dari $argv agar tidak mengganggu urutan argumen slug
+    $argv = array_diff($argv, ['--update']);
+    $argv = array_values($argv);
+}
+
 $slug_override = isset($argv[1]) ? strtolower(trim($argv[1])) : null;
 
 // ============================================================
@@ -139,12 +147,17 @@ foreach ($csv_files as $csv_file) {
 
         if ($cek_row['total'] > 0) {
             echo "PERINGATAN: Data sudah ada! Ditemukan {$cek_row['total']} entri.\n";
-            echo "Melewati import untuk menghindari duplikasi.\n";
-            echo "Menghapus file '$filename' karena data sudah ada di DB...\n";
-            fclose($handle);
-            unlink($csv_file);
-            echo "\n";
-            continue;
+            if ($force_update) {
+                echo "Mode --update aktif: Melanjutkan import untuk memperbarui data...\n\n";
+            } else {
+                echo "Melewati import untuk menghindari duplikasi.\n";
+                echo "Gunakan flag '--update' jika Anda ingin memperbarui data yang sudah ada.\n";
+                echo "Menghapus file '$filename' karena data sudah ada di DB...\n";
+                fclose($handle);
+                unlink($csv_file);
+                echo "\n";
+                continue;
+            }
         }
     }
 

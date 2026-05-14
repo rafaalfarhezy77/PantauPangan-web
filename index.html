@@ -21,10 +21,10 @@
   <ul class="nav-links">
     <li><a href="#beranda" class="active">Beranda</a></li>
     <li><a href="#cari">Cari Harga</a></li>
+    <li><a href="#peta">Peta</a></li>
     <li><a href="#harga">Grafik &amp; Prediksi</a></li>
     <li><a href="#inflasi">Prediksi Inflasi</a></li>
     <li><a href="#berita">Berita <span class="nav-badge">5</span></a></li>
-    <li><a href="#peta">Peta</a></li>
   </ul>
   <div class="nav-right">
     <a href="api/login.php" class="btn-login" id="navLoginBtn"> <img src="img/login_icon.png" alt=""> Masuk</a>
@@ -50,10 +50,10 @@
   <ul>
     <li><a href="#beranda" class="active" onclick="closeMobileNav()"><span class="mobile-nav-icon">🏠</span> Beranda</a></li>
     <li><a href="#cari" onclick="closeMobileNav()"><span class="mobile-nav-icon">🔍</span> Cari Harga</a></li>
+    <li><a href="#peta" onclick="closeMobileNav()"><span class="mobile-nav-icon">🗺️</span> Peta</a></li>
     <li><a href="#harga" onclick="closeMobileNav()"><span class="mobile-nav-icon">📊</span> Grafik &amp; Prediksi</a></li>
     <li><a href="#inflasi" onclick="closeMobileNav()"><span class="mobile-nav-icon">📉</span> Prediksi Inflasi</a></li>
     <li><a href="#berita" onclick="closeMobileNav()"><span class="mobile-nav-icon">📰</span> Berita <span class="nav-badge">5</span></a></li>
-    <li><a href="#peta" onclick="closeMobileNav()"><span class="mobile-nav-icon">🗺️</span> Peta</a></li>
   </ul>
   <div class="mobile-nav-divider"></div>
   <div id="mobileLoginSection">
@@ -149,7 +149,7 @@
     <p class="hero-desc">Data harga komoditas pangan terkini dari seluruh penjuru Indonesia. Membantu petani, pembeli, dan tengkulak mengambil keputusan yang tepat berdasarkan informasi pasar.</p>
     <div class="hero-cta">
       <a href="#cari" class="btn-primary">🔍 Cari Harga Sekarang</a>
-      <a href="#harga" class="btn-outline">Lihat Grafik Harga</a>
+      <a href="#harga" class="btn-outline">Lihat Grafik &amp; Prediksi</a>
     </div>
     <div class="hero-stats">
       <div>
@@ -202,7 +202,7 @@
           <option>30 Hari</option>
         </select>
       </div>
-      <button class="search-btn" onclick="doSearch()">Cari Harga</button>
+      <button class="search-btn" id="searchBtn" onclick="doSearch()">Cari Harga</button>
     </div>
     <div class="search-tags">
       <span class="search-tags-label">Populer:</span>
@@ -267,6 +267,10 @@
         </div>
       </div>
       <div class="chart-wrap">
+        <div id="chartLoading" class="chart-loading" style="display:none">
+          <div class="prediksi-spinner"></div>
+          <span>Memuat data historis...</span>
+        </div>
         <canvas id="priceChart"></canvas>
       </div>
       <div class="chart-summary">
@@ -587,8 +591,11 @@
     <div>
       <div class="footer-col-title">Fitur</div>
       <ul class="footer-links">
+        <li><a href="#beranda">Beranda</a></li>
         <li><a href="#cari">Cari Harga</a></li>
-        <li><a href="#harga">Grafik Harga</a></li>
+        <li><a href="#peta">Peta</a></li>
+        <li><a href="#harga">Grafik &amp; Prediksi</a></li>
+        <li><a href="#inflasi">Prediksi Inflasi</a></li>
         <li><a href="#berita">Berita Pangan</a></li>
       </ul>
     </div>

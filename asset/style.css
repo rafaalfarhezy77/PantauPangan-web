@@ -744,6 +744,12 @@ white-space: nowrap;
 }
 
 .search-btn:hover { background: var(--green-deep); transform: translateY(-1px); }
+.search-btn:disabled { 
+  background: var(--text-light); 
+  cursor: not-allowed; 
+  transform: none; 
+  opacity: 0.8;
+}
 
 .search-tags {
 margin-top: 16px;
@@ -908,7 +914,11 @@ flex-shrink: 0;
 }
 
 .prediksi-cek-btn:hover:not(:disabled) { background: var(--green-deep); transform: translateY(-1px); }
-.prediksi-cek-btn:disabled { opacity: .6; cursor: not-allowed; }
+.prediksi-cek-btn:disabled { 
+  background: var(--text-light); 
+  cursor: not-allowed; 
+  opacity: 0.8;
+}
 
 .prediksi-placeholder {
 position: absolute;
@@ -954,6 +964,18 @@ width: 32px;
 height: 32px;
 color: var(--green-mid);
 animation: spin 1s linear infinite;
+}
+
+.btn-spinner {
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(255,255,255,0.3);
+  border-radius: 50%;
+  border-top-color: #fff;
+  animation: spin 0.8s linear infinite;
+  display: inline-block;
+  vertical-align: middle;
+  margin-right: 8px;
 }
 
 @keyframes spin {
@@ -1125,6 +1147,29 @@ transition: background .2s, color .2s;
 .chart-wrap {
 height: 220px;
 position: relative;
+}
+
+.chart-loading {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: rgba(250, 247, 242, 0.85);
+  backdrop-filter: blur(2px);
+  z-index: 10;
+  gap: 12px;
+  color: var(--text-light);
+  font-size: .88rem;
+  font-weight: 600;
+  border-radius: var(--radius-sm);
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
 .chart-summary {
