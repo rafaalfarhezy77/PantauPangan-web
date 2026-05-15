@@ -114,15 +114,23 @@ def save_to_cache(key, data):
 # HELPER: Ambil & siapkan data historis dari DB
 # ============================================================
 def fetch_and_prepare(slug, wilayah, limit):
+    # Query untuk mengambil harga harian DAN total panen harian (jika ada)
     query = text("""
-        SELECT tanggal, harga FROM harga_harian
-        WHERE slug_komoditas = :slug AND wilayah = :wilayah
-        ORDER BY tanggal DESC
+        SELECT 
+            h.tanggal, 
+            h.harga,
+            COALESCE(SUM(p.jumlah), 0) as total_panen
+        FROM harga_harian h
+        JOIN komoditas k ON h.slug_komoditas = k.slug_id
+        LEFT JOIN hasil_panen p ON h.tanggal = p.tanggal_panen AND k.nama = p.nama_komoditas
+        WHERE h.slug_komoditas = :slug AND h.wilayah = :wilayah
+        GROUP BY h.tanggal, h.harga
+        ORDER BY h.tanggal DESC
         LIMIT :limit
     """)
     with engine.connect() as conn:
         rows = conn.execute(query, {"slug": slug, "wilayah": wilayah, "limit": limit})
-        df_raw = pd.DataFrame(rows.fetchall(), columns=['tanggal', 'harga'])
+        df_raw = pd.DataFrame(rows.fetchall(), columns=['tanggal', 'harga', 'total_panen'])
 
     if df_raw.empty:
         return None, None
@@ -130,13 +138,22 @@ def fetch_and_prepare(slug, wilayah, limit):
     df_raw = df_raw.sort_values('tanggal').reset_index(drop=True)
     df_raw['tanggal'] = pd.to_datetime(df_raw['tanggal'])
     df_raw['harga'] = df_raw['harga'].astype(float)
+    df_raw['total_panen'] = df_raw['total_panen'].astype(float)
 
     full_range = pd.date_range(start=df_raw['tanggal'].min(), end=df_raw['tanggal'].max(), freq='D')
     df_full = pd.DataFrame({'tanggal': full_range})
     df_full = df_full.merge(df_raw, on='tanggal', how='left')
+    
+    # Fill harga dengan ffill/bfill
     df_full['harga'] = df_full['harga'].ffill().bfill()
+    # Fill total_panen dengan 0 jika tidak ada data panen di tanggal tersebut
+    df_full['total_panen'] = df_full['total_panen'].fillna(0)
 
-    df = pd.DataFrame({'ds': df_full['tanggal'], 'y': df_full['harga']})
+    df = pd.DataFrame({
+        'ds': df_full['tanggal'], 
+        'y': df_full['harga'],
+        'total_panen': df_full['total_panen']
+    })
     return df_raw, df
 
 
@@ -190,11 +207,20 @@ def predict():
             interval_width=0.80,
             holidays=holidays_df
         )
+
+        # Tambahkan regressor hasil panen
+        model.add_regressor('total_panen')
+
         model.fit(df)
 
         future = model.make_future_dataframe(periods=hari, freq='D')
         future['floor'] = harga_floor
         future['cap']   = harga_cap
+
+        # Untuk masa depan, kita gunakan rata-rata panen historis sebagai asumsi stok
+        rata_rata_panen = df['total_panen'].mean()
+        future['total_panen'] = df['total_panen'].tolist() + [rata_rata_panen] * hari
+
         forecast = model.predict(future)
 
         last_date_asli = df_raw['tanggal'].max()
@@ -297,11 +323,19 @@ def predict_inflasi():
             df['harga_bbm'] = harga_bbm_input
             model.add_regressor('harga_bbm')
 
+        # Tambahkan regressor hasil panen (selalu aktif sebagai variabel kontrol)
+        model.add_regressor('total_panen')
+
         model.fit(df)
 
         future = model.make_future_dataframe(periods=hari, freq='D')
         future['floor'] = harga_floor
         future['cap']   = harga_cap
+        
+        # Asumsi panen masa depan (rata-rata)
+        rata_rata_panen = df['total_panen'].mean()
+        future['total_panen'] = df['total_panen'].tolist() + [rata_rata_panen] * hari
+
         if faktor_bbm and harga_bbm_input > 0:
             future['harga_bbm'] = harga_bbm_input
 
