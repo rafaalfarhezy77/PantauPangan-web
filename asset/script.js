@@ -2,6 +2,8 @@ let dbHistory = [];
 
 // ── DATA ──
 let commodities = [];
+let currentPage = 1;
+const commoditiesPerPage = 4;
 
 async function fetchKomoditasDB() {
   try {
@@ -192,7 +194,13 @@ function fmt(n) { return 'Rp '+n.toLocaleString('id-ID'); }
 function renderCommodities() {
   const list = document.getElementById('commodityList');
   const filtered = activeKategori === 'semua' ? commodities : commodities.filter(c=>c.kategori===activeKategori);
-  list.innerHTML = filtered.map(c => `
+  
+  // Hitung slice untuk pagination
+  const start = (currentPage - 1) * commoditiesPerPage;
+  const end = start + commoditiesPerPage;
+  const paginated = filtered.slice(start, end);
+
+  list.innerHTML = paginated.map(c => `
     <div class="commodity-card ${c.id===activeCommodityId?'active':''}" onclick="selectCommodity('${c.id}')">
       <div class="c-icon">${c.icon}</div>
       <div class="c-info">
@@ -213,10 +221,39 @@ function renderCommodities() {
       </div>
     </div>
   `).join('');
+
+  renderPagination(filtered.length);
+}
+
+function renderPagination(totalItems) {
+  const paginationEl = document.getElementById('commodityPagination');
+  if (!paginationEl) return;
+
+  const totalPages = Math.ceil(totalItems / commoditiesPerPage);
+  if (totalPages <= 1) {
+    paginationEl.innerHTML = '';
+    return;
+  }
+
+  let html = '';
+  for (let i = 1; i <= totalPages; i++) {
+    html += `<button class="pagination-btn ${i === currentPage ? 'active' : ''}" onclick="changePage(${i})">${i}</button>`;
+  }
+  paginationEl.innerHTML = html;
+}
+
+function changePage(page) {
+  currentPage = page;
+  renderCommodities();
+  // Scroll ke atas list jika di mobile
+  if (window.innerWidth <= 900) {
+    document.getElementById('commodityList').scrollIntoView({ behavior: 'smooth' });
+  }
 }
 
 function filterKategori(k, btn) {
   activeKategori = k;
+  currentPage = 1; // Reset ke halaman 1
   document.querySelectorAll('#kategoriTabs .tab-btn').forEach(b=>b.classList.remove('active'));
   btn.classList.add('active');
 

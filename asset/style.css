@@ -984,9 +984,39 @@ to   { transform: rotate(360deg); }
 }
 
 @media (max-width: 600px) {
-.prediksi-header { flex-direction: column; }
-.prediksi-controls { width: 100%; }
-.prediksi-select { flex: 1; min-width: 0; }
+  .prediksi-header { flex-direction: column; align-items: stretch; }
+  .prediksi-controls { 
+    width: 100%; 
+    display: grid; 
+    grid-template-columns: repeat(2, 1fr); 
+    gap: 10px; 
+  }
+  .prediksi-select { 
+    width: 100%; 
+    min-width: 0; 
+    font-size: 0.95rem; 
+    padding: 12px 15px; 
+    height: auto;
+    background-position: right 0.8rem top 50%;
+    border-color: #cbd5e0;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+  }
+  .prediksi-cek-btn { 
+    grid-column: span 2; 
+    padding: 14px; 
+    font-size: 0.95rem;
+    margin-top: 4px;
+    box-shadow: var(--shadow-sm);
+  }
+}
+
+@media (max-width: 420px) {
+  .prediksi-controls { 
+    grid-template-columns: 1fr; 
+  }
+  .prediksi-cek-btn { 
+    grid-column: span 1; 
+  }
 }
 
 .harga-header {
@@ -1027,20 +1057,27 @@ gap: 24px;
 }
 
 @media (max-width: 900px) {
-.harga-grid { display: flex; flex-direction: column; }
-.commodity-list { 
-  flex-direction: row; 
-  overflow-x: auto; 
-  padding-bottom: 8px; 
-  margin-bottom: 8px;
-  scroll-snap-type: x mandatory;
-  -webkit-overflow-scrolling: touch;
-}
-.commodity-card {
-  min-width: 260px;
-  scroll-snap-align: start;
-  flex-shrink: 0;
-}
+  .harga-grid { display: flex !important; flex-direction: column !important; gap: 16px !important; }
+  .chart-panel { padding: 20px 10px !important; } /* Lebih rapat ke kiri untuk mobile */
+  .commodity-list { 
+    flex-direction: row; 
+    overflow-x: auto; 
+    padding-bottom: 8px; 
+    margin-bottom: 8px;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+  }
+  .commodity-card {
+    min-width: 260px;
+    scroll-snap-align: start;
+    flex-shrink: 0;
+  }
+  /* Box statistik agar tidak berdesakan di mobile */
+  .chart-summary {
+    grid-template-columns: 1fr;
+    gap: 10px;
+    margin-top: 18px;
+  }
 }
 
 /* Komoditas Cards */
@@ -1092,6 +1129,42 @@ box-shadow: var(--shadow-sm);
 .c-change { font-size: .75rem; font-weight: 600; }
 .c-change.up { color: #2e7d32; }
 .c-change.down { color: #c62828; }
+
+/* Pagination */
+.pagination {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.pagination-btn {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  border: 1.5px solid var(--cream-dark);
+  background: white;
+  color: var(--text-mid);
+  font-size: .85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all .2s;
+}
+
+.pagination-btn:hover {
+  background: var(--green-mist);
+  color: var(--green-deep);
+  border-color: var(--green-pale);
+}
+
+.pagination-btn.active {
+  background: var(--green-deep);
+  color: white;
+  border-color: var(--green-deep);
+}
 
 /* Chart Panel */
 .chart-panel {
@@ -1175,9 +1248,11 @@ position: relative;
 .chart-summary {
 display: grid;
 grid-template-columns: repeat(3, 1fr);
-gap: 12px;
-margin-top: 20px;
+gap: 16px;
+margin-top: 24px;
 }
+
+
 
 .chart-stat {
 background: white;

@@ -7,7 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&family=Lora:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
-<link rel="stylesheet" href="asset/style.css?v=2">
+<link rel="stylesheet" href="asset/style.css?v=3">
 
 </head>
 <body>
@@ -252,7 +252,10 @@
   </div>
 
   <div class="harga-grid">
-    <div class="commodity-list" id="commodityList"></div>
+    <div class="commodity-list-wrap">
+      <div class="commodity-list" id="commodityList"></div>
+      <div id="commodityPagination" class="pagination"></div>
+    </div>
     <div class="chart-panel">
       <div class="chart-header">
         <div>
