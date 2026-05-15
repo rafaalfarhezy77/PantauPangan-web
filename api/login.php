@@ -255,7 +255,7 @@ if (isset($_SESSION['user_id'])) {
       </div>
 
       <p class="text-xs font-semibold text-gray-600 mb-2.5">Kamu adalah seorang...</p>
-      <div id="roleGrid" class="grid grid-cols-4 gap-2 mb-5">
+      <div id="roleGrid" class="grid grid-cols-3 gap-2 mb-3">
         <div onclick="selectRole('petani', this)"
              class="role-card flex flex-col items-center gap-1.5 p-3 bg-white border border-cream-dark rounded-xl cursor-pointer hover:border-green-pale transition-all text-center">
           <span class="text-2xl">🌾</span>
@@ -271,6 +271,16 @@ if (isset($_SESSION['user_id'])) {
           <span class="text-2xl">🏪</span>
           <span class="text-xs font-semibold text-gray-700">Tengkulak</span>
         </div>
+        <div onclick="selectRole('pedagang', this)"
+             class="role-card flex flex-col items-center gap-1.5 p-3 bg-white border border-cream-dark rounded-xl cursor-pointer hover:border-green-pale transition-all text-center">
+          <span class="text-2xl">🏬</span>
+          <span class="text-xs font-semibold text-gray-700">Pedagang</span>
+        </div>
+        <div onclick="selectRole('dinas pemerintah', this)"
+             class="role-card flex flex-col items-center gap-1.5 p-3 bg-white border border-cream-dark rounded-xl cursor-pointer hover:border-green-pale transition-all text-center">
+          <span class="text-2xl">🏛️</span>
+          <span class="text-xs font-semibold text-gray-700">Dinas</span>
+        </div>
         <div onclick="selectRole('lainnya', this)"
              class="role-card flex flex-col items-center gap-1.5 p-3 bg-white border border-cream-dark rounded-xl cursor-pointer hover:border-green-pale transition-all text-center">
           <span class="text-2xl">👤</span>
@@ -278,6 +288,15 @@ if (isset($_SESSION['user_id'])) {
         </div>
       </div>
       <input type="hidden" id="selectedRole">
+      <div id="instansiDinasContainer" class="hidden mb-5">
+        <label class="block text-xs font-semibold text-gray-600 mb-1.5">Instansi Dinas</label>
+        <div class="relative">
+          <span class="absolute left-3.5 top-1/2 -translate-y-1/2 text-base pointer-events-none">🏢</span>
+          <input id="regInstansiDinas" type="text" placeholder="cth : Dinas Pertanian Jawa Barat"
+                 class="w-full pl-10 pr-4 py-3 bg-white border border-cream-dark rounded-xl text-sm
+                        outline-none focus:border-green-light transition-colors font-sans">
+        </div>
+      </div>
 
       <button onclick="doRegister()"
         class="w-full py-3.5 bg-green-deep text-white font-semibold text-sm rounded-xl
@@ -429,6 +448,13 @@ function selectRole(role, el) {
   el.classList.add('border-green-light','bg-green-mist');
   el.classList.remove('border-cream-dark');
   document.getElementById('selectedRole').value = role;
+
+  const instansiContainer = document.getElementById('instansiDinasContainer');
+  if (role === 'dinas pemerintah') {
+    instansiContainer.classList.remove('hidden');
+  } else {
+    instansiContainer.classList.add('hidden');
+  }
 }
 
 // ── LOGIN ──
@@ -484,11 +510,13 @@ async function doRegister() {
   const username = document.getElementById('regUsername').value.trim();
   const email     = document.getElementById('regEmail').value.trim();
   const password       = document.getElementById('regPassword').value;
+  const instansiDinas = document.getElementById('regInstansiDinas').value.trim();
   
   if (!username||!email||!password)  { showAlert('formAlert','⚠️ Nama, email, dan kata sandi wajib diisi.','error'); return; }
   if (!email.includes('@'))     { showAlert('formAlert','⚠️ Format email tidak valid.','error'); return; }
   if (password.length < 8)            { showAlert('formAlert','⚠️ Kata sandi minimal 8 karakter.','error'); return; }
   if (!selectedRoleValue)       { showAlert('formAlert','⚠️ Pilih peranmu terlebih dahulu.','error'); return; }
+  if (selectedRoleValue === 'dinas pemerintah' && !instansiDinas) { showAlert('formAlert','⚠️ Instansi Dinas wajib diisi untuk peran Dinas Pemerintah.','error'); return; }
 
   try {
     const response = await fetch('Proses/prosesRegister.php', {
@@ -499,7 +527,8 @@ async function doRegister() {
         username: username,
         email: email, 
         password: password, 
-        role: selectedRoleValue 
+        role: selectedRoleValue,
+        instansi_dinas: selectedRoleValue === 'dinas pemerintah' ? instansiDinas : null
       })
     });
     

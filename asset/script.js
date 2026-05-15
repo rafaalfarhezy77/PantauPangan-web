@@ -616,6 +616,47 @@ setTimeout(()=>{
   });
 }, 100);
 
+// Jalankan fungsi ini secara otomatis saat home.html selesai dimuat
+document.addEventListener('DOMContentLoaded', checkLoginStatus);
+
+// ── FUNGSI REKOMENDASI ──
+function getRekomendasiHarga(role, trend) {
+  if (!role) return null;
+  role = role.toLowerCase();
+  if (role === 'petani') {
+    if (trend === 'naik') return "Saatnya memanen atau menjual lebih banyak hasil panen untuk memaksimalkan keuntungan.";
+    if (trend === 'turun') return "Tunda panen besar-besaran jika memungkinkan, atau cari pasar alternatif untuk menghindari kerugian.";
+    return "Pertahankan jadwal panen normal, pastikan kualitas hasil tani tetap terjaga.";
+  }
+  if (role === 'tengkulak') {
+    if (trend === 'naik') return "Beli stok sesegera mungkin sebelum harga semakin tinggi, namun hati-hati terhadap penurunan permintaan.";
+    if (trend === 'turun') return "Kurangi pembelian stok besar-besaran, fokus pada penjualan stok yang ada untuk menghindari penurunan nilai.";
+    return "Lakukan pembelian dan penjualan secara normal sesuai permintaan pasar rutin.";
+  }
+  if (role === 'pedagang') {
+    if (trend === 'naik') return "Sesuaikan harga jual secara bertahap agar tidak kehilangan pelanggan, perhatikan juga stok ketersediaan.";
+    if (trend === 'turun') return "Ini kesempatan baik untuk menambah stok dengan harga lebih murah, lalu beri diskon untuk menarik pelanggan.";
+    return "Harga stabil, fokuskan pada strategi pelayanan dan kualitas barang untuk menarik pembeli.";
+  }
+  if (role === 'pembeli') {
+    if (trend === 'naik') return "Beli secukupnya saja, pertimbangkan untuk mencari barang substitusi yang lebih murah.";
+    if (trend === 'turun') return "Waktu yang tepat untuk menyetok komoditas ini sebelum harga kembali normal.";
+    return "Beli sesuai kebutuhan rutin, harga terpantau stabil.";
+  }
+  return null;
+}
+
+function getRekomendasiInflasi(role, trend) {
+  if (!role) return null;
+  role = role.toLowerCase();
+  if (role === 'dinas pemerintah') {
+    if (trend === 'naik') return "Segera lakukan operasi pasar, amankan rantai pasok, dan koordinasikan distribusi antardaerah untuk menekan laju inflasi.";
+    if (trend === 'turun') return "Pantau daya beli masyarakat, bantu penyerapan hasil panen petani lokal agar harga tidak anjlok berlebihan.";
+    return "Lakukan pemantauan rutin pada sentra produksi dan distribusi untuk menjaga stabilitas harga tetap kondusif.";
+  }
+  return null;
+}
+
 // ── PREDIKSI HARGA (HALAMAN UTAMA) ──
 const periodeLabelHome = { '7':'7 Hari', '30':'1 Bulan', '90':'3 Bulan', '120':'4 Bulan' };
 let homePrediksiChartInst = null;
@@ -701,6 +742,10 @@ async function renderHomePrediksiChart() {
   }
 
   if (subtitleEl) subtitleEl.textContent = `Prediksi Tren Harga ${komoditasNama} ${labelPeriode} ke Depan (Memuat...)`;
+
+  // Reset Rekomendasi
+  const rekoEl = document.getElementById('prediksiRekomendasiHome');
+  if (rekoEl) rekoEl.style.display = 'none';
 
   try {
     const res  = await fetch(`api/predict_prophet.php?slug=${encodeURIComponent(slug)}&wilayah=${encodeURIComponent(wilayah)}&hari=${hari}`);
@@ -800,6 +845,46 @@ async function renderHomePrediksiChart() {
         });
     }
 
+    // --- REKOMENDASI HARGA ---
+    if (rekoEl) {
+      const role = localStorage.getItem('role');
+      const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
+
+      if (!isLoggedIn) {
+        rekoEl.style.display = 'block';
+        document.getElementById('saranRoleBadge').textContent = "Tamu";
+        document.getElementById('prediksiSaranText').innerHTML = "<em>Silakan <a href='api/login.php' style='color:#2e7d32; text-decoration:underline;'>login</a> terlebih dahulu untuk mendapatkan saran tindakan.</em>";
+      } else {
+        const lastHistoris = hargaHistoris[hargaHistoris.length - 1];
+        const lastPrediksi = hargaPrediksi[hargaPrediksi.length - 1];
+        let pctChange = 0;
+        if (lastHistoris && lastHistoris > 0) {
+          pctChange = ((lastPrediksi - lastHistoris) / lastHistoris) * 100;
+        }
+        let trend = 'stagnan';
+        if (pctChange > 2) trend = 'naik';
+        else if (pctChange < -2) trend = 'turun';
+
+        const saran = getRekomendasiHarga(role, trend);
+        if (saran) {
+          rekoEl.style.display = 'block';
+          document.getElementById('saranRoleBadge').textContent = toTitleCase(role || 'User');
+          document.getElementById('prediksiSaranText').textContent = saran;
+        } else {
+          // Jika role tidak termasuk yang dapat saran harga (misal: dinas pemerintah)
+          if (role === 'dinas pemerintah') {
+            rekoEl.style.display = 'block';
+            rekoEl.style.background = '#f5f5f5';
+            rekoEl.style.borderColor = '#d0d0d0';
+            document.getElementById('saranRoleBadge').textContent = "Dinas Pemerintah";
+            document.getElementById('prediksiSaranText').innerHTML = "<span style='color:#666'>Saran tindakan teknis harga hanya tersedia untuk Petani, Pedagang, dan Pembeli. Silakan cek bagian <strong>Prediksi Inflasi</strong> untuk saran kebijakan.</span>";
+          } else {
+            rekoEl.style.display = 'none';
+          }
+        }
+      }
+    }
+
     homePrediksiChartInst = new Chart(ctx, {
       type: 'line',
       data: {
@@ -840,6 +925,7 @@ async function renderHomePrediksiChart() {
         }
       }
     });
+
   } catch (e) {
     if (loadingEl) loadingEl.style.display = 'none';
     if (placeholderEl) {
@@ -851,9 +937,6 @@ async function renderHomePrediksiChart() {
     if (btn) { btn.disabled = false; btn.innerHTML = '🔍 Cek Prediksi'; }
   }
 }
-
-// ── SCROLL EFFECTS ──
-
 // ── LOGIN & AUTH ──
 let currentUser = null;
 
@@ -1016,6 +1099,9 @@ function inflasiShowState(state) {
   document.getElementById('inflasiMetricsCard').style.display    = state === 'result'      ? 'block' : 'none';
   document.getElementById('inflasiChartCard').style.display      = state === 'result'      ? 'block' : 'none';
   document.getElementById('inflasiKontribusiCard').style.display = state === 'result'      ? 'block' : 'none';
+  if (state !== 'result') {
+    document.getElementById('inflasiRekomendasi').style.display = 'none';
+  }
 }
 
 async function runInflasiPrediksi() {
@@ -1121,6 +1207,32 @@ function renderInflasiResult(data) {
     iconEl.textContent = '✅';
     titleEl.textContent = 'Aman — Harga Diprediksi Stabil atau Turun';
     textEl.textContent = `${komoNama} di ${data.wilayah} diprediksi tidak mengalami kenaikan signifikan dalam ${periodeLabel}.`;
+  }
+
+  // --- REKOMENDASI INFLASI ---
+  const rekoInflasiEl = document.getElementById('inflasiRekomendasi');
+  const role = localStorage.getItem('role');
+  const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
+
+  if (rekoInflasiEl) {
+    if (!isLoggedIn) {
+      rekoInflasiEl.style.display = 'block';
+      document.getElementById('saranInflasiRoleBadge').textContent = "Tamu";
+      document.getElementById('inflasiSaranText').innerHTML = "<em>Silakan <a href='api/login.php' style='color:#1565c0; text-decoration:underline;'>login</a> terlebih dahulu untuk mendapatkan saran tindakan.</em>";
+    } else {
+      let trend = 'stagnan';
+      if (pct > 2) trend = 'naik';
+      else if (pct < -2) trend = 'turun';
+
+      const saran = getRekomendasiInflasi(role, trend);
+      if (saran) {
+        rekoInflasiEl.style.display = 'block';
+        document.getElementById('saranInflasiRoleBadge').textContent = toTitleCase(role);
+        document.getElementById('inflasiSaranText').textContent = saran;
+      } else {
+        rekoInflasiEl.style.display = 'none';
+      }
+    }
   }
 
   // --- Chart (gunakan Chart.js yang sama seperti prediksi harga) ---
@@ -1292,4 +1404,3 @@ async function updateInflasiKabKota() {
     kabEl.innerHTML = '<option value="">Gagal memuat</option>';
   }
 }
-

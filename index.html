@@ -373,6 +373,11 @@
         <span>Menghitung prediksi...</span>
       </div>
       <canvas id="homePrediksiChart" style="display:none;"></canvas>
+      <!-- Rekomendasi Harga -->
+      <div id="prediksiRekomendasiHome" class="prediksi-rekomendasi" style="display:none; margin-top: 20px; padding: 15px; border-radius: 8px; background: #e8f5e9; border: 1px solid #c8e6c9;">
+        <h4 style="margin: 0 0 10px 0; color: #2e7d32; display: flex; align-items: center; gap: 8px;">💡 Saran Tindakan <span id="saranRoleBadge" style="font-size: 0.75rem; padding: 2px 8px; background: #2e7d32; color: white; border-radius: 12px; font-weight: normal;"></span></h4>
+        <p id="prediksiSaranText" style="margin: 0; font-size: 0.9rem; color: #1b5e20; line-height: 1.5;"></p>
+      </div>
     </div>
   </div>
 
@@ -538,6 +543,12 @@
         </div>
       </div>
 
+      <!-- Rekomendasi Inflasi -->
+      <div id="inflasiRekomendasi" class="inflasi-rekomendasi" style="display:none; margin-top: 20px; padding: 15px; border-radius: 8px; background: #e3f2fd; border: 1px solid #bbdefb;">
+        <h4 style="margin: 0 0 10px 0; color: #1565c0; display: flex; align-items: center; gap: 8px;">💡 Saran Tindakan <span id="saranInflasiRoleBadge" style="font-size: 0.75rem; padding: 2px 8px; background: #1565c0; color: white; border-radius: 12px; font-weight: normal;"></span></h4>
+        <p id="inflasiSaranText" style="margin: 0; font-size: 0.9rem; color: #0d47a1; line-height: 1.5;"></p>
+      </div>
+
       <!-- Chart Card -->
       <div class="inflasi-chart-card" id="inflasiChartCard" style="display:none">
         <div class="inflasi-chart-header">
@@ -610,7 +621,7 @@
     </div>
   </div>
   <div class="footer-bottom">
-    <span>© 2025 PantauPangan. Data bersumber dari Bapanas & BPS.</span>
+    <span>© 2025 PantauPangan. Data bersumber dari download CSV PIHPS (Pasar Tradisional).</span>
     <span><a href="#">Kebijakan Privasi</a> · <a href="#">Ketentuan Penggunaan</a></span>
   </div>
 </footer>

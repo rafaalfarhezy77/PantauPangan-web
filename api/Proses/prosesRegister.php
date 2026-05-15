@@ -16,6 +16,7 @@
     $email = mysqli_real_escape_string($koneksi, $data['email']);
     $password = mysqli_real_escape_string($koneksi, $data['password']);
     $role = mysqli_real_escape_string($koneksi, $data['role']);
+    $instansi_dinas = isset($data['instansi_dinas']) ? mysqli_real_escape_string($koneksi, $data['instansi_dinas']) : NULL;
 
     $password_hash = password_hash($password, PASSWORD_DEFAULT);
 
@@ -26,7 +27,12 @@
         exit;
     }
 
-    $query = "INSERT INTO users (username, email, password, role) VALUES ('$username', '$email', '$password_hash', '$role')";
+    if ($instansi_dinas !== NULL) {
+        $query = "INSERT INTO users (username, email, password, role, instansi_dinas) VALUES ('$username', '$email', '$password_hash', '$role', '$instansi_dinas')";
+    } else {
+        $query = "INSERT INTO users (username, email, password, role) VALUES ('$username', '$email', '$password_hash', '$role')";
+    }
+    
     $result = mysqli_query($koneksi, $query);
 
     if ($result) {
