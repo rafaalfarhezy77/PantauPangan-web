@@ -130,6 +130,12 @@ $query = mysqli_query($koneksi, "SELECT * FROM users");
        class="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm font-medium text-blue-300 hover:bg-white/10 hover:text-white transition-colors no-underline">
       <span class="w-5 text-center text-base">📰</span>Kelola Berita
     </a>
+    <?php elseif(isset($_SESSION['role']) && $_SESSION['role'] === 'petani'): ?>
+    <p class="text-[0.65rem] font-semibold uppercase tracking-widest text-white/30 px-2 pt-4 pb-1.5">Fitur Petani</p>
+    <a href="panen.php" 
+       class="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm font-medium text-green-pale hover:bg-white/10 hover:text-white transition-colors no-underline">
+      <span class="w-5 text-center text-base">🌾</span>Catat Panen
+    </a>
     <?php endif; ?>
   </nav>
 
