@@ -93,7 +93,7 @@ Data harga yang digunakan dalam sistem ini bersumber dari **Layanan Download CSV
 ---
 
 ## 👥 Kontributor
-- **Nama Anda/Tim** - *Initial Work*
+- *Rafa Alfa Rhezy*
 
 ---
 
