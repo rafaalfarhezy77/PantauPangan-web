@@ -10,8 +10,12 @@
       "dest": "/index.html"
     },
     {
-      "src": "/(login|dashboard|dashboardAdmin|detail|edit_user|coba_api|provinsi_api|logout)",
+      "src": "/(login|dashboard|dashboardAdmin|dashboardBerita|dashboardKomoditas|detail|edit_user|coba_api|provinsi_api|logout|panen|tambah_panen)",
       "dest": "/api/$1.php"
+    },
+    {
+      "src": "/api/(predict|predict_prophet|predict_inflasi|api_komoditas|api_harga_provinsi|api_berita|api_history|api_import_log|api_list_provinsi|api_pantauan|api_riwayat|api_toggle_pantauan|kab_kota_by_provinsi)\\.php(.*)",
+      "dest": "/api/$1.php$2"
     },
     {
       "src": "/Proses/(.*)",

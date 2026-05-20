@@ -37,50 +37,108 @@ $curl_error = curl_error($ch);
 curl_close($ch);
 
 if ($curl_error || $http_code !== 200) {
-    // FALLBACK KE REGRESI LINEAR LAMA JIKA PYTHON MATI, ERROR, ATAU 404
+    // ============================================================
+    // FALLBACK: Regresi Linear langsung via PHP (tanpa HTTP request)
+    // Sebelumnya menggunakan cURL ke predict.php, namun gagal di Vercel
+    // karena routing vercel.json tidak meng-cover file tersebut (308 redirect).
+    // Sekarang fallback dilakukan langsung di dalam proses ini.
+    // ============================================================
     
-    $protocol = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? "https" : "http";
-    $host = $_SERVER['HTTP_HOST'];
-    $uri = $_SERVER['REQUEST_URI']; 
-    // Ganti nama file endpoint
-    $fallback_uri = str_replace("predict_prophet.php", "predict.php", $uri);
-    $fallback_url = $protocol . "://" . $host . $fallback_uri;
-    
-    $ch_fallback = curl_init();
-    curl_setopt_array($ch_fallback, [
-        CURLOPT_URL            => $fallback_url,
-        CURLOPT_RETURNTRANSFER => true,
-        CURLOPT_TIMEOUT        => 10
-    ]);
-    
-    $fallback_response = curl_exec($ch_fallback);
-    $fallback_code = curl_getinfo($ch_fallback, CURLINFO_HTTP_CODE);
-    curl_close($ch_fallback);
-    
-    if ($fallback_response) {
-        $data = json_decode($fallback_response, true);
-        if (is_array($data)) {
-            // Jika prediksi regresi linear sukses
-            if (!isset($data['error'])) {
-                $data['algoritma'] = 'regresi_linear (fallback)';
-                $data['fallback_reason'] = 'Python Service Error / 404';
-                echo json_encode($data);
-            } else {
-                // Jika regresi linear mengembalikan error seperti "Data tidak ditemukan"
-                http_response_code(200); // Set ke 200 agar frontend tetap memproses pesannya
-                echo $fallback_response;
-            }
+    try {
+        require_once __DIR__ . '/Server/koneksi.php';
+
+        date_default_timezone_set('Asia/Jakarta');
+        $hari_ini = date('Y-m-d');
+
+        // Data training: min 30 hari, max 60 hari
+        $limit_hari = min(60, max(30, $hari));
+
+        $query = "SELECT tanggal, harga FROM harga_harian
+                  WHERE slug_komoditas = ? AND wilayah = ? AND tanggal < ?
+                  ORDER BY tanggal DESC LIMIT ?";
+        $stmt = mysqli_prepare($koneksi, $query);
+
+        if (!$stmt) {
+            throw new Exception("Error prepare statement: " . mysqli_error($koneksi));
+        }
+
+        mysqli_stmt_bind_param($stmt, "sssi", $slug, $wilayah, $hari_ini, $limit_hari);
+        mysqli_stmt_execute($stmt);
+        $result = mysqli_stmt_get_result($stmt);
+
+        $data_historis = [];
+        while ($row = mysqli_fetch_assoc($result)) {
+            $data_historis[] = $row;
+        }
+
+        // Balik urutan menjadi ASC
+        $data_historis = array_reverse($data_historis);
+        mysqli_stmt_close($stmt);
+
+        if (count($data_historis) == 0) {
+            echo json_encode(['error' => 'Data tidak ditemukan untuk wilayah ini.']);
             exit;
         }
-    }
 
-    // Jika file predict.php tidak bisa diakses sama sekali
-    http_response_code(503);
-    echo json_encode([
-        'error' => 'Prediction Service tidak dapat dihubungi dan Fallback (Regresi Linear) mati.',
-        'detail' => 'Python HTTP: ' . $http_code . ' | Fallback HTTP: ' . $fallback_code
-    ]);
-    exit;
+        // Siapkan array untuk Regresi Linear
+        $x_values = [];
+        $y_values = [];
+        foreach ($data_historis as $index => $row) {
+            $x_values[] = $index + 1;
+            $y_values[] = (float) $row['harga'];
+        }
+
+        // Hitung koefisien Regresi Linear (y = mx + c)
+        $n     = count($x_values);
+        $sumX  = array_sum($x_values);
+        $sumY  = array_sum($y_values);
+        $sumXY = 0;
+        $sumX2 = 0;
+        for ($i = 0; $i < $n; $i++) {
+            $sumXY += ($x_values[$i] * $y_values[$i]);
+            $sumX2 += ($x_values[$i] * $x_values[$i]);
+        }
+
+        $denominator = ($n * $sumX2 - $sumX * $sumX);
+        $m = ($denominator == 0) ? 0 : ($n * $sumXY - $sumX * $sumY) / $denominator;
+        $c = ($sumY - $m * $sumX) / $n;
+
+        // Prediksi N hari ke depan mulai hari ini
+        $prediksi = [];
+        $tanggal_terakhir = date('Y-m-d', strtotime('-1 day'));
+
+        for ($i = 1; $i <= $hari; $i++) {
+            $x_prediksi = $n + $i;
+            $y_prediksi = round(($m * $x_prediksi) + $c);
+            $tgl_baru   = date('Y-m-d', strtotime($tanggal_terakhir . " + $i days"));
+
+            $prediksi[] = [
+                'tanggal' => $tgl_baru,
+                'harga'   => $y_prediksi
+            ];
+        }
+
+        echo json_encode([
+            'wilayah'         => $wilayah,
+            'slug'            => $slug,
+            'hari_prediksi'   => $hari,
+            'historis'        => $data_historis,
+            'prediksi'        => $prediksi,
+            'algoritma'       => 'regresi_linear (fallback)',
+            'fallback_reason' => 'Python Service tidak tersedia (HTTP ' . $http_code . ')'
+        ]);
+        exit;
+
+    } catch (Exception $e) {
+        // Jika bahkan fallback regresi linear pun gagal
+        error_log("Fallback Regresi Linear Error: " . $e->getMessage());
+        http_response_code(503);
+        echo json_encode([
+            'error'  => 'Prediction Service tidak dapat dihubungi dan Fallback (Regresi Linear) juga gagal.',
+            'detail' => 'Python HTTP: ' . $http_code . ' | Fallback Error: ' . $e->getMessage()
+        ]);
+        exit;
+    }
 }
 
 // Teruskan respons dari Python ke Frontend
