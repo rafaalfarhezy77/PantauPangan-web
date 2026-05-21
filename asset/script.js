@@ -556,46 +556,121 @@ function renderBerita() {
   }
   
   const featured = newsData.find(n=>n.featured) || newsData[0];
-  const rest = newsData.filter(n=> n !== featured).slice(0, 4);
+  const rest = newsData.filter(n=> n !== featured).slice(0, 5);
+  const featIdx = newsData.indexOf(featured);
+
+  // Helper: potong deskripsi menjadi 1 kalimat pembuka sebagai teaser
+  function teaser(text, maxLen = 140) {
+    if (!text) return '';
+    return text.length > maxLen ? text.slice(0, maxLen).trim() + '...' : text;
+  }
+
+  // Atribusi sumber: "(Sumber: Kompas.com)"
+  function sourceLabel(n) {
+    return n.source && n.source !== 'Redaksi' ? `(Sumber: ${n.source})` : '';
+  }
+
+  // Tombol Baca Selengkapnya — hanya jika ada link
+  function readMoreBtn(n, style = '') {
+    if (!n.link_url) return '';
+    return `<a href="${n.link_url}" target="_blank" rel="noopener noreferrer"
+      onclick="event.stopPropagation()"
+      style="display:inline-flex;align-items:center;gap:5px;margin-top:8px;
+             font-size:.72rem;font-weight:700;color:var(--green-mid);
+             background:var(--green-mist);padding:4px 12px;border-radius:20px;
+             text-decoration:none;transition:background .2s;${style}"
+      onmouseover="this.style.background='var(--green-pale)'"
+      onmouseout="this.style.background='var(--green-mist)'">
+      Baca Selengkapnya <span style="font-size:.8rem">↗</span>
+    </a>`;
+  }
 
   document.getElementById('beritaGrid').innerHTML = `
-    <div class="news-featured" onclick="openModal(${newsData.indexOf(featured)})">
+    <div class="news-featured" onclick="openModal(${featIdx})" style="cursor:pointer">
       <div class="news-featured-bg" style="background-image: url('${featured.image}'); background-size: cover; background-position: center;"></div>
-      <div class="news-featured-content" style="background: linear-gradient(to top, rgba(26,58,42,0.95), transparent);">
+      <div class="news-featured-content" style="background: linear-gradient(to top, rgba(26,58,42,0.97) 0%, rgba(26,58,42,0.6) 60%, transparent 100%);">
         <span class="news-category" style="background: rgba(255,255,255,0.2); backdrop-filter: blur(4px);">${featured.cat}</span>
         <div class="news-featured-title" style="text-shadow: 0 2px 4px rgba(0,0,0,0.5);">${featured.title}</div>
-        <div class="news-meta" style="color: rgba(255,255,255,0.8);">
-          <span>${featured.source} · ${featured.date}</span>
+        <div class="news-meta" style="color: rgba(255,255,255,0.75); margin-top:6px; line-height:1.5; font-size:.8rem;">
+          <span style="font-style:italic;">&ldquo;${teaser(featured.body, 120)}&rdquo;</span><br>
+          <span style="opacity:.85">${sourceLabel(featured)} &nbsp;·&nbsp; ${featured.date}${featured.penulis ? ' &nbsp;·&nbsp; ✍️ ' + featured.penulis : ''}</span>
         </div>
+        ${readMoreBtn(featured, 'margin-top:10px;color:#b7e4c7;background:rgba(255,255,255,0.12);')}
       </div>
     </div>
-    <div class="news-list">
-      ${rest.map((n,i)=>`
-        <div class="news-card" onclick="openModal(${newsData.indexOf(n)})">
-          <img src="${n.image}" style="width: 80px; height: 60px; border-radius: 12px; object-fit: cover; flex-shrink: 0;" alt="News Cover">
-          <div>
+    <div class="news-list" style="overflow-y:auto; max-height:460px; padding-right:2px;">
+      ${rest.map((n)=>{
+        const idx = newsData.indexOf(n);
+        return `
+        <div class="news-card" onclick="openModal(${idx})" style="cursor:pointer; align-items:flex-start;">
+          <img src="${n.image}" style="width:84px;height:64px;border-radius:12px;object-fit:cover;flex-shrink:0;margin-top:2px;" alt="">
+          <div style="flex:1;min-width:0">
             <div class="news-card-title">${n.title}</div>
-            <div class="news-card-meta">${n.source} · ${n.date} · <span class="news-category" style="font-size:.7rem;padding:2px 7px">${n.cat}</span></div>
+            <div class="news-card-meta" style="margin-bottom:4px;">
+              <span style="font-weight:700;color:var(--green-deep);font-size:.72rem">${n.source || 'Redaksi'}</span>
+              ${n.penulis ? `<span style="color:var(--text-light);font-size:.7rem"> &middot; ✍️ ${n.penulis}</span>` : ''}
+              <span style="color:var(--text-light);font-size:.7rem"> &middot; ${n.date}</span>
+              <span class="news-category" style="font-size:.65rem;padding:1px 6px;margin-left:3px">${n.cat}</span>
+            </div>
+            <div style="font-size:.78rem;color:var(--text-light);line-height:1.55;">${teaser(n.body, 110)}&nbsp;<span style="color:#888;font-style:italic;font-size:.7rem">${sourceLabel(n)}</span></div>
+            ${readMoreBtn(n)}
           </div>
-        </div>
-      `).join('')}
+        </div>`;
+      }).join('')}
     </div>
   `;
 }
 
 function openModal(idx) {
   const n = newsData[idx];
+  if (!n) return;
+
   document.getElementById('modalCategory').textContent = n.cat;
   document.getElementById('modalTitle').textContent = n.title;
-  document.getElementById('modalSource').textContent = n.source + ' · ' + n.date;
+
+  // Sumber + penulis + tanggal
+  let sourceLine = '';
+  if (n.source && n.source !== 'Redaksi') sourceLine += n.source;
+  if (n.penulis) sourceLine += (sourceLine ? ' · ✍️ ' : '✍️ ') + n.penulis;
+  if (n.date) sourceLine += (sourceLine ? ' · ' : '') + n.date;
+  document.getElementById('modalSource').textContent = sourceLine;
+
   document.getElementById('modalImage').src = n.image;
-  document.getElementById('modalBody').textContent = n.body;
+
+  // Deskripsi — tampilkan sebagai paragraf
+  const bodyEl = document.getElementById('modalBody');
+  const paragraphs = (n.body || '').split(/\n+/).filter(p => p.trim());
+  if (paragraphs.length > 1) {
+    bodyEl.innerHTML = paragraphs.map(p => `<p style="margin-bottom:12px;line-height:1.75;">${p}</p>`).join('');
+  } else {
+    bodyEl.innerHTML = `<p style="line-height:1.75;">${n.body || ''}</p>`;
+  }
+
+  // Attribution footer
+  const attrEl = document.getElementById('modalAttribution');
+  if (n.source && n.source !== 'Redaksi') {
+    attrEl.innerHTML = `<span style="color:var(--text-light);font-size:.82rem;font-style:italic;">&ldquo;...&rdquo; <strong style="color:var(--green-deep)">(Sumber: ${n.source})</strong></span>`;
+    attrEl.style.display = 'block';
+  } else {
+    attrEl.style.display = 'none';
+  }
+
+  // Tombol Baca Selengkapnya
+  const readMoreEl = document.getElementById('modalReadMore');
+  if (n.link_url) {
+    readMoreEl.href = n.link_url;
+    readMoreEl.style.display = 'inline-flex';
+  } else {
+    readMoreEl.style.display = 'none';
+  }
+
   document.getElementById('newsModal').classList.add('open');
 }
 
 function closeModal(e) {
   if (e.target.id==='newsModal') document.getElementById('newsModal').classList.remove('open');
 }
+
 
 // ── SCROLL EFFECTS ──
 window.addEventListener('scroll', ()=>{

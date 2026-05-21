@@ -33,7 +33,9 @@ $judul = mysqli_real_escape_string($koneksi, trim($_POST['judul']));
 $deskripsi = mysqli_real_escape_string($koneksi, trim($_POST['deskripsi']));
 $tanggal_upload = mysqli_real_escape_string($koneksi, trim($_POST['tanggal_upload']));
 $slug_komoditas = isset($_POST['slug_komoditas']) ? mysqli_real_escape_string($koneksi, trim($_POST['slug_komoditas'])) : '';
-$sumber = isset($_POST['sumber']) ? mysqli_real_escape_string($koneksi, trim($_POST['sumber'])) : 'Admin';
+$sumber = isset($_POST['sumber']) ? mysqli_real_escape_string($koneksi, trim($_POST['sumber'])) : 'Redaksi';
+$penulis = isset($_POST['penulis']) ? mysqli_real_escape_string($koneksi, trim($_POST['penulis'])) : '';
+$link_url = isset($_POST['link_url']) ? mysqli_real_escape_string($koneksi, trim($_POST['link_url'])) : '';
 $uploaded_by = mysqli_real_escape_string($koneksi, $_SESSION['username']);
 
 // ── Validasi file cover_image ──
@@ -89,8 +91,8 @@ if (getenv('CLOUDINARY_CLOUD_NAME')) {
     $cover_url = 'uploads/berita/' . $newFileName;
 }
 
-$query = "INSERT INTO berita (judul, deskripsi, cover_image, tanggal, slug_komoditas, uploaded_by, sumber) 
-          VALUES ('$judul', '$deskripsi', '$cover_url', '$tanggal_upload', '$slug_komoditas', '$uploaded_by', '$sumber')";
+$query = "INSERT INTO berita (judul, deskripsi, cover_image, tanggal, slug_komoditas, uploaded_by, sumber, penulis, link_url) 
+          VALUES ('$judul', '$deskripsi', '$cover_url', '$tanggal_upload', '$slug_komoditas', '$uploaded_by', '$sumber', '$penulis', '$link_url')";
 
 if (mysqli_query($koneksi, $query)) {
     echo json_encode(['success' => true, 'message' => 'Berita berhasil diupload.']);

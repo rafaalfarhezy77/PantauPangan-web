@@ -12,15 +12,18 @@ if ($result) {
     while ($row = mysqli_fetch_assoc($result)) {
         // Pemetaan dari tabel berita ke format yang dimengerti frontend
         $news = [
-            'id' => $row['id'],
-            'title' => $row['judul'],
-            'body' => $row['deskripsi'],
-            'image' => $row['cover_image'] ? $row['cover_image'] : 'img/news-placeholder.jpg',
-            'date' => date('d M Y', strtotime($row['tanggal'])),
-            'source' => $row['sumber'] ? $row['sumber'] : 'Admin',
-            'cat' => $row['slug_komoditas'] ? strtoupper($row['slug_komoditas']) : 'UMUM',
-            'icon' => '📰',
-            'emoji' => '📰'
+            'id'       => $row['id'],
+            'title'    => $row['judul'],
+            'body'     => $row['deskripsi'],
+            'image'    => $row['cover_image'] ? $row['cover_image'] : 'img/news-placeholder.jpg',
+            'date'     => date('d M Y', strtotime($row['tanggal'])),
+            'source'   => $row['sumber'] ? $row['sumber'] : 'Redaksi',
+            'penulis'  => isset($row['penulis']) && $row['penulis'] ? $row['penulis'] : '',
+            'link_url' => isset($row['link_url']) && $row['link_url'] ? $row['link_url'] : '',
+            'cat'      => $row['slug_komoditas'] ? strtoupper($row['slug_komoditas']) : 'UMUM',
+            'icon'     => '📰',
+            'emoji'    => '📰',
+            'uploader' => $row['uploaded_by'],
         ];
         
         // Buat item pertama jadi featured

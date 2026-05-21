@@ -32,13 +32,17 @@ $deskripsi = mysqli_real_escape_string($koneksi, trim($_POST['deskripsi']));
 $tanggal = mysqli_real_escape_string($koneksi, trim($_POST['tanggal']));
 $slug = isset($_POST['slug']) ? mysqli_real_escape_string($koneksi, trim($_POST['slug'])) : '';
 $sumber = isset($_POST['sumber']) ? mysqli_real_escape_string($koneksi, trim($_POST['sumber'])) : '';
+$penulis = isset($_POST['penulis']) ? mysqli_real_escape_string($koneksi, trim($_POST['penulis'])) : '';
+$link_url = isset($_POST['link_url']) ? mysqli_real_escape_string($koneksi, trim($_POST['link_url'])) : '';
 
 $update_parts = [
     "judul = '$judul'",
     "deskripsi = '$deskripsi'",
     "tanggal = '$tanggal'",
     "slug_komoditas = '$slug'",
-    "sumber = '$sumber'"
+    "sumber = '$sumber'",
+    "penulis = '$penulis'",
+    "link_url = '$link_url'"
 ];
 
 // Handle Image Update if provided

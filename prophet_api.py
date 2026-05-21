@@ -187,7 +187,7 @@ def predict():
 
         harga_rata = df['y'].mean()
         harga_std  = df['y'].std()
-        if harga_std < 1:
+        if pd.isna(harga_std) or harga_std < 1:
             harga_std = harga_rata * 0.10
         harga_floor = max(0, harga_rata - (harga_std * 3))
         harga_cap   = harga_rata + (harga_std * 3)
@@ -292,7 +292,7 @@ def predict_inflasi():
 
         harga_rata = df['y'].mean()
         harga_std  = df['y'].std()
-        if harga_std < 1:
+        if pd.isna(harga_std) or harga_std < 1:
             harga_std = harga_rata * 0.10
         harga_floor = max(0, harga_rata - (harga_std * 3))
         harga_cap   = harga_rata + (harga_std * 3)
@@ -374,7 +374,7 @@ def predict_inflasi():
         # Historis per minggu/bulan untuk grafik batang
         historis_agregat = []
         df_hist = df_raw.copy()
-        df_hist = df_hist.set_index('tanggal').resample('W').mean().reset_index()
+        df_hist = df_hist.set_index('tanggal').resample('W').mean().dropna(subset=['harga']).reset_index()
         df_hist = df_hist.tail(4)
         harga_ref = float(df_hist['harga'].iloc[0]) if not df_hist.empty else harga_awal
         for _, r in df_hist.iterrows():

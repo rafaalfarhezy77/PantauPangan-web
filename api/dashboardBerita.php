@@ -109,8 +109,21 @@ if ($res_berita) {
                    class="w-full px-4 py-3 bg-cream/50 border border-cream-dark rounded-xl text-sm outline-none focus:border-green-light focus:bg-white transition-colors">
           </div>
           <div>
-            <label class="block text-xs font-semibold text-gray-600 mb-1.5">Sumber Berita <span class="text-gray-400 font-normal">(Contoh: Bapanas, Antara, dll)</span></label>
-            <input type="text" id="sumberInput" placeholder="Masukkan sumber berita..."
+            <label class="block text-xs font-semibold text-gray-600 mb-1.5">Nama Media/Sumber <span class="text-gray-400 font-normal">(Contoh: Kompas.com, Antara, Bapanas)</span></label>
+            <input type="text" id="sumberInput" placeholder="Kompas.com"
+                   class="w-full px-4 py-3 bg-cream/50 border border-cream-dark rounded-xl text-sm outline-none focus:border-green-light focus:bg-white transition-colors">
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+          <div>
+            <label class="block text-xs font-semibold text-gray-600 mb-1.5">Nama Penulis <span class="text-gray-400 font-normal">(Opsional)</span></label>
+            <input type="text" id="penulisInput" placeholder="Contoh: Ahmad Fauzi"
+                   class="w-full px-4 py-3 bg-cream/50 border border-cream-dark rounded-xl text-sm outline-none focus:border-green-light focus:bg-white transition-colors">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-gray-600 mb-1.5">Link Artikel Asli <span class="text-gray-400 font-normal">(URL ke web berita resmi)</span></label>
+            <input type="url" id="linkInput" placeholder="https://www.kompas.com/artikel/..."
                    class="w-full px-4 py-3 bg-cream/50 border border-cream-dark rounded-xl text-sm outline-none focus:border-green-light focus:bg-white transition-colors">
           </div>
         </div>
@@ -204,6 +217,7 @@ if ($res_berita) {
             <tr>
               <th class="px-6 py-3 font-semibold">Tanggal</th>
               <th class="px-6 py-3 font-semibold">Judul</th>
+              <th class="px-6 py-3 font-semibold">Media / Penulis</th>
               <th class="px-6 py-3 font-semibold">Komoditas</th>
               <th class="px-6 py-3 font-semibold">Uploader</th>
               <th class="px-6 py-3 font-semibold text-center">Aksi</th>
@@ -215,8 +229,18 @@ if ($res_berita) {
               <td class="px-6 py-3 whitespace-nowrap text-xs text-gray-500">
                 <?= date('d M Y', strtotime($b['tanggal'])) ?>
               </td>
-              <td class="px-6 py-3 font-medium text-green-deep max-w-xs truncate">
-                <?= htmlspecialchars($b['judul']) ?>
+              <td class="px-6 py-3 font-medium text-green-deep max-w-xs">
+                <div class="truncate max-w-[200px]"><?= htmlspecialchars($b['judul']) ?></div>
+                <?php if(!empty($b['link_url'])): ?>
+                  <a href="<?= htmlspecialchars($b['link_url']) ?>" target="_blank" rel="noopener noreferrer"
+                     class="text-[10px] text-blue-600 hover:underline font-normal">🔗 Lihat artikel asli</a>
+                <?php endif; ?>
+              </td>
+              <td class="px-6 py-3">
+                <div class="text-xs font-semibold text-gray-700"><?= htmlspecialchars($b['sumber'] ?? '-') ?></div>
+                <?php if(!empty($b['penulis'])): ?>
+                  <div class="text-[10px] text-gray-400">✍️ <?= htmlspecialchars($b['penulis']) ?></div>
+                <?php endif; ?>
               </td>
               <td class="px-6 py-3">
                 <?php if($b['slug_komoditas']): ?>
@@ -309,8 +333,19 @@ if ($res_berita) {
             <input type="text" id="editJudul" required class="w-full px-4 py-2.5 bg-cream/50 border border-cream-dark rounded-xl text-sm outline-none focus:border-green-light focus:bg-white transition-colors">
           </div>
           <div>
-            <label class="block text-xs font-semibold text-gray-600 mb-1">Sumber Berita</label>
-            <input type="text" id="editSumber" class="w-full px-4 py-2.5 bg-cream/50 border border-cream-dark rounded-xl text-sm outline-none focus:border-green-light focus:bg-white transition-colors">
+            <label class="block text-xs font-semibold text-gray-600 mb-1">Nama Media/Sumber</label>
+            <input type="text" id="editSumber" placeholder="Kompas.com" class="w-full px-4 py-2.5 bg-cream/50 border border-cream-dark rounded-xl text-sm outline-none focus:border-green-light focus:bg-white transition-colors">
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-semibold text-gray-600 mb-1">Nama Penulis <span class="text-gray-400 font-normal">(Opsional)</span></label>
+            <input type="text" id="editPenulis" placeholder="Nama jurnalis/penulis" class="w-full px-4 py-2.5 bg-cream/50 border border-cream-dark rounded-xl text-sm outline-none focus:border-green-light focus:bg-white transition-colors">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-gray-600 mb-1">Link Artikel Asli <span class="text-gray-400 font-normal">(URL berita resmi)</span></label>
+            <input type="url" id="editLink" placeholder="https://..." class="w-full px-4 py-2.5 bg-cream/50 border border-cream-dark rounded-xl text-sm outline-none focus:border-green-light focus:bg-white transition-colors">
           </div>
         </div>
 
@@ -511,6 +546,8 @@ async function executeUpload() {
   formData.append('judul', judul);
   formData.append('deskripsi', deskripsi);
   formData.append('sumber', document.getElementById('sumberInput').value);
+  formData.append('penulis', document.getElementById('penulisInput').value);
+  formData.append('link_url', document.getElementById('linkInput').value);
   formData.append('slug_komoditas', slug);
   formData.append('tanggal_upload', tanggal);
   formData.append('cover_image', selectedFile);
@@ -625,6 +662,8 @@ function openEditModal(data) {
   document.getElementById('editJudul').value = data.judul;
   document.getElementById('editDeskripsi').value = data.deskripsi;
   document.getElementById('editSumber').value = data.sumber || '';
+  document.getElementById('editPenulis').value = data.penulis || '';
+  document.getElementById('editLink').value = data.link_url || '';
   document.getElementById('editSlug').value = data.slug_komoditas || '';
   document.getElementById('editTanggal').value = data.tanggal;
   
@@ -648,6 +687,8 @@ async function handleEdit(e) {
   formData.append('judul', document.getElementById('editJudul').value);
   formData.append('deskripsi', document.getElementById('editDeskripsi').value);
   formData.append('sumber', document.getElementById('editSumber').value);
+  formData.append('penulis', document.getElementById('editPenulis').value);
+  formData.append('link_url', document.getElementById('editLink').value);
   formData.append('slug', document.getElementById('editSlug').value);
   formData.append('tanggal', document.getElementById('editTanggal').value);
   
