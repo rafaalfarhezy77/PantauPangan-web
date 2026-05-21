@@ -4,105 +4,105 @@
 
 // ── Kategori & Warna ──
 const CATEGORIES = {
-  'Pangan Pokok':  { color: '#2d6a4f', icon: '🌾' },
-  'Hortikultura':  { color: '#e63946', icon: '🌶️' },
-  'Perkebunan':    { color: '#d4a373', icon: '🌴' },
-  'Perikanan':     { color: '#0077b6', icon: '🐟' },
+  'Padi':            { color: '#2d6a4f', icon: '🌾' },
+  'Cabai & Bumbu':   { color: '#d90429', icon: '🌶️' },
+  'Umbi-umbian':     { color: '#e07a5f', icon: '🥔' },
+  'Sayur & Jagung':  { color: '#f4a261', icon: '🌽' },
 };
 
 // ── Mock Data Provinsi ──
 const PROVINCE_DATA = {
   "ACEH": {
-    kategori: "Pangan Pokok",
+    kategori: "Padi",
     kabupaten: [
       { nama: "Kab. Aceh Utara", komoditas: "Beras" },
       { nama: "Kab. Bireuen", komoditas: "Beras" },
-      { nama: "Kab. Aceh Tengah", komoditas: "Kopi Gayo" },
+      { nama: "Kab. Aceh Tengah", komoditas: "Kentang" },
       { nama: "Kab. Pidie", komoditas: "Beras" },
     ]
   },
   "SUMATERA UTARA": {
-    kategori: "Perkebunan",
+    kategori: "Sayur & Jagung",
     kabupaten: [
-      { nama: "Kab. Simalungun", komoditas: "Kelapa Sawit" },
-      { nama: "Kab. Deli Serdang", komoditas: "Kelapa Sawit" },
-      { nama: "Kab. Langkat", komoditas: "Karet" },
+      { nama: "Kab. Simalungun", komoditas: "Jagung" },
+      { nama: "Kab. Deli Serdang", komoditas: "Jagung" },
+      { nama: "Kab. Langkat", komoditas: "Kacang Tanah" },
       { nama: "Kab. Karo", komoditas: "Sayuran" },
-      { nama: "Kab. Tapanuli Utara", komoditas: "Kopi" },
+      { nama: "Kab. Tapanuli Utara", komoditas: "Kentang" },
     ]
   },
   "SUMATERA BARAT": {
-    kategori: "Pangan Pokok",
+    kategori: "Padi",
     kabupaten: [
       { nama: "Kab. Agam", komoditas: "Beras" },
       { nama: "Kab. Tanah Datar", komoditas: "Beras" },
       { nama: "Kab. Solok", komoditas: "Beras" },
-        { nama: "Kab. Pesisir Selatan", komoditas: "Gula Pasir" },
+      { nama: "Kab. Pesisir Selatan", komoditas: "Jagung" },
     ]
   },
   "RIAU": {
-    kategori: "Perkebunan",
+    kategori: "Sayur & Jagung",
     kabupaten: [
-      { nama: "Kab. Kampar", komoditas: "Kelapa Sawit" },
-      { nama: "Kab. Rokan Hilir", komoditas: "Kelapa Sawit" },
-      { nama: "Kab. Bengkalis", komoditas: "Kelapa Sawit" },
-      { nama: "Kab. Siak", komoditas: "Kelapa Sawit" },
+      { nama: "Kab. Kampar", komoditas: "Jagung" },
+      { nama: "Kab. Rokan Hilir", komoditas: "Kedelai" },
+      { nama: "Kab. Bengkalis", komoditas: "Jagung" },
+      { nama: "Kab. Siak", komoditas: "Kacang Tanah" },
     ]
   },
   "JAMBI": {
-    kategori: "Perkebunan",
+    kategori: "Umbi-umbian",
     kabupaten: [
-      { nama: "Kab. Bungo", komoditas: "Karet" },
-      { nama: "Kab. Merangin", komoditas: "Karet" },
-      { nama: "Kab. Batanghari", komoditas: "Kelapa Sawit" },
+      { nama: "Kab. Bungo", komoditas: "Ubi Kayu" },
+      { nama: "Kab. Merangin", komoditas: "Kentang" },
+      { nama: "Kab. Batanghari", komoditas: "Ubi Jalar" },
     ]
   },
   "SUMATERA SELATAN": {
-    kategori: "Perkebunan",
+    kategori: "Padi",
     kabupaten: [
-      { nama: "Kab. Musi Banyuasin", komoditas: "Kelapa Sawit" },
-      { nama: "Kab. Ogan Komering Ulu", komoditas: "Kopi Robusta" },
-      { nama: "Kab. Muara Enim", komoditas: "Karet" },
+      { nama: "Kab. Musi Banyuasin", komoditas: "Beras" },
+      { nama: "Kab. Ogan Komering Ulu", komoditas: "Beras" },
+      { nama: "Kab. Muara Enim", komoditas: "Beras" },
     ]
   },
   "BENGKULU": {
-    kategori: "Perkebunan",
+    kategori: "Cabai & Bumbu",
     kabupaten: [
-      { nama: "Kab. Rejang Lebong", komoditas: "Kopi" },
-      { nama: "Kab. Bengkulu Utara", komoditas: "Kelapa Sawit" },
+      { nama: "Kab. Rejang Lebong", komoditas: "Cabai Rawit" },
+      { nama: "Kab. Bengkulu Utara", komoditas: "Bawang Merah" },
     ]
   },
   "LAMPUNG": {
-    kategori: "Pangan Pokok",
+    kategori: "Padi",
     kabupaten: [
-        { nama: "Kab. Lampung Tengah", komoditas: "Gula Pasir" },
+      { nama: "Kab. Lampung Tengah", komoditas: "Beras" },
       { nama: "Kab. Lampung Timur", komoditas: "Beras" },
-      { nama: "Kab. Tanggamus", komoditas: "Kopi Robusta" },
+      { nama: "Kab. Tanggamus", komoditas: "Beras" },
     ]
   },
   "KEPULAUAN BANGKA BELITUNG": {
-    kategori: "Perikanan",
+    kategori: "Umbi-umbian",
     kabupaten: [
-      { nama: "Kab. Bangka", komoditas: "Ikan Laut" },
-      { nama: "Kab. Belitung", komoditas: "Udang" },
+      { nama: "Kab. Bangka", komoditas: "Ubi Kayu" },
+      { nama: "Kab. Belitung", komoditas: "Ubi Jalar" },
     ]
   },
   "KEPULAUAN RIAU": {
-    kategori: "Perikanan",
+    kategori: "Cabai & Bumbu",
     kabupaten: [
-      { nama: "Kab. Bintan", komoditas: "Ikan Laut" },
-      { nama: "Kab. Karimun", komoditas: "Ikan Laut" },
+      { nama: "Kab. Bintan", komoditas: "Cabai Merah" },
+      { nama: "Kab. Karimun", komoditas: "Bawang Merah" },
     ]
   },
   "DKI JAKARTA": {
-    kategori: "Pangan Pokok",
+    kategori: "Padi",
     kabupaten: [
-      { nama: "Jakarta Utara", komoditas: "Pusat Distribusi" },
-      { nama: "Jakarta Barat", komoditas: "Pusat Distribusi" },
+      { nama: "Jakarta Utara", komoditas: "Beras" },
+      { nama: "Jakarta Barat", komoditas: "Beras" },
     ]
   },
   "JAWA BARAT": {
-    kategori: "Pangan Pokok",
+    kategori: "Padi",
     kabupaten: [
       { nama: "Kab. Indramayu", komoditas: "Beras" },
       { nama: "Kab. Karawang", komoditas: "Beras" },
@@ -113,7 +113,7 @@ const PROVINCE_DATA = {
     ]
   },
   "JAWA TENGAH": {
-    kategori: "Pangan Pokok",
+    kategori: "Padi",
     kabupaten: [
       { nama: "Kab. Demak", komoditas: "Beras" },
       { nama: "Kab. Sragen", komoditas: "Beras" },
@@ -123,7 +123,7 @@ const PROVINCE_DATA = {
     ]
   },
   "DI YOGYAKARTA": {
-    kategori: "Pangan Pokok",
+    kategori: "Padi",
     kabupaten: [
       { nama: "Kab. Sleman", komoditas: "Beras" },
       { nama: "Kab. Bantul", komoditas: "Beras" },
@@ -131,65 +131,65 @@ const PROVINCE_DATA = {
     ]
   },
   "JAWA TIMUR": {
-    kategori: "Hortikultura",
+    kategori: "Cabai & Bumbu",
     kabupaten: [
       { nama: "Kab. Banyuwangi", komoditas: "Cabai Rawit" },
       { nama: "Kab. Kediri", komoditas: "Cabai Merah" },
       { nama: "Kab. Nganjuk", komoditas: "Bawang Merah" },
       { nama: "Kab. Probolinggo", komoditas: "Bawang Merah" },
-      { nama: "Kab. Jember", komoditas: "Tembakau" },
-      { nama: "Kab. Lamongan", komoditas: "Beras" },
+      { nama: "Kab. Jember", komoditas: "Cabai Merah" },
+      { nama: "Kab. Lamongan", komoditas: "Cabai Rawit" },
     ]
   },
   "BANTEN": {
-    kategori: "Pangan Pokok",
+    kategori: "Padi",
     kabupaten: [
       { nama: "Kab. Serang", komoditas: "Beras" },
       { nama: "Kab. Pandeglang", komoditas: "Beras" },
-        { nama: "Kab. Lebak", komoditas: "Gula Pasir" },
+      { nama: "Kab. Lebak", komoditas: "Beras" },
     ]
   },
   "BALI": {
-    kategori: "Hortikultura",
+    kategori: "Cabai & Bumbu",
     kabupaten: [
-      { nama: "Kab. Tabanan", komoditas: "Beras" },
-      { nama: "Kab. Bangli", komoditas: "Sayuran" },
+      { nama: "Kab. Tabanan", komoditas: "Cabai Merah" },
+      { nama: "Kab. Bangli", komoditas: "Bawang Merah" },
       { nama: "Kab. Karangasem", komoditas: "Cabai" },
     ]
   },
   "NUSA TENGGARA BARAT": {
-    kategori: "Pangan Pokok",
+    kategori: "Padi",
     kabupaten: [
-        { nama: "Kab. Lombok Timur", komoditas: "Gula Pasir" },
-        { nama: "Kab. Sumbawa", komoditas: "Gula Pasir" },
-      { nama: "Kab. Bima", komoditas: "Bawang Merah" },
+      { nama: "Kab. Lombok Timur", komoditas: "Beras" },
+      { nama: "Kab. Sumbawa", komoditas: "Beras" },
+      { nama: "Kab. Bima", komoditas: "Beras" },
     ]
   },
   "NUSA TENGGARA TIMUR": {
-    kategori: "Pangan Pokok",
+    kategori: "Padi",
     kabupaten: [
-        { nama: "Kab. Kupang", komoditas: "Gula Pasir" },
-        { nama: "Kab. Timor Tengah Selatan", komoditas: "Gula Pasir" },
-      { nama: "Kab. Manggarai", komoditas: "Kopi" },
+      { nama: "Kab. Kupang", komoditas: "Beras" },
+      { nama: "Kab. Timor Tengah Selatan", komoditas: "Beras" },
+      { nama: "Kab. Manggarai", komoditas: "Beras" },
     ]
   },
   "KALIMANTAN BARAT": {
-    kategori: "Perkebunan",
+    kategori: "Padi",
     kabupaten: [
-      { nama: "Kab. Ketapang", komoditas: "Kelapa Sawit" },
+      { nama: "Kab. Ketapang", komoditas: "Beras" },
       { nama: "Kab. Sambas", komoditas: "Beras" },
-      { nama: "Kab. Sanggau", komoditas: "Kelapa Sawit" },
+      { nama: "Kab. Sanggau", komoditas: "Beras" },
     ]
   },
   "KALIMANTAN TENGAH": {
-    kategori: "Perkebunan",
+    kategori: "Umbi-umbian",
     kabupaten: [
-      { nama: "Kab. Kotawaringin Barat", komoditas: "Kelapa Sawit" },
-      { nama: "Kab. Kapuas", komoditas: "Kelapa Sawit" },
+      { nama: "Kab. Kotawaringin Barat", komoditas: "Ubi Kayu" },
+      { nama: "Kab. Kapuas", komoditas: "Singkong" },
     ]
   },
   "KALIMANTAN SELATAN": {
-    kategori: "Pangan Pokok",
+    kategori: "Padi",
     kabupaten: [
       { nama: "Kab. Barito Kuala", komoditas: "Beras" },
       { nama: "Kab. Hulu Sungai Utara", komoditas: "Beras" },
@@ -197,90 +197,89 @@ const PROVINCE_DATA = {
     ]
   },
   "KALIMANTAN TIMUR": {
-    kategori: "Perkebunan",
+    kategori: "Sayur & Jagung",
     kabupaten: [
-      { nama: "Kab. Kutai Kartanegara", komoditas: "Kelapa Sawit" },
-      { nama: "Kab. Paser", komoditas: "Kelapa Sawit" },
+      { nama: "Kab. Kutai Kartanegara", komoditas: "Jagung" },
+      { nama: "Kab. Paser", komoditas: "Kacang Tanah" },
     ]
   },
   "KALIMANTAN UTARA": {
-    kategori: "Perkebunan",
+    kategori: "Sayur & Jagung",
     kabupaten: [
-      { nama: "Kab. Bulungan", komoditas: "Kelapa Sawit" },
-      { nama: "Kab. Nunukan", komoditas: "Kelapa Sawit" },
+      { nama: "Kab. Bulungan", komoditas: "Jagung" },
+      { nama: "Kab. Nunukan", komoditas: "Kedelai" },
     ]
   },
   "SULAWESI UTARA": {
-    kategori: "Perkebunan",
+    kategori: "Sayur & Jagung",
     kabupaten: [
-      { nama: "Kab. Minahasa", komoditas: "Cengkeh" },
-        { nama: "Kab. Bolaang Mongondow", komoditas: "Gula Pasir" },
+      { nama: "Kab. Minahasa", komoditas: "Jagung" },
+      { nama: "Kab. Bolaang Mongondow", komoditas: "Kedelai" },
     ]
   },
   "SULAWESI TENGAH": {
-    kategori: "Perkebunan",
+    kategori: "Sayur & Jagung",
     kabupaten: [
-      { nama: "Kab. Parigi Moutong", komoditas: "Kakao" },
-      { nama: "Kab. Donggala", komoditas: "Kakao" },
+      { nama: "Kab. Parigi Moutong", komoditas: "Jagung" },
+      { nama: "Kab. Donggala", komoditas: "Kacang Tanah" },
     ]
   },
   "SULAWESI SELATAN": {
-    kategori: "Pangan Pokok",
+    kategori: "Padi",
     kabupaten: [
       { nama: "Kab. Bone", komoditas: "Beras" },
       { nama: "Kab. Wajo", komoditas: "Beras" },
       { nama: "Kab. Pinrang", komoditas: "Beras" },
-      { nama: "Kab. Luwu", komoditas: "Kakao" },
-      { nama: "Kab. Enrekang", komoditas: "Bawang Merah" },
+      { nama: "Kab. Luwu", komoditas: "Beras" },
     ]
   },
   "SULAWESI TENGGARA": {
-    kategori: "Perikanan",
+    kategori: "Umbi-umbian",
     kabupaten: [
-      { nama: "Kab. Muna", komoditas: "Ikan Laut" },
-      { nama: "Kab. Konawe", komoditas: "Kakao" },
+      { nama: "Kab. Muna", komoditas: "Ubi Kayu" },
+      { nama: "Kab. Konawe", komoditas: "Singkong" },
     ]
   },
   "GORONTALO": {
-    kategori: "Pangan Pokok",
+    kategori: "Sayur & Jagung",
     kabupaten: [
-        { nama: "Kab. Gorontalo", komoditas: "Gula Pasir" },
-        { nama: "Kab. Boalemo", komoditas: "Gula Pasir" },
+      { nama: "Kab. Gorontalo", komoditas: "Jagung" },
+      { nama: "Kab. Boalemo", komoditas: "Jagung" },
     ]
   },
   "SULAWESI BARAT": {
-    kategori: "Perkebunan",
+    kategori: "Umbi-umbian",
     kabupaten: [
-      { nama: "Kab. Mamuju", komoditas: "Kelapa Sawit" },
-      { nama: "Kab. Polewali Mandar", komoditas: "Kakao" },
+      { nama: "Kab. Mamuju", komoditas: "Ubi Jalar" },
+      { nama: "Kab. Polewali Mandar", komoditas: "Singkong" },
     ]
   },
   "MALUKU": {
-    kategori: "Perikanan",
+    kategori: "Umbi-umbian",
     kabupaten: [
-      { nama: "Kab. Maluku Tengah", komoditas: "Ikan Tuna" },
-      { nama: "Kab. Seram Bagian Barat", komoditas: "Cengkeh" },
+      { nama: "Kab. Maluku Tengah", komoditas: "Singkong" },
+      { nama: "Kab. Seram Bagian Barat", komoditas: "Ubi Jalar" },
     ]
   },
   "MALUKU UTARA": {
-    kategori: "Perkebunan",
+    kategori: "Umbi-umbian",
     kabupaten: [
-      { nama: "Kab. Halmahera Utara", komoditas: "Cengkeh" },
-      { nama: "Kab. Halmahera Selatan", komoditas: "Kelapa" },
+      { nama: "Kab. Halmahera Utara", komoditas: "Singkong" },
+      { nama: "Kab. Halmahera Selatan", komoditas: "Ubi Jalar" },
     ]
   },
   "PAPUA": {
-    kategori: "Pangan Pokok",
+    kategori: "Umbi-umbian",
     kabupaten: [
-      { nama: "Kab. Merauke", komoditas: "Beras" },
+      { nama: "Kab. Merauke", komoditas: "Ubi Jalar" },
       { nama: "Kab. Jayapura", komoditas: "Ubi Jalar" },
     ]
   },
   "PAPUA BARAT": {
-    kategori: "Perikanan",
+    kategori: "Umbi-umbian",
     kabupaten: [
-      { nama: "Kab. Manokwari", komoditas: "Ikan Laut" },
-      { nama: "Kab. Fakfak", komoditas: "Pala" },
+      { nama: "Kab. Manokwari", komoditas: "Ubi Jalar" },
+      { nama: "Kab. Fakfak", komoditas: "Singkong" },
     ]
   },
 };
@@ -394,7 +393,15 @@ async function openPanel(provinceName, staticData) {
 
   // Tampilkan panel dengan loading state dulu
   document.getElementById('panelTitle').textContent = titleCase(provinceName);
-  document.getElementById('panelSubtitle').textContent = 'Memuat data...';
+  
+  let baseSubtitle = '';
+  if (staticData) {
+    const uniqueComms = [...new Set(staticData.kabupaten.map(k => k.komoditas))].join(', ');
+    baseSubtitle = `Unggulan: ${uniqueComms}`;
+  } else {
+    baseSubtitle = 'Data belum tersedia';
+  }
+  document.getElementById('panelSubtitle').textContent = baseSubtitle + ' · Memuat data...';
 
   const badge = document.getElementById('panelBadge');
   badge.textContent = staticData ? `${cat.icon} ${staticData.kategori}` : '🗺️ Provinsi';
@@ -417,10 +424,10 @@ async function openPanel(provinceName, staticData) {
     if (json.error) throw new Error(json.error);
 
     // Update subtitle dengan info harga provinsi
-    let subtitleText = `${json.total} kab/kota terpantau`;
+    let subtitleText = baseSubtitle + ` · ${json.total} kab/kota terpantau`;
     if (json.harga_provinsi) {
       const hargaFmt = 'Rp ' + json.harga_provinsi.toLocaleString('id-ID');
-      subtitleText += ` · Rata-rata provinsi: ${hargaFmt}`;
+      subtitleText += ` · Rata-rata: ${hargaFmt}`;
     }
     document.getElementById('panelSubtitle').textContent = subtitleText;
 
@@ -457,7 +464,7 @@ async function openPanel(provinceName, staticData) {
            </div>
          </div>`
       ).join('');
-      document.getElementById('panelSubtitle').textContent = `${staticData.kabupaten.length} kab/kota (data statis)`;
+      document.getElementById('panelSubtitle').textContent = baseSubtitle + ` · ${staticData.kabupaten.length} daerah (statis)`;
     } else {
       list.innerHTML = `<div class="text-center py-8 text-gray-400 text-sm">⚠️ Gagal memuat data.</div>`;
       document.getElementById('panelSubtitle').textContent = 'Gagal memuat data dari database';
@@ -515,7 +522,13 @@ function onEachFeature(feature, layer) {
       const cat = data ? CATEGORIES[data.kategori] : null;
       const bar = document.getElementById('hoverBar');
       document.getElementById('hoverName').textContent = titleCase(normalizeName(rawName));
-      document.getElementById('hoverKategori').textContent = data ? `${cat.icon} ${data.kategori} — ${data.kabupaten.length} kab/kota` : 'Data belum tersedia';
+      
+      let hoverText = 'Data belum tersedia';
+      if (data) {
+        const uniqueComms = [...new Set(data.kabupaten.map(k => k.komoditas))].join(', ');
+        hoverText = `${cat.icon} ${data.kategori} (${uniqueComms}) — ${data.kabupaten.length} kab/kota`;
+      }
+      document.getElementById('hoverKategori').textContent = hoverText;
       document.getElementById('hoverDot').style.background = cat ? cat.color : '#d1d5db';
       bar.classList.remove('hidden');
     },
