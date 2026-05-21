@@ -878,8 +878,10 @@ async function renderHomePrediksiChart() {
     // Tampilkan canvas
     if (canvasEl) canvasEl.style.display = 'block';
 
-    const labelHistoris  = data.historis.map(d => d.tanggal);
-    const hargaHistoris  = data.historis.map(d => d.harga);
+    // Hanya gunakan 7 hari terakhir dari data historis agar grafik tidak terlalu rapat/padat
+    const slicedHistoris = data.historis.slice(-7);
+    const labelHistoris  = slicedHistoris.map(d => d.tanggal);
+    const hargaHistoris  = slicedHistoris.map(d => d.harga);
     const labelPrediksi  = data.prediksi.map(d => d.tanggal);
     const hargaPrediksi  = data.prediksi.map(d => d.harga);
     const semuaLabel     = labelHistoris.concat(labelPrediksi);

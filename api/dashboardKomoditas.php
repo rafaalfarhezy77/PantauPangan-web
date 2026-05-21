@@ -85,7 +85,7 @@ if ($res_log) {
     <div class="relative z-10">
       <p class="text-green-pale text-sm font-medium mb-1">📦 Panel Komoditas — Import Data PIHPS</p>
       <h1 class="text-2xl font-bold text-white mb-1">Upload Data Harga Komoditas</h1>
-      <p class="text-white/60 text-sm">Upload file CSV dari PIHPS, pilih komoditas, dan tentukan tanggal data. Sistem akan memproses secara otomatis.</p>
+      <p class="text-white/60 text-sm">Upload file CSV atau XLSX dari PIHPS, pilih komoditas, dan tentukan tanggal data. Sistem akan memproses secara otomatis.</p>
     </div>
     <span class="absolute right-8 top-1/2 -translate-y-1/2 text-8xl opacity-10 pointer-events-none select-none">📊</span>
   </div>
@@ -96,8 +96,8 @@ if ($res_log) {
   <!-- FORM UPLOAD -->
   <div class="anim-1 bg-white border border-cream-dark rounded-2xl overflow-hidden shadow-sm">
     <div class="px-6 py-4 border-b border-cream-dark">
-      <p class="font-bold text-green-deep">📤 Import CSV Baru</p>
-      <p class="text-xs text-gray-400 mt-0.5">Format CSV harus sesuai format PIHPS: kolom No, Wilayah, dan tanggal (dd/mm/yyyy).</p>
+      <p class="font-bold text-green-deep">📤 Import CSV / XLSX Baru</p>
+      <p class="text-xs text-gray-400 mt-0.5">Format CSV/XLSX harus sesuai format PIHPS: kolom No, Wilayah, dan tanggal (dd/mm/yyyy).</p>
     </div>
     <form id="importForm" class="p-6 space-y-5" onsubmit="handleImport(event)">
 
@@ -124,7 +124,7 @@ if ($res_log) {
 
       <!-- Dropzone CSV -->
       <div>
-        <label class="block text-xs font-semibold text-gray-600 mb-1.5">📂 File CSV <span class="text-red-500">*</span></label>
+        <label class="block text-xs font-semibold text-gray-600 mb-1.5">📂 File CSV / XLSX <span class="text-red-500">*</span></label>
         <div id="dropzone"
           class="border-2 border-dashed border-cream-dark rounded-xl p-8 text-center cursor-pointer hover:border-green-light hover:bg-green-mist/30 transition-all"
           onclick="document.getElementById('csvInput').click()"
@@ -134,10 +134,10 @@ if ($res_log) {
           <div id="dropzoneContent">
             <div class="text-4xl mb-3">📁</div>
             <p class="text-sm font-semibold text-gray-600">Klik untuk memilih file atau drag & drop di sini</p>
-            <p class="text-xs text-gray-400 mt-1">Hanya file <strong>.csv</strong> — Maks. 10 MB</p>
+            <p class="text-xs text-gray-400 mt-1">Hanya file <strong>.csv</strong> atau <strong>.xlsx</strong> — Maks. 10 MB</p>
           </div>
         </div>
-        <input type="file" id="csvInput" name="csv_file" accept=".csv" class="hidden" onchange="handleFileSelect(this)">
+        <input type="file" id="csvInput" name="csv_file" accept=".csv,.xlsx" class="hidden" onchange="handleFileSelect(this)">
       </div>
 
       <!-- Force Update -->
@@ -154,7 +154,7 @@ if ($res_log) {
       <button type="submit" id="submitBtn"
         class="w-full py-3.5 bg-green-deep text-white font-semibold text-sm rounded-xl hover:bg-green-mid transition-colors cursor-pointer border-0 flex items-center justify-center gap-2">
         <span id="submitIcon">📤</span>
-        <span id="submitText">Import Data CSV</span>
+        <span id="submitText">Import Data CSV / XLSX</span>
       </button>
     </form>
   </div>
@@ -266,8 +266,8 @@ function handleFileSelect(input) {
   if (input.files[0]) setFile(input.files[0]);
 }
 function setFile(file) {
-  if (!file.name.endsWith('.csv')) {
-    showAlert('❌ Hanya file .csv yang diperbolehkan.', 'error');
+  if (!file.name.endsWith('.csv') && !file.name.endsWith('.xlsx')) {
+    showAlert('❌ Hanya file .csv atau .xlsx yang diperbolehkan.', 'error');
     return;
   }
   if (file.size > 10 * 1024 * 1024) {
@@ -292,7 +292,7 @@ async function handleImport(e) {
 
   if (!slug) { showAlert('⚠️ Pilih komoditas terlebih dahulu.', 'error'); return; }
   if (!tanggal) { showAlert('⚠️ Tanggal data wajib diisi.', 'error'); return; }
-  if (!selectedFile) { showAlert('⚠️ Pilih file CSV terlebih dahulu.', 'error'); return; }
+  if (!selectedFile) { showAlert('⚠️ Pilih file CSV atau XLSX terlebih dahulu.', 'error'); return; }
 
   // Tampilkan Modal Konfirmasi Custom
   const komoditasName = document.getElementById('slugSelect').options[document.getElementById('slugSelect').selectedIndex].text;
@@ -322,7 +322,7 @@ async function executeImport() {
 
   document.getElementById('progressPanel').classList.remove('hidden');
   document.getElementById('progressBar').style.width = '30%';
-  document.getElementById('progressText').textContent = 'Mengunggah file CSV...';
+  document.getElementById('progressText').textContent = 'Mengunggah file...';
   document.getElementById('globalAlert').classList.add('hidden');
   document.getElementById('resultPanel').classList.add('hidden');
 
@@ -359,7 +359,7 @@ async function executeImport() {
     showAlert('❌ Gagal terhubung ke server. Periksa koneksi dan coba lagi.', 'error');
   } finally {
     document.getElementById('submitIcon').textContent = '📤';
-    document.getElementById('submitText').textContent = 'Import Data CSV';
+    document.getElementById('submitText').textContent = 'Import Data CSV / XLSX';
     btn.disabled = false;
     btn.classList.remove('opacity-60');
   }
@@ -482,7 +482,7 @@ async function doLogout(e) {
           <span id="confTanggal" class="font-bold text-green-deep"></span>
         </div>
         <div class="flex justify-between items-center text-xs">
-          <span class="text-gray-400">File CSV:</span>
+          <span class="text-gray-400">File:</span>
           <span id="confFile" class="font-bold text-green-mid truncate max-w-[180px]"></span>
         </div>
       </div>

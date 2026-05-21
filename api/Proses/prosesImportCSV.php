@@ -49,8 +49,8 @@ if (!isset($_FILES['csv_file']) || $_FILES['csv_file']['error'] !== UPLOAD_ERR_O
 // ── Validasi ekstensi file ──
 $filename  = $_FILES['csv_file']['name'];
 $ext       = strtolower(pathinfo($filename, PATHINFO_EXTENSION));
-if ($ext !== 'csv') {
-    echo json_encode(['success' => false, 'message' => 'Hanya file CSV yang diperbolehkan.']);
+if ($ext !== 'csv' && $ext !== 'xlsx') {
+    echo json_encode(['success' => false, 'message' => 'Hanya file CSV atau XLSX yang diperbolehkan.']);
     exit;
 }
 
@@ -78,30 +78,63 @@ function isRomanNumeral(string $s): bool {
     return (bool) preg_match('/^M{0,4}(CM|CD|D?C{0,3})(XC|XL|L?X{0,3})(IX|IV|V?I{0,3})$/i', trim($s));
 }
 
-// ── Baca CSV dari tmp ──
+// ── Baca File (CSV atau XLSX) ke dalam Array $rows ──
 $tmp_path = $_FILES['csv_file']['tmp_name'];
-$handle   = fopen($tmp_path, 'r');
+$rows = [];
 
-if ($handle === false) {
-    echo json_encode(['success' => false, 'message' => 'Gagal membaca file CSV yang diupload.']);
-    exit;
-}
-
-// ── Baca header CSV: kolom[0]=No, kolom[1]=Wilayah, kolom[2+]=Tanggal ──
-$header = fgetcsv($handle, 10000, ',');
-
-if ($header === false || count($header) < 3) {
+if ($ext === 'csv') {
+    $handle = fopen($tmp_path, 'r');
+    if ($handle === false) {
+        echo json_encode(['success' => false, 'message' => 'Gagal membaca file CSV yang diupload.']);
+        exit;
+    }
+    while (($r = fgetcsv($handle, 10000, ',')) !== false) {
+        $rows[] = $r;
+    }
     fclose($handle);
-    echo json_encode(['success' => false, 'message' => 'Format CSV tidak valid. Pastikan ada kolom No, Wilayah, dan minimal satu kolom tanggal.']);
+} else {
+    // XLSX
+    $autoload_path = __DIR__ . '/../../vendor/autoload.php';
+    if (!file_exists($autoload_path)) {
+        echo json_encode(['success' => false, 'message' => 'Library PhpSpreadsheet belum terinstal di server. Silakan hubungi admin.']);
+        exit;
+    }
+    require_once $autoload_path;
+    try {
+        $spreadsheet = \PhpOffice\PhpSpreadsheet\IOFactory::load($tmp_path);
+        $worksheet = $spreadsheet->getActiveSheet();
+        // toArray params: nullValue, calculateFormulas, formatData, returnCellRef
+        $rows = $worksheet->toArray(null, true, true, false);
+    } catch (\Exception $e) {
+        echo json_encode(['success' => false, 'message' => 'Gagal membaca file XLSX: ' . $e->getMessage()]);
+        exit;
+    }
+}
+
+if (empty($rows) || count($rows[0]) < 3) {
+    echo json_encode(['success' => false, 'message' => 'Format file tidak valid. Pastikan data tidak kosong dan memiliki kolom No, Wilayah, serta minimal satu kolom tanggal.']);
     exit;
 }
 
+$header = $rows[0];
 $dates             = [];
 $tanggal_untuk_cek = [];
 
 for ($i = 2; $i < count($header); $i++) {
-    $tgl_raw  = str_replace(' ', '', trim($header[$i]));
+    $tgl_raw  = str_replace(' ', '', trim($header[$i] ?? ''));
+    if (empty($tgl_raw)) continue;
+
     $date_obj = DateTime::createFromFormat('d/m/Y', $tgl_raw);
+    
+    // Fallback 1: Jika Excel memformatnya ke format Y-m-d
+    if (!$date_obj) {
+        $date_obj = DateTime::createFromFormat('Y-m-d', $tgl_raw);
+    }
+    // Fallback 2: Jika dibaca dengan format j/n/Y
+    if (!$date_obj) {
+        $date_obj = DateTime::createFromFormat('j/n/Y', $tgl_raw);
+    }
+
     if ($date_obj) {
         $format_tanggal       = $date_obj->format('Y-m-d');
         $dates[$i]            = $format_tanggal;
@@ -110,8 +143,7 @@ for ($i = 2; $i < count($header); $i++) {
 }
 
 if (empty($dates)) {
-    fclose($handle);
-    echo json_encode(['success' => false, 'message' => 'Tidak ada kolom tanggal valid (format dd/mm/yyyy) yang ditemukan di header CSV.']);
+    echo json_encode(['success' => false, 'message' => 'Tidak ada kolom tanggal valid (format dd/mm/yyyy atau YYYY-MM-DD) yang ditemukan di header file.']);
     exit;
 }
 
@@ -126,7 +158,6 @@ $cek_result = mysqli_query($koneksi,
 $cek_row = mysqli_fetch_assoc($cek_result);
 
 if ($cek_row['total'] > 0 && !$force_update) {
-    fclose($handle);
     echo json_encode([
         'success'    => false,
         'duplicate'  => true,
@@ -144,11 +175,12 @@ $baris_diproses   = 0;
 $errors           = 0;
 $current_provinsi = null;
 
-while (($data = fgetcsv($handle, 10000, ',')) !== false) {
-    if (count($data) < 2) continue;
+for ($rowIndex = 1; $rowIndex < count($rows); $rowIndex++) {
+    $data = $rows[$rowIndex];
+    if (empty($data) || count($data) < 2) continue;
 
-    $no_col      = trim($data[0]);
-    $wilayah_raw = trim($data[1]);
+    $no_col      = trim($data[0] ?? '');
+    $wilayah_raw = trim($data[1] ?? '');
 
     if (empty($wilayah_raw)) continue;
 
@@ -182,7 +214,7 @@ while (($data = fgetcsv($handle, 10000, ',')) !== false) {
     foreach ($dates as $index => $tanggal) {
         if (!isset($data[$index])) continue;
 
-        $harga_raw = trim($data[$index]);
+        $harga_raw = trim($data[$index] ?? '');
         if ($harga_raw === '' || $harga_raw === '-') continue;
 
         $harga = (int) preg_replace('/[^0-9]/', '', $harga_raw);
@@ -223,7 +255,6 @@ if (!empty($values)) {
     }
 }
 
-fclose($handle);
 unlink($tmp_path); // Hapus file sementara setelah diproses
 
 // ── Catat log import ──
