@@ -3,7 +3,12 @@ require __DIR__ . '/Server/koneksi.php';
 
 header('Content-Type: application/json');
 
-$query = "SELECT * FROM berita ORDER BY created_at DESC LIMIT 6";
+$all = isset($_GET['all']) && $_GET['all'] === 'true';
+if ($all) {
+    $query = "SELECT * FROM berita ORDER BY created_at DESC";
+} else {
+    $query = "SELECT * FROM berita ORDER BY created_at DESC LIMIT 6";
+}
 $result = mysqli_query($koneksi, $query);
 
 $newsData = [];

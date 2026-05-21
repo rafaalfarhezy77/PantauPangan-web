@@ -170,14 +170,14 @@ def predict():
 
     try:
         cache_key = get_cache_key(slug, wilayah, hari)
-        cached = get_from_cache(cache_key, max_age_hours=6)
+        cached = get_from_cache(cache_key, max_age_hours=12)
         if cached:
             return jsonify(cached)
 
         if engine is None:
             return jsonify({"error": "Database URL tidak dikonfigurasi"}), 500
 
-        limit = min(max(60, hari * 3), 365)
+        limit = min(max(365, hari * 3), 730)
         df_raw, df = fetch_and_prepare(slug, wilayah, limit)
         if df_raw is None:
             return jsonify({"error": "Data tidak ditemukan untuk wilayah ini."}), 404
@@ -202,10 +202,12 @@ def predict():
             yearly_seasonality=use_yearly,
             weekly_seasonality=False,
             daily_seasonality=False,
-            changepoint_prior_scale=0.01,
+            changepoint_prior_scale=0.05,
             seasonality_prior_scale=5,
+            holidays_prior_scale=10.0,
             interval_width=0.80,
-            holidays=holidays_df
+            holidays=holidays_df,
+            uncertainty_samples=100
         )
 
         # Tambahkan regressor hasil panen
@@ -275,14 +277,14 @@ def predict_inflasi():
     try:
         faktor_key = f"_r{faktor_raya}_c{faktor_cuaca}_b{faktor_bbm}_bbm{harga_bbm_input}"
         cache_key  = get_cache_key(slug, wilayah, hari, faktor_key)
-        cached = get_from_cache(cache_key, max_age_hours=3)
+        cached = get_from_cache(cache_key, max_age_hours=12)
         if cached:
             return jsonify(cached)
 
         if engine is None:
             return jsonify({"error": "Database URL tidak dikonfigurasi"}), 500
 
-        limit = min(max(90, hari * 4), 365)
+        limit = min(max(365, hari * 4), 730)
         df_raw, df = fetch_and_prepare(slug, wilayah, limit)
         if df_raw is None:
             return jsonify({"error": "Data tidak ditemukan untuk wilayah ini."}), 404
@@ -312,10 +314,12 @@ def predict_inflasi():
             yearly_seasonality=use_yearly,
             weekly_seasonality=False,
             daily_seasonality=False,
-            changepoint_prior_scale=0.01,
+            changepoint_prior_scale=0.05,
             seasonality_prior_scale=5,
+            holidays_prior_scale=10.0,
             interval_width=0.80,
-            holidays=holidays_df
+            holidays=holidays_df,
+            uncertainty_samples=100
         )
 
         # Regressor BBM jika aktif
