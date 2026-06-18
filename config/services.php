@@ -37,8 +37,12 @@ return [
 
     // PantauPangan Custom Services
     'prophet' => [
-        'url'     => env('PROPHET_API_URL', 'http://localhost:5000'),
-        'timeout' => env('PROPHET_API_TIMEOUT', 30),
+        // URL Flask server Prophet — jalankan: python scripts/prophet_predict.py
+        'url'       => env('PROPHET_API_URL', 'http://localhost:5000'),
+        // Timeout HTTP request dalam detik (Prophet butuh waktu untuk training)
+        'timeout'   => (int) env('PROPHET_TIMEOUT', 120),
+        // Durasi cache prediksi dalam detik (default: 6 jam)
+        'cache_ttl' => (int) env('PROPHET_CACHE_TTL', 21600),
     ],
 
     'cloudinary' => [

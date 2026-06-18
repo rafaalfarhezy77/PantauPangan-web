@@ -16,40 +16,61 @@ class PrediksiController extends Controller
 
     /**
      * GET /api/v1/prediksi
-     * Proxy ke Python Flask Prophet microservice, dengan fallback linear regression
+     * Prediksi harga komoditas menggunakan algoritma Prophet (lokal, tanpa microservice).
+     * Fallback ke regresi linear jika Prophet gagal.
      *
      * Query params:
      *   - slug_komoditas (required)
      *   - provinsi       (optional, default: 'Nasional')
      *   - days           (optional, default: 30)
+     *   - force_refresh  (optional, default: false) — paksa hitung ulang, abaikan cache
      */
     public function index(Request $request)
     {
-        $slug    = $request->input('slug_komoditas') ?? $request->input('slug');
-        $wilayah = $request->input('provinsi') ?? $request->input('wilayah', 'Nasional');
-        $days    = (int) ($request->input('days') ?? $request->input('hari', 30));
+        $slug         = $request->input('slug_komoditas') ?? $request->input('slug');
+        $wilayah      = $request->input('provinsi') ?? $request->input('wilayah', 'Nasional');
+        $days         = (int) ($request->input('days') ?? $request->input('hari', 30));
+        $forceRefresh = filter_var($request->input('force_refresh', false), FILTER_VALIDATE_BOOLEAN);
 
         if (!$slug) {
             return response()->json(['error' => 'Parameter slug_komoditas wajib diisi.'], 422);
         }
 
+        // Batasi jumlah hari prediksi agar tidak terlalu lama
+        $days = max(1, min($days, 365));
+
+        // Jika force_refresh, buang cache lama sebelum prediksi
+        if ($forceRefresh) {
+            $this->prophetService->forgetCache($slug, $wilayah, $days);
+            Log::info('PrediksiController: force_refresh diminta', compact('slug', 'wilayah', 'days'));
+        }
+
         try {
+            $startTime = microtime(true);
+
             $result = $this->prophetService->predict(
                 komoditas: $slug,
                 provinsi:  $wilayah,
                 days:      $days,
             );
 
-            return response()->json($result);
-        } catch (\Exception $e) {
-            Log::warning('Prophet tidak tersedia, menggunakan fallback linear: ' . $e->getMessage());
+            $elapsed    = round((microtime(true) - $startTime) * 1000); // ms
+            $fromCache  = isset($result['cached_at']) && $elapsed < 200;  // < 200ms → hampir pasti dari cache
 
+            return response()
+                ->json($result)
+                ->header('X-Cache-Status', $fromCache ? 'HIT' : 'MISS')
+                ->header('X-Response-Time-Ms', $elapsed);
+
+        } catch (\Exception $e) {
+            Log::warning('Prophet gagal, menggunakan fallback linear: ' . $e->getMessage());
             return $this->linearFallback($slug, $wilayah, $days);
         }
     }
 
     /**
-     * Fallback: hitung prediksi sederhana dari data historis DB dengan regresi linear.
+     * Fallback: prediksi sederhana dari data historis DB dengan regresi linear.
+     * Digunakan ketika script Python Prophet gagal dijalankan.
      */
     private function linearFallback(string $slug, string $wilayah, int $days)
     {
@@ -60,7 +81,7 @@ class PrediksiController extends Controller
             ->limit(90)
             ->get(['tanggal', 'harga']);
 
-        if ($rows->count() < 3) {
+        if ($rows->count() < 3 && $wilayah !== 'Nasional') {
             $rows = HargaHarian::where('slug_komoditas', $slug)
                 ->where('provinsi', 'Nasional')
                 ->orderBy('tanggal')
@@ -72,29 +93,32 @@ class PrediksiController extends Controller
             return response()->json(['error' => 'Data historis tidak tersedia untuk komoditas ini.'], 404);
         }
 
-        $historis = $rows->map(fn($r) => ['tanggal' => $r->tanggal, 'harga' => (int)$r->harga])->values()->all();
+        $historis = $rows->map(fn($r) => ['tanggal' => $r->tanggal, 'harga' => (int) $r->harga])->values()->all();
 
         // Regresi linear sederhana
         $n      = count($historis);
         $xMean  = ($n - 1) / 2;
         $yMean  = collect($historis)->avg('harga');
-        $num    = 0; $den = 0;
+        $num    = 0;
+        $den    = 0;
+
         foreach ($historis as $i => $h) {
             $num += ($i - $xMean) * ($h['harga'] - $yMean);
             $den += ($i - $xMean) ** 2;
         }
-        $slope = $den > 0 ? $num / $den : 0;
+
+        $slope     = $den > 0 ? $num / $den : 0;
         $intercept = $yMean - $slope * $xMean;
 
-        $lastHarga  = end($historis)['harga'];
+        $lastHarga   = end($historis)['harga'];
         $lastTanggal = end($historis)['tanggal'];
 
         $prediksi = [];
         for ($i = 1; $i <= $days; $i++) {
-            $harga = (int) round($intercept + $slope * ($n - 1 + $i));
-            $harga = max($harga, 0);
-            $tanggal = date('Y-m-d', strtotime($lastTanggal . " +{$i} days"));
-            $prediksi[] = ['tanggal' => $tanggal, 'harga' => $harga];
+            $harga       = (int) round($intercept + $slope * ($n - 1 + $i));
+            $harga       = max($harga, 0);
+            $tanggal     = date('Y-m-d', strtotime($lastTanggal . " +{$i} days"));
+            $prediksi[]  = ['tanggal' => $tanggal, 'harga' => $harga];
         }
 
         return response()->json([
@@ -106,4 +130,3 @@ class PrediksiController extends Controller
         ]);
     }
 }
-
