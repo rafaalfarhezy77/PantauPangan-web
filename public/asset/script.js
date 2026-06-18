@@ -1,14 +1,50 @@
 let dbHistory = [];
 
-// ── DATA ──
+// ── FRONTEND MEMORY CACHE ──────────────────────────────────────────────────
+// Cache in-memory per-sesi (direset saat halaman di-refresh).
+// Mencegah request duplikat ke backend saat user klik komoditas yang sama.
+const _apiCache = new Map();
+const CACHE_TTL_MS = {
+  komoditas : 60  * 60 * 1000,  // 1 jam
+  history   : 6   * 60 * 60 * 1000,  // 6 jam
+  provinsi  : 24  * 60 * 60 * 1000,  // 24 jam
+  wilayah   : 6   * 60 * 60 * 1000,  // 6 jam
+  kabkota   : 30  * 60 * 1000,  // 30 menit
+};
+
+/**
+ * Wrapper fetch dengan in-memory cache.
+ * @param {string} key   - Cache key unik
+ * @param {string} url   - URL yang akan di-fetch
+ * @param {number} ttl   - TTL dalam milidetik
+ * @param {object} opts  - Opsional: tambahan opsi fetch
+ */
+async function cachedFetch(key, url, ttl, opts = {}) {
+  const cached = _apiCache.get(key);
+  if (cached && (Date.now() - cached.ts) < ttl) {
+    return cached.data;  // ⚡ Cache HIT
+  }
+  const res  = await fetch(url, opts);
+  const data = await res.json();
+  _apiCache.set(key, { data, ts: Date.now() });
+  return data;  // 🔄 Cache MISS
+}
+
+/** Hapus satu entry cache secara manual (misal setelah logout/login) */
+function invalidateCache(keyPrefix) {
+  for (const key of _apiCache.keys()) {
+    if (key.startsWith(keyPrefix)) _apiCache.delete(key);
+  }
+}
+// ──────────────────────────────────────────────────────────────────────────
+
 let commodities = [];
 let currentPage = 1;
 const commoditiesPerPage = 4;
 
 async function fetchKomoditasDB() {
   try {
-    const response = await fetch('/api/v1/komoditas');
-    const result = await response.json();
+    const result = await cachedFetch('komoditas', '/api/v1/komoditas', CACHE_TTL_MS.komoditas);
     
     if (result.status === "success") {
       // Map data dari Laravel API ke format yang dibutuhkan script
@@ -70,18 +106,17 @@ async function fetchKomoditasDB() {
 
 async function fetchHistoryDB(slug) {
   try {
-    // Coba ambil history dari salah satu wilayah yang ada datanya
-    let response = await fetch(`/api/v1/harga/history/${slug}?provinsi=Nasional`);
-    let result = await response.json();
+    // Coba ambil history dari Nasional terlebih dahulu
+    const cacheKey1 = `history:${slug}:Nasional`;
+    let result = await cachedFetch(cacheKey1, `/api/v1/harga/history/${slug}?provinsi=Nasional`, CACHE_TTL_MS.history);
     
     // Jika Nasional tidak ada data, ambil dari provinsi pertama yang tersedia
     if (result.status === 'success' && result.data.length === 0) {
-      const provRes = await fetch('/api/v1/harga/provinsi');
-      const provData = await provRes.json();
+      const provData = await cachedFetch('provinsi', '/api/v1/harga/provinsi', CACHE_TTL_MS.provinsi);
       if (provData.status === 'success' && provData.data.length > 0) {
         const firstProv = provData.data[0];
-        response = await fetch(`/api/v1/harga/history/${slug}?provinsi=${encodeURIComponent(firstProv)}`);
-        result = await response.json();
+        const cacheKey2 = `history:${slug}:${firstProv}`;
+        result = await cachedFetch(cacheKey2, `/api/v1/harga/history/${slug}?provinsi=${encodeURIComponent(firstProv)}`, CACHE_TTL_MS.history);
       }
     }
     
@@ -89,10 +124,6 @@ async function fetchHistoryDB(slug) {
       const history = result.data.map(item => item.harga);
       if (history.length > 0) {
         dbHistory = history;
-        const latestPrice = history[history.length - 1];
-        
-        // Tidak perlu menimpa price global di sini karena price global
-        // merepresentasikan rata-rata nasional, sedangkan history mungkin saja dari provinsi tertentu.
       } else {
         dbHistory = [];
       }
@@ -105,10 +136,7 @@ async function fetchHistoryDB(slug) {
 
 async function fetchProvinsiDB() {
   try {
-    const response = await fetch('/api/v1/harga/provinsi');
-    if (!response.ok) throw new Error('Gagal memanggil API list provinsi');
-    
-    const result = await response.json();
+    const result = await cachedFetch('provinsi', '/api/v1/harga/provinsi', CACHE_TTL_MS.provinsi);
     
     if (result.status === "success") {
       const provinces = result.data;
@@ -457,8 +485,8 @@ async function updateSearchKabKota() {
     const komoditasData = slugName ? commodities.find(c => c.name === slugName) : null;
     const slugParam = komoditasData ? `&slug=${encodeURIComponent(komoditasData.id)}` : '';
     
-    const res = await fetch(`/api/v1/harga/kab-kota?provinsi=${encodeURIComponent(provinsi)}${slugParam}`);
-    const json = await res.json();
+    const ckKey = `kabkota:${provinsi}:${komoditasData?.id || 'all'}`;
+    const json = await cachedFetch(ckKey, `/api/v1/harga/kab-kota?provinsi=${encodeURIComponent(provinsi)}${slugParam}`, CACHE_TTL_MS.kabkota);
     if (json.error) throw new Error(json.error);
 
     kabEl.innerHTML = '<option value="">Semua Kab/Kota</option>';
@@ -496,8 +524,8 @@ async function doSearch() {
   }
 
   try {
-    const response = await fetch(`/api/v1/harga/wilayah/${komoditasData.id}`);
-    const result = await response.json();
+    const wilayahCacheKey = `wilayah:${komoditasData.id}`;
+    const result = await cachedFetch(wilayahCacheKey, `/api/v1/harga/wilayah/${komoditasData.id}`, CACHE_TTL_MS.wilayah);
 
     if (result.status === 'success') {
       let filteredData = result.data;
@@ -826,8 +854,8 @@ async function updatePrediksiKabKota() {
 
   try {
     const slugParam = slug ? `&slug=${encodeURIComponent(slug)}` : '';
-    const res = await fetch(`/api/v1/harga/kab-kota?provinsi=${encodeURIComponent(provinsi)}${slugParam}`);
-    const json = await res.json();
+    const ckKeyPrediksi = `kabkota:${provinsi}:${slug || 'all'}`;
+    const json = await cachedFetch(ckKeyPrediksi, `/api/v1/harga/kab-kota?provinsi=${encodeURIComponent(provinsi)}${slugParam}`, CACHE_TTL_MS.kabkota);
     if (json.error) throw new Error(json.error);
 
     kabEl.innerHTML = '<option value="">Seluruh Provinsi</option>';

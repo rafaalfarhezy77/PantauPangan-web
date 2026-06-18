@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\HargaHarian;
 use App\Models\Komoditas;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
@@ -17,36 +18,39 @@ class HargaController extends Controller
      */
     public function index(Request $request)
     {
-        $query = HargaHarian::query();
+        // Buat cache key dari semua parameter filter
+        $cacheKey = 'harga_index:' . md5(json_encode($request->all()));
 
-        if ($request->has('slug_komoditas')) {
-            $query->where('slug_komoditas', $request->slug_komoditas);
-        }
+        $data = Cache::remember($cacheKey, now()->addHours(6), function () use ($request) {
+            $query = HargaHarian::query();
 
-        if ($request->has('provinsi')) {
-            $query->where('provinsi', $request->provinsi);
-        }
+            if ($request->has('slug_komoditas')) {
+                $query->where('slug_komoditas', $request->slug_komoditas);
+            }
 
-        if ($request->has('dari')) {
-            $query->where('tanggal', '>=', $request->dari);
-        }
+            if ($request->has('provinsi')) {
+                $query->where('provinsi', $request->provinsi);
+            }
 
-        if ($request->has('sampai')) {
-            $query->where('tanggal', '<=', $request->sampai);
-        }
+            if ($request->has('dari')) {
+                $query->where('tanggal', '>=', $request->dari);
+            }
 
-        // Default: 30 hari terakhir jika tidak ada filter tanggal
-        if (!$request->has('dari') && !$request->has('sampai')) {
-            $query->where('tanggal', '>=', now()->subDays(30)->toDateString());
-        }
+            if ($request->has('sampai')) {
+                $query->where('tanggal', '<=', $request->sampai);
+            }
 
-        $data = $query->orderBy('tanggal', 'desc')
-            ->limit(500)
-            ->get();
+            // Default: 30 hari terakhir jika tidak ada filter tanggal
+            if (!$request->has('dari') && !$request->has('sampai')) {
+                $query->where('tanggal', '>=', now()->subDays(30)->toDateString());
+            }
+
+            return $query->orderBy('tanggal', 'desc')->limit(500)->get()->toArray();
+        });
 
         return response()->json([
             'status' => 'success',
-            'total'  => $data->count(),
+            'total'  => count($data),
             'data'   => $data,
         ]);
     }
@@ -58,18 +62,20 @@ class HargaController extends Controller
      */
     public function provinsi()
     {
-        $semua = HargaHarian::distinct()
-            ->orderBy('provinsi')
-            ->pluck('provinsi');
+        // Data provinsi sangat jarang berubah — cache 24 jam
+        $provinsi = Cache::remember('harga_provinsi_list', now()->addHours(24), function () {
+            $semua = HargaHarian::distinct()
+                ->orderBy('provinsi')
+                ->pluck('provinsi');
 
-        // Hanya ambil yang merupakan nama provinsi (tidak ada prefix Kab./Kota)
-        $provinsi = $semua->filter(function ($nama) {
-            $nama = trim($nama);
-            return $nama !== ''
-                && $nama !== 'Semua Provinsi'
-                && !str_starts_with($nama, 'Kab. ')
-                && !str_starts_with($nama, 'Kota ');
-        })->values();
+            return $semua->filter(function ($nama) {
+                $nama = trim($nama);
+                return $nama !== ''
+                    && $nama !== 'Semua Provinsi'
+                    && !str_starts_with($nama, 'Kab. ')
+                    && !str_starts_with($nama, 'Kota ');
+            })->values()->toArray();
+        });
 
         return response()->json([
             'status' => 'success',
@@ -83,30 +89,35 @@ class HargaController extends Controller
      */
     public function perbandingan(string $slug)
     {
-        $all = HargaHarian::where('slug_komoditas', $slug)
-            ->orderBy('tanggal', 'desc')
-            ->get(['provinsi', 'harga', 'tanggal']);
+        $cacheKey = 'harga_perbandingan:' . $slug;
 
-        $wilayahTerkini = [];
-        foreach ($all as $row) {
-            if (!isset($wilayahTerkini[$row->provinsi])) {
-                $wilayahTerkini[$row->provinsi] = [
-                    'provinsi' => $row->provinsi,
-                    'harga'    => $row->harga,
-                    'tanggal'  => $row->tanggal
-                ];
+        $result = Cache::remember($cacheKey, now()->addHours(6), function () use ($slug) {
+            $all = HargaHarian::where('slug_komoditas', $slug)
+                ->orderBy('tanggal', 'desc')
+                ->get(['provinsi', 'harga', 'tanggal']);
+
+            $wilayahTerkini = [];
+            foreach ($all as $row) {
+                if (!isset($wilayahTerkini[$row->provinsi])) {
+                    $wilayahTerkini[$row->provinsi] = [
+                        'provinsi' => $row->provinsi,
+                        'harga'    => $row->harga,
+                        'tanggal'  => $row->tanggal
+                    ];
+                }
             }
-        }
 
-        $data = collect(array_values($wilayahTerkini))->sortByDesc('harga')->values();
+            $data           = collect(array_values($wilayahTerkini))->sortByDesc('harga')->values()->toArray();
+            $tanggalTerkini = collect(array_values($wilayahTerkini))->max('tanggal');
 
-        $tanggalTerkini = $data->max('tanggal');
+            return compact('data', 'tanggalTerkini');
+        });
 
         return response()->json([
             'status'  => 'success',
             'slug'    => $slug,
-            'tanggal' => $tanggalTerkini,
-            'data'    => $data,
+            'tanggal' => $result['tanggalTerkini'],
+            'data'    => $result['data'],
         ]);
     }
 
@@ -120,11 +131,16 @@ class HargaController extends Controller
         $provinsi = request('provinsi', 'Nasional');
         $days     = (int) request('days', 90);
 
-        $data = HargaHarian::where('slug_komoditas', $slug)
-            ->where('provinsi', $provinsi)
-            ->where('tanggal', '>=', now()->subDays($days)->toDateString())
-            ->orderBy('tanggal')
-            ->get(['tanggal', 'harga']);
+        // Cache key unik per komoditas + wilayah + periode
+        $cacheKey = 'harga_history:' . $slug . ':' . str_replace(' ', '_', strtolower($provinsi)) . ':d' . $days;
+
+        $data = Cache::remember($cacheKey, now()->addHours(6), function () use ($slug, $provinsi, $days) {
+            return HargaHarian::where('slug_komoditas', $slug)
+                ->where('provinsi', $provinsi)
+                ->where('tanggal', '>=', now()->subDays($days)->toDateString())
+                ->orderBy('tanggal')
+                ->get(['tanggal', 'harga'])->toArray();
+        });
 
         return response()->json([
             'status' => 'success',
@@ -356,69 +372,76 @@ class HargaController extends Controller
      */
     public function wilayah(string $slug)
     {
-        // Ambil semua data diurutkan dari yang terbaru
-        // Pendekatan O(N) pass ini memastikan kita mendapat harga terkini setiap provinsi
-        // tidak peduli kapan tanggal update terakhir dari provinsi tersebut.
-        $allData = HargaHarian::where('slug_komoditas', $slug)
-            ->orderBy('tanggal', 'desc')
-            ->get(['provinsi', 'harga', 'tanggal']);
+        $cacheKey = 'harga_wilayah:' . $slug;
 
-        if ($allData->isEmpty()) {
-            return response()->json(['status' => 'success', 'data' => []]);
-        }
+        $cached = Cache::remember($cacheKey, now()->addHours(6), function () use ($slug) {
+            // Ambil semua data diurutkan dari yang terbaru
+            // Pendekatan O(N) pass ini memastikan kita mendapat harga terkini setiap provinsi
+            // tidak peduli kapan tanggal update terakhir dari provinsi tersebut.
+            $allData = HargaHarian::where('slug_komoditas', $slug)
+                ->orderBy('tanggal', 'desc')
+                ->get(['provinsi', 'harga', 'tanggal']);
 
-        $wilayahData = [];
-        
-        foreach ($allData as $row) {
-            $prov = $row->provinsi;
-            if (!isset($wilayahData[$prov])) {
-                $wilayahData[$prov] = [
-                    'terkini' => $row,
-                    'kemarin' => null
-                ];
-            } else if ($wilayahData[$prov]['kemarin'] === null && $row->tanggal !== $wilayahData[$prov]['terkini']->tanggal) {
-                $wilayahData[$prov]['kemarin'] = $row;
+            if ($allData->isEmpty()) {
+                return ['tanggal' => null, 'data' => collect()];
             }
-        }
 
-        $result = collect($wilayahData)->map(function ($item, $provinsi) {
-            $terkini = $item['terkini'];
-            $kemarin = $item['kemarin'];
+            $wilayahData = [];
 
-            $hargaKemarin = $kemarin ? $kemarin->harga : $terkini->harga;
-            $perubahan    = $hargaKemarin > 0
-                ? round((($terkini->harga - $hargaKemarin) / $hargaKemarin) * 100, 2)
-                : 0;
+            foreach ($allData as $row) {
+                $prov = $row->provinsi;
+                if (!isset($wilayahData[$prov])) {
+                    $wilayahData[$prov] = [
+                        'terkini' => $row,
+                        'kemarin' => null
+                    ];
+                } else if ($wilayahData[$prov]['kemarin'] === null && $row->tanggal !== $wilayahData[$prov]['terkini']->tanggal) {
+                    $wilayahData[$prov]['kemarin'] = $row;
+                }
+            }
 
-            $tipe = $this->tipeWilayah($provinsi);
+            $result = collect($wilayahData)->map(function ($item, $provinsi) {
+                $terkini = $item['terkini'];
+                $kemarin = $item['kemarin'];
 
-            // Cari provinsi induk untuk kab/kota
-            $provinsiInduk = $tipe === 'kab_kota'
-                ? (self::mappingKabKotaKeProvinsi()[$provinsi] ?? null)
-                : $provinsi;
+                $hargaKemarin = $kemarin ? $kemarin->harga : $terkini->harga;
+                $perubahan    = $hargaKemarin > 0
+                    ? round((($terkini->harga - $hargaKemarin) / $hargaKemarin) * 100, 2)
+                    : 0;
+
+                $tipe = $this->tipeWilayah($provinsi);
+
+                // Cari provinsi induk untuk kab/kota
+                $provinsiInduk = $tipe === 'kab_kota'
+                    ? (self::mappingKabKotaKeProvinsi()[$provinsi] ?? null)
+                    : $provinsi;
+
+                return [
+                    'wilayah'        => $provinsi,
+                    'tipe_wilayah'   => $tipe,
+                    'provinsi'       => $provinsiInduk ?? $provinsi,
+                    'harga'          => $terkini->harga,
+                    'tanggal'        => $terkini->tanggal,
+                    'perubahan'      => $perubahan,
+                ];
+            });
+
+            // Urutkan default: provinsi yang ada datanya di atas, baru kab/kota
+            $result = $result->sortBy(function ($item) {
+                return ($item['tipe_wilayah'] === 'provinsi' ? 0 : 1) . '-' . $item['wilayah'];
+            })->values()->toArray();
 
             return [
-                'wilayah'        => $provinsi,
-                'tipe_wilayah'   => $tipe,
-                'provinsi'       => $provinsiInduk ?? $provinsi,
-                'harga'          => $terkini->harga,
-                'tanggal'        => $terkini->tanggal,
-                'perubahan'      => $perubahan,
+                'tanggal' => $allData->isEmpty() ? null : $allData->first()->tanggal,
+                'data'    => $result,
             ];
         });
-
-        // Urutkan default: provinsi yang ada datanya di atas, baru kab/kota
-        $result = $result->sortBy(function($item) {
-            return ($item['tipe_wilayah'] === 'provinsi' ? 0 : 1) . '-' . $item['wilayah'];
-        })->values();
-
-        $tanggalTerkini = $allData->first()->tanggal; // Tanggal paling baru secara global
 
         return response()->json([
             'status'  => 'success',
             'slug'    => $slug,
-            'tanggal' => $tanggalTerkini,
-            'data'    => $result,
+            'tanggal' => $cached['tanggal'],
+            'data'    => $cached['data'],
         ]);
     }
 

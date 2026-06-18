@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Komoditas;
 use App\Models\HargaHarian;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 
 class KomoditasController extends Controller
@@ -16,70 +17,75 @@ class KomoditasController extends Controller
      */
     public function index(Request $request)
     {
-        $query = Komoditas::where('status', 'aktif');
+        // Cache key berdasarkan filter aktif — TTL 1 jam
+        $cacheKey = 'komoditas_index:' . md5(json_encode($request->only(['kategori', 'q'])));
 
-        if ($request->has('kategori')) {
-            $query->where('kategori', $request->kategori);
-        }
+        $result = Cache::remember($cacheKey, now()->addHour(), function () use ($request) {
+            $query = Komoditas::where('status', 'aktif');
 
-        if ($request->has('q')) {
-            $query->where('nama_komoditas', 'like', '%' . $request->q . '%');
-        }
+            if ($request->has('kategori')) {
+                $query->where('kategori', $request->kategori);
+            }
 
-        $komoditas = $query->orderBy('nama_komoditas')->get();
+            if ($request->has('q')) {
+                $query->where('nama_komoditas', 'like', '%' . $request->q . '%');
+            }
 
-        // Ambil harga terkini untuk tiap komoditas (nasional / rata-rata)
-        $result = $komoditas->map(function ($k) {
-            $latestDate = HargaHarian::where('slug_komoditas', $k->slug_komoditas)->max('tanggal');
+            $komoditas = $query->orderBy('nama_komoditas')->get();
 
-            if (!$latestDate) {
+            // Ambil harga terkini untuk tiap komoditas (nasional / rata-rata)
+            return $komoditas->map(function ($k) {
+                $latestDate = HargaHarian::where('slug_komoditas', $k->slug_komoditas)->max('tanggal');
+
+                if (!$latestDate) {
+                    return [
+                        'slug'          => $k->slug_komoditas,
+                        'nama'          => $k->nama_komoditas,
+                        'kategori'      => $k->kategori,
+                        'icon'          => $k->icon,
+                        'harga_terkini' => 0,
+                        'tanggal'       => null,
+                        'perubahan'     => 0,
+                        'naik'          => false,
+                    ];
+                }
+
+                // Hitung rata-rata harga di tanggal terbaru (sebagai representasi Nasional)
+                $hargaTerkiniAvg = HargaHarian::where('slug_komoditas', $k->slug_komoditas)
+                    ->where('tanggal', $latestDate)
+                    ->avg('harga');
+
+                // Hitung rata-rata harga di tanggal sebelumnya yang ada datanya
+                $prevDate = HargaHarian::where('slug_komoditas', $k->slug_komoditas)
+                    ->where('tanggal', '<', $latestDate)
+                    ->max('tanggal');
+
+                $hargaKemarinAvg = $prevDate
+                    ? HargaHarian::where('slug_komoditas', $k->slug_komoditas)
+                        ->where('tanggal', $prevDate)
+                        ->avg('harga')
+                    : $hargaTerkiniAvg;
+
+                $harga   = round($hargaTerkiniAvg);
+                $hargaH1 = round($hargaKemarinAvg);
+                $change  = $hargaH1 > 0 ? round((($harga - $hargaH1) / $hargaH1) * 100, 2) : 0;
+
                 return [
                     'slug'          => $k->slug_komoditas,
                     'nama'          => $k->nama_komoditas,
                     'kategori'      => $k->kategori,
                     'icon'          => $k->icon,
-                    'harga_terkini' => 0,
-                    'tanggal'       => null,
-                    'perubahan'     => 0,
-                    'naik'          => false,
+                    'harga_terkini' => $harga,
+                    'tanggal'       => $latestDate,
+                    'perubahan'     => $change,
+                    'naik'          => $change >= 0,
                 ];
-            }
-
-            // Hitung rata-rata harga di tanggal terbaru (sebagai representasi Nasional)
-            $hargaTerkiniAvg = HargaHarian::where('slug_komoditas', $k->slug_komoditas)
-                ->where('tanggal', $latestDate)
-                ->avg('harga');
-
-            // Hitung rata-rata harga di tanggal sebelumnya yang ada datanya
-            $prevDate = HargaHarian::where('slug_komoditas', $k->slug_komoditas)
-                ->where('tanggal', '<', $latestDate)
-                ->max('tanggal');
-
-            $hargaKemarinAvg = $prevDate
-                ? HargaHarian::where('slug_komoditas', $k->slug_komoditas)
-                    ->where('tanggal', $prevDate)
-                    ->avg('harga')
-                : $hargaTerkiniAvg;
-
-            $harga   = round($hargaTerkiniAvg);
-            $hargaH1 = round($hargaKemarinAvg);
-            $change  = $hargaH1 > 0 ? round((($harga - $hargaH1) / $hargaH1) * 100, 2) : 0;
-
-            return [
-                'slug'          => $k->slug_komoditas,
-                'nama'          => $k->nama_komoditas,
-                'kategori'      => $k->kategori,
-                'icon'          => $k->icon,
-                'harga_terkini' => $harga,
-                'tanggal'       => $latestDate,
-                'perubahan'     => $change,
-                'naik'          => $change >= 0,
-            ];
+            })->toArray();
         });
 
         return response()->json([
             'status' => 'success',
-            'total'  => $result->count(),
+            'total'  => count($result),
             'data'   => $result,
         ]);
     }
