@@ -1,0 +1,781 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PantauPangan — Harga Komoditas Pangan Indonesia</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&family=Lora:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<link rel="stylesheet" href="{{ asset('asset/style.css') }}">
+<style>
+/* Scrollbar for news-list inside beritaGrid */
+#beritaGrid .news-list::-webkit-scrollbar { width: 4px; }
+#beritaGrid .news-list::-webkit-scrollbar-track { background: transparent; }
+#beritaGrid .news-list::-webkit-scrollbar-thumb { background: rgba(45,106,79,.2); border-radius: 99px; }
+#beritaGrid .news-list::-webkit-scrollbar-thumb:hover { background: rgba(45,106,79,.4); }
+
+/* Premium & Responsive news modal styling */
+.modal-overlay.open {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 24px !important;
+}
+
+.modal-box {
+  background: white;
+  border-radius: var(--radius);
+  padding: 32px !important;
+  max-width: 650px !important;
+  width: 100% !important;
+  max-height: 88vh !important;
+  display: flex !important;
+  flex-direction: column !important;
+  box-shadow: var(--shadow-lg) !important;
+  animation: fadeUp .3s ease;
+}
+
+.modal-title {
+  font-size: 1.35rem !important;
+  line-height: 1.3 !important;
+  margin-bottom: 8px !important;
+}
+
+.modal-scroll-content {
+  flex: 1 !important;
+  overflow-y: auto !important;
+  margin: 16px 0 !important;
+  padding-right: 12px !important;
+}
+
+/* Custom Scrollbar for modal content */
+.modal-scroll-content::-webkit-scrollbar {
+  width: 6px;
+}
+.modal-scroll-content::-webkit-scrollbar-track {
+  background: transparent;
+}
+.modal-scroll-content::-webkit-scrollbar-thumb {
+  background: rgba(45, 106, 79, 0.2);
+  border-radius: 99px;
+}
+.modal-scroll-content::-webkit-scrollbar-thumb:hover {
+  background: rgba(45, 106, 79, 0.4);
+}
+
+/* Stack buttons vertically on mobile for best accessibility */
+@media (max-width: 576px) {
+  .modal-overlay.open {
+    padding: 16px !important;
+  }
+  .modal-box {
+    padding: 24px 18px 18px !important;
+    max-height: 92vh !important;
+    border-radius: 18px !important;
+  }
+  .modal-title {
+    font-size: 1.18rem !important;
+  }
+  .modal-scroll-content {
+    margin: 12px 0 !important;
+    padding-right: 6px !important;
+  }
+  #modalImage {
+    border-radius: 10px !important;
+    margin: 10px 0 !important;
+  }
+  .modal-body p {
+    font-size: 0.88rem !important;
+    line-height: 1.65 !important;
+  }
+  .modal-footer-btn-container {
+    flex-direction: column-reverse !important;
+    gap: 8px !important;
+    margin-top: 14px !important;
+  }
+  .modal-footer-btn-container a,
+  .modal-footer-btn-container button {
+    width: 100% !important;
+    text-align: center !important;
+    justify-content: center !important;
+    padding: 11px 22px !important;
+    font-size: 0.88rem !important;
+  }
+}
+
+/* Fix news-featured image & details overflow on mobile */
+@media (max-width: 576px) {
+  .news-featured {
+    aspect-ratio: auto !important;
+    min-height: 380px !important;
+    padding: 24px 18px !important;
+  }
+  .news-featured-title {
+    font-size: 1.15rem !important;
+    line-height: 1.35 !important;
+  }
+  .news-meta {
+    font-size: 0.75rem !important;
+  }
+}
+</style>
+
+</head>
+<body>
+
+<!-- NAVBAR -->
+<nav id="navbar">
+  <a href="#beranda" class="nav-brand">
+    <div class="nav-logo">🌾</div>
+    <span class="nav-title">Pantau<span>Pangan</span></span>
+  </a>
+  <ul class="nav-links">
+    <li><a href="#beranda" class="active">Beranda</a></li>
+    <li><a href="#cari">Cari Harga</a></li>
+    <li><a href="#peta">Peta</a></li>
+    <li><a href="#harga">Grafik &amp; Prediksi</a></li>
+    <li><a href="#inflasi">Prediksi Inflasi</a></li>
+    <li><a href="#berita">Berita</a></li>
+  </ul>
+  <div class="nav-right">
+    <a href="{{ route('login') }}" class="btn-login" id="navLoginBtn"> <img src="{{ asset('img/login_icon.png') }}" alt=""> Masuk</a>
+    <div class="nav-avatar-wrap" id="navAvatarWrap" style="display:none;position:relative">
+      <div class="nav-avatar" id="navAvatar" onclick="toggleAvatarDropdown()">TA</div>
+      <div class="avatar-dropdown" id="avatarDropdown">
+        <div class="avatar-dropdown-header">
+          <div class="avatar-dropdown-name" id="dropdownName">Tani Arga</div>
+          <div class="avatar-dropdown-email" id="dropdownEmail"><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="d7a3b6b9beb6a5b0b697b2bab6bebbf9b4b8ba">[email&#160;protected]</a></div>
+        </div>
+        <a href="api/dashboard.php">👤 Dashboard</a>
+        <button class="logout-btn" onclick="doLogout()">🚪 Keluar</button>
+      </div>
+    </div>
+    <button class="hamburger" id="hamburgerBtn" onclick="toggleMobileNav()" aria-label="Menu">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</nav>
+
+<!-- MOBILE NAV DRAWER -->
+<div class="mobile-nav" id="mobileNav">
+  <ul>
+    <li><a href="#beranda" class="active" onclick="closeMobileNav()"><span class="mobile-nav-icon">🏠</span> Beranda</a></li>
+    <li><a href="#cari" onclick="closeMobileNav()"><span class="mobile-nav-icon">🔍</span> Cari Harga</a></li>
+    <li><a href="#peta" onclick="closeMobileNav()"><span class="mobile-nav-icon">🗺️</span> Peta</a></li>
+    <li><a href="#harga" onclick="closeMobileNav()"><span class="mobile-nav-icon">📊</span> Grafik &amp; Prediksi</a></li>
+    <li><a href="#inflasi" onclick="closeMobileNav()"><span class="mobile-nav-icon">📉</span> Prediksi Inflasi</a></li>
+    <li><a href="#berita" onclick="closeMobileNav()"><span class="mobile-nav-icon">📰</span> Berita</a></li>
+  </ul>
+  <div class="mobile-nav-divider"></div>
+  <div id="mobileLoginSection">
+    <a href="{{ route('login') }}" class="mobile-login-btn" style="text-decoration:none;display:flex;align-items:center;justify-content:center;gap:8px">👤 Masuk / Daftar</a>
+  </div>
+  <div id="mobileUserSection" style="display:none">
+    <div style="display:flex;align-items:center;gap:12px;padding:12px 14px;background:var(--green-mist);border-radius:var(--radius-sm);margin-bottom:8px">
+      <div style="width:38px;height:38px;background:var(--green-mid);border-radius:50%;display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:.85rem" id="mobileAvatar">TA</div>
+      <div>
+        <div style="font-size:.88rem;font-weight:700;color:var(--green-deep)" id="mobileName">Tani Arga</div>
+        <div style="font-size:.75rem;color:var(--text-light)" id="mobileEmail"><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="295d484740485b4e48694c44484045074a4644">[email&#160;protected]</a></div>
+      </div>
+    </div>
+    <button class="mobile-login-btn" style="background:#fce4ec;color:#c62828" onclick="doLogout(); closeMobileNav()">🚪 Keluar</button>
+  </div>
+</div>
+
+<!-- LOGIN MODAL -->
+<div class="login-modal-overlay" id="loginModal" onclick="closeLoginModalOverlay(event)">
+  <div class="login-modal">
+    <div class="login-modal-header">
+      <button class="login-modal-close" onclick="closeLoginModal()">✕</button>
+      <div class="login-modal-logo">🌾</div>
+      <div class="login-modal-title">PantauPangan</div>
+      <div class="login-modal-subtitle">Masuk untuk akses fitur lengkap</div>
+    </div>
+    <div class="login-modal-body">
+      <div class="login-tabs">
+        <button class="login-tab active" id="tabMasuk" onclick="switchTab('masuk')">Masuk</button>
+        <button class="login-tab" id="tabDaftar" onclick="switchTab('daftar')">Daftar</button>
+      </div>
+      <div class="login-error" id="loginError"></div>
+      <!-- Form Masuk -->
+      <div id="formMasuk">
+        <div class="form-group">
+          <label>Email</label>
+          <input type="email" class="form-input" id="loginEmail" placeholder="nama@email.com">
+        </div>
+        <div class="form-group">
+          <label>Kata Sandi</label>
+          <input type="password" class="form-input" id="loginPassword" placeholder="••••••••">
+        </div>
+
+        <button class="login-submit" onclick="doLogin()">Masuk</button>
+      </div>
+      <!-- Form Daftar -->
+      <div id="formDaftar" style="display:none">
+        <div class="form-row">
+          <div class="form-group">
+            <label>Nama Depan</label>
+            <input type="text" class="form-input" id="regFirstName" placeholder="Budi">
+          </div>
+          <div class="form-group">
+            <label>Nama Belakang</label>
+            <input type="text" class="form-input" id="regLastName" placeholder="Santoso">
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Email</label>
+          <input type="email" class="form-input" id="regEmail" placeholder="nama@email.com">
+        </div>
+        <div class="form-group">
+          <label>Kata Sandi</label>
+          <input type="password" class="form-input" id="regPassword" placeholder="Min. 8 karakter">
+        </div>
+        <div class="form-group">
+          <label>Peran</label>
+          <select class="form-input" id="regRole">
+            <option value="">Pilih peran kamu...</option>
+            <option value="petani">🌾 Petani</option>
+            <option value="pembeli">🛒 Pembeli</option>
+            <option value="tengkulak">🏪 Tengkulak / Pedagang</option>
+            <option value="lainnya">👤 Lainnya</option>
+          </select>
+        </div>
+        <button class="login-submit" onclick="doRegister()">Buat Akun</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- TICKER BERJALAN -->
+<div class="ticker-wrap" style="margin-top:68px">
+  <div class="ticker-track" id="ticker"></div>
+</div>
+
+<!-- HERO -->
+<section id="beranda">
+  <div class="hero-blob"></div>
+  <div class="hero-content">
+    <p class="hero-eyebrow">Platform Informasi Komoditas Pangan Indonesia</p>
+    <h1 class="hero-title">Harga Pangan<br><em>Transparan & Akurat</em><br>untuk Semua</h1>
+    <p class="hero-desc">Data harga komoditas pangan terkini dari seluruh penjuru Indonesia. Membantu petani, pembeli, dan tengkulak mengambil keputusan yang tepat berdasarkan informasi pasar.</p>
+    <div class="hero-cta">
+      <a href="#cari" class="btn-primary">🔍 Cari Harga Sekarang</a>
+      <a href="#harga" class="btn-outline">Lihat Grafik &amp; Prediksi</a>
+    </div>
+    <div class="hero-stats">
+      <div>
+        <span class="hero-stat-num">34</span>
+        <span class="hero-stat-label">Provinsi Terpantau</span>
+      </div>
+      <div>
+        <span class="hero-stat-num">120+</span>
+        <span class="hero-stat-label">Komoditas Pangan</span>
+      </div>
+      <div>
+        <span class="hero-stat-num">Harian</span>
+        <span class="hero-stat-label">Pembaruan Data</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CARI HARGA -->
+<section id="cari">
+  <div class="section-label">Pencarian Harga</div>
+  <h2 class="section-title">Cari Harga Komoditas<br>di Wilayahmu</h2>
+  <p class="section-subtitle">Temukan harga terkini komoditas pangan di provinsi atau kabupaten tertentu dengan mudah.</p>
+
+  <div class="search-box fade-in">
+    <div class="search-row">
+      <div class="search-field">
+        <label>Komoditas</label>
+        <select class="search-input" id="searchCommodity" onchange="updateSearchKabKota()">
+          <option value="">Memuat komoditas...</option>
+        </select>
+      </div>
+      <div class="search-field">
+        <label>Provinsi</label>
+        <select class="search-input" id="searchProvince" onchange="updateSearchKabKota()">
+          <option value="">Memuat data...</option>
+        </select>
+      </div>
+      <div class="search-field" id="searchKabKotaField">
+        <label>Kab/Kota</label>
+        <select class="search-input" id="searchKabKota" disabled>
+          <option value="">Pilih Komoditas & Provinsi</option>
+        </select>
+      </div>
+      <div class="search-field" style="max-width:160px">
+        <label>Periode</label>
+        <select class="search-input" id="searchPeriod">
+          <option>Hari Ini</option>
+          <option>7 Hari</option>
+          <option>30 Hari</option>
+        </select>
+      </div>
+      <button class="search-btn" id="searchBtn" onclick="doSearch()">Cari Harga</button>
+    </div>
+    <div class="search-tags">
+      <span class="search-tags-label">Populer:</span>
+      <button class="tag" onclick="quickSearch('Beras')">Beras</button>
+      <button class="tag" onclick="quickSearch('Cabai Merah')">Cabai Merah</button>
+      <button class="tag" onclick="quickSearch('Bawang Merah')">Bawang Merah</button>
+      <button class="tag" onclick="quickSearch('Minyak')">Minyak Goreng</button>
+      <button class="tag" onclick="quickSearch('Telur')">Telur Ayam</button>
+      <button class="tag" onclick="quickSearch('Daging Sapi')">Daging Sapi</button>
+    </div>
+
+    <div class="search-results" id="searchResults">
+      <p style="font-size:.85rem;color:var(--text-light);margin-bottom:12px" id="searchResultLabel"></p>
+      <div class="results-grid" id="resultsGrid"></div>
+    </div>
+  </div>
+</section>
+
+<!-- PETA INTERAKTIF -->
+<section id="peta" style="padding: 60px 5%; background: var(--cream-dark);">
+  <div style="margin-bottom: 24px;">
+    <div class="section-label">Peta Interaktif</div>
+    <h2 class="section-title">Sebaran Komoditas Unggulan</h2>
+    <p class="section-subtitle" style="margin-bottom: 24px;">Jelajahi komoditas andalan dari setiap provinsi di seluruh Indonesia secara interaktif.</p>
+  </div>
+  
+  <div style="width: 100%; height: 600px; border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow-md); position: relative; z-index: 10;">
+    <iframe src="{{ route('peta', ['embed' => 'true']) }}" style="width: 100%; height: 100%; border: none;"></iframe>
+  </div>
+</section>
+
+<!-- GRAFIK HARGA -->
+<section id="harga">
+  <div class="harga-header">
+    <div>
+      <div class="section-label">Grafik &amp; Prediksi Harga</div>
+      <h2 class="section-title">Pantau &amp; Prediksi Pergerakan Harga</h2>
+      <p class="section-subtitle" style="margin-bottom:0">Klik komoditas untuk melihat tren harga dan prediksinya.</p>
+    </div>
+    <div class="komoditas-tabs" id="kategoriTabs">
+      <button class="tab-btn active" onclick="filterKategori('semua',this)">Semua</button>
+      <button class="tab-btn" onclick="filterKategori('pokok',this)">Pangan Pokok</button>
+      <button class="tab-btn" onclick="filterKategori('protein',this)">Protein</button>
+      <button class="tab-btn" onclick="filterKategori('bumbu',this)">Bumbu</button>
+      <button class="tab-btn" onclick="filterKategori('sayur',this)">Sayuran</button>
+    </div>
+  </div>
+
+  <div class="harga-grid">
+    <div class="commodity-list-wrap">
+      <div class="commodity-list" id="commodityList"></div>
+      <div id="commodityPagination" class="pagination"></div>
+    </div>
+    <div class="chart-panel">
+      <div class="chart-header">
+        <div>
+          <div class="chart-commodity-name" id="chartCommodityName">Beras Premium</div>
+          <div class="chart-price-now" id="chartPriceNow">Rp 14.500/kg</div>
+        </div>
+        <div class="chart-period-btns">
+          <button class="period-btn active" onclick="changePeriod('7H',this)">7H</button>
+          <button class="period-btn" onclick="changePeriod('1B',this)">1B</button>
+          <button class="period-btn" onclick="changePeriod('3B',this)">3B</button>
+          <button class="period-btn" onclick="changePeriod('1T',this)">1T</button>
+        </div>
+      </div>
+      <div class="chart-wrap">
+        <div id="chartLoading" class="chart-loading" style="display:none">
+          <div class="prediksi-spinner"></div>
+          <span>Memuat data historis...</span>
+        </div>
+        <canvas id="priceChart"></canvas>
+      </div>
+      <div class="chart-summary">
+        <div class="chart-stat">
+          <div class="chart-stat-label">Tertinggi</div>
+          <div class="chart-stat-value" id="statHigh">—</div>
+        </div>
+        <div class="chart-stat">
+          <div class="chart-stat-label">Terendah</div>
+          <div class="chart-stat-value" id="statLow">—</div>
+        </div>
+        <div class="chart-stat">
+          <div class="chart-stat-label">Rata-rata</div>
+          <div class="chart-stat-value" id="statAvg">—</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PREDIKSI HARGA -->
+  <div class="prediksi-panel" id="prediksiPanel">
+    <div class="prediksi-header">
+      <div>
+        <div class="prediksi-title">📈 Prediksi Harga</div>
+        <div class="prediksi-subtitle" id="prediksiSubtitleHome">Prediksi Tren Harga 7 Hari ke Depan (Regresi Linear)</div>
+      </div>
+      <div class="prediksi-controls">
+        <!-- Dropdown Komoditas -->
+        <select id="prediksiKomoditas" class="prediksi-select" onchange="updatePrediksiKabKota()">
+          <option value="">Memuat...</option>
+        </select>
+        <!-- Dropdown Wilayah (Provinsi) -->
+        <select id="prediksiWilayah" class="prediksi-select" onchange="updatePrediksiKabKota()">
+          <option value="Semua Provinsi">Semua Provinsi</option>
+          <option value="Aceh">Aceh</option>
+          <option value="Sumatera Utara">Sumatera Utara</option>
+          <option value="Sumatera Barat">Sumatera Barat</option>
+          <option value="Riau">Riau</option>
+          <option value="Jambi">Jambi</option>
+          <option value="Sumatera Selatan">Sumatera Selatan</option>
+          <option value="Bengkulu">Bengkulu</option>
+          <option value="Lampung">Lampung</option>
+          <option value="Kepulauan Bangka Belitung">Kepulauan Bangka Belitung</option>
+          <option value="Kepulauan Riau">Kepulauan Riau</option>
+          <option value="DKI Jakarta">DKI Jakarta</option>
+          <option value="Jawa Barat">Jawa Barat</option>
+          <option value="Jawa Tengah">Jawa Tengah</option>
+          <option value="DI Yogyakarta">DI Yogyakarta</option>
+          <option value="Jawa Timur">Jawa Timur</option>
+          <option value="Banten">Banten</option>
+          <option value="Bali">Bali</option>
+          <option value="Nusa Tenggara Barat">Nusa Tenggara Barat</option>
+          <option value="Nusa Tenggara Timur">Nusa Tenggara Timur</option>
+          <option value="Kalimantan Barat">Kalimantan Barat</option>
+          <option value="Kalimantan Tengah">Kalimantan Tengah</option>
+          <option value="Kalimantan Selatan">Kalimantan Selatan</option>
+          <option value="Kalimantan Timur">Kalimantan Timur</option>
+          <option value="Kalimantan Utara">Kalimantan Utara</option>
+          <option value="Sulawesi Utara">Sulawesi Utara</option>
+          <option value="Sulawesi Tengah">Sulawesi Tengah</option>
+          <option value="Sulawesi Selatan">Sulawesi Selatan</option>
+          <option value="Sulawesi Tenggara">Sulawesi Tenggara</option>
+          <option value="Gorontalo">Gorontalo</option>
+          <option value="Sulawesi Barat">Sulawesi Barat</option>
+          <option value="Maluku">Maluku</option>
+          <option value="Maluku Utara">Maluku Utara</option>
+          <option value="Papua Barat">Papua Barat</option>
+          <option value="Papua">Papua</option>
+          <option value="Papua Selatan">Papua Selatan</option>
+          <option value="Papua Tengah">Papua Tengah</option>
+          <option value="Papua Pegunungan">Papua Pegunungan</option>
+        </select>
+        <!-- Dropdown Kab/Kota -->
+        <select id="prediksiKabKota" class="prediksi-select" disabled>
+          <option value="">Pilih Komoditas & Provinsi</option>
+        </select>
+        <!-- Dropdown Periode -->
+        <select id="prediksiPeriode" class="prediksi-select">
+          <option value="7">7 Hari</option>
+          <option value="30">1 Bulan</option>
+          <option value="90">3 Bulan</option>
+          <option value="120">4 Bulan</option>
+        </select>
+        <!-- Tombol Cek -->
+        <button id="prediksiCekBtn" onclick="renderHomePrediksiChart()" class="prediksi-cek-btn">🔍 Cek Prediksi</button>
+      </div>
+    </div>
+    <div class="prediksi-chart-wrap">
+      <!-- Placeholder sebelum tombol ditekan -->
+      <div id="prediksiPlaceholderHome" class="prediksi-placeholder">
+        <span class="prediksi-placeholder-icon">📈</span>
+        <p>Pilih komoditas, wilayah, dan periode,<br>lalu tekan <strong>Cek Prediksi</strong>.</p>
+      </div>
+      <!-- Loading spinner, tersembunyi secara default -->
+      <div id="prediksiLoadingHome" class="prediksi-loading" style="display:none;">
+        <svg class="prediksi-spinner" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+        </svg>
+        <span>Menghitung prediksi...</span>
+      </div>
+      <canvas id="homePrediksiChart" style="display:none;"></canvas>
+      <!-- Rekomendasi Harga -->
+      <div id="prediksiRekomendasiHome" class="prediksi-rekomendasi" style="display:none; margin-top: 20px; padding: 15px; border-radius: 8px; background: #e8f5e9; border: 1px solid #c8e6c9;">
+        <h4 style="margin: 0 0 10px 0; color: #2e7d32; display: flex; align-items: center; gap: 8px;">💡 Saran Tindakan <span id="saranRoleBadge" style="font-size: 0.75rem; padding: 2px 8px; background: #2e7d32; color: white; border-radius: 12px; font-weight: normal;"></span></h4>
+        <p id="prediksiSaranText" style="margin: 0; font-size: 0.9rem; color: #1b5e20; line-height: 1.5;"></p>
+      </div>
+    </div>
+  </div>
+
+</section>
+
+<!-- PREDIKSI INFLASI -->
+<section id="inflasi">
+  <div style="margin-bottom:36px">
+    <div class="section-label">Analisis Cerdas</div>
+    <h2 class="section-title">Prediksi Inflasi Harga Pangan</h2>
+    <p class="section-subtitle">Proyeksi kenaikan harga berdasarkan tren historis, hari raya, cuaca, dan harga BBM menggunakan model AI Facebook Prophet.</p>
+  </div>
+
+  <div class="inflasi-layout">
+
+    <!-- FORM PARAMETER -->
+    <div class="inflasi-form-card">
+      <div class="inflasi-form-title">⚙️ Parameter Prediksi</div>
+
+      <div class="inflasi-form-group">
+        <label class="inflasi-form-label">Komoditas</label>
+        <select class="inflasi-form-select" id="inflasiKomoditas" onchange="updateInflasiKabKota()"></select>
+      </div>
+
+      <div class="inflasi-form-group">
+        <label class="inflasi-form-label">Provinsi</label>
+        <select class="inflasi-form-select" id="inflasiProvinsi" onchange="updateInflasiKabKota()">
+          <option value="Semua Provinsi">Semua Provinsi (Nasional)</option>
+          <option value="Aceh">Aceh</option>
+          <option value="Sumatera Utara">Sumatera Utara</option>
+          <option value="Sumatera Barat">Sumatera Barat</option>
+          <option value="Riau">Riau</option>
+          <option value="Jambi">Jambi</option>
+          <option value="Sumatera Selatan">Sumatera Selatan</option>
+          <option value="Bengkulu">Bengkulu</option>
+          <option value="Lampung">Lampung</option>
+          <option value="Kepulauan Bangka Belitung">Kep. Bangka Belitung</option>
+          <option value="Kepulauan Riau">Kepulauan Riau</option>
+          <option value="DKI Jakarta">DKI Jakarta</option>
+          <option value="Jawa Barat">Jawa Barat</option>
+          <option value="Jawa Tengah">Jawa Tengah</option>
+          <option value="DI Yogyakarta">DI Yogyakarta</option>
+          <option value="Jawa Timur">Jawa Timur</option>
+          <option value="Banten">Banten</option>
+          <option value="Bali">Bali</option>
+          <option value="Nusa Tenggara Barat">Nusa Tenggara Barat</option>
+          <option value="Nusa Tenggara Timur">Nusa Tenggara Timur</option>
+          <option value="Kalimantan Barat">Kalimantan Barat</option>
+          <option value="Kalimantan Tengah">Kalimantan Tengah</option>
+          <option value="Kalimantan Selatan">Kalimantan Selatan</option>
+          <option value="Kalimantan Timur">Kalimantan Timur</option>
+          <option value="Kalimantan Utara">Kalimantan Utara</option>
+          <option value="Sulawesi Utara">Sulawesi Utara</option>
+          <option value="Sulawesi Tengah">Sulawesi Tengah</option>
+          <option value="Sulawesi Selatan">Sulawesi Selatan</option>
+          <option value="Sulawesi Tenggara">Sulawesi Tenggara</option>
+          <option value="Gorontalo">Gorontalo</option>
+          <option value="Sulawesi Barat">Sulawesi Barat</option>
+          <option value="Maluku">Maluku</option>
+          <option value="Maluku Utara">Maluku Utara</option>
+          <option value="Papua Barat">Papua Barat</option>
+          <option value="Papua">Papua</option>
+        </select>
+      </div>
+
+      <div class="inflasi-form-group">
+        <label class="inflasi-form-label">Kabupaten/Kota</label>
+        <select class="inflasi-form-select" id="inflasiKabKota" disabled>
+          <option value="">Pilih Komoditas & Provinsi</option>
+        </select>
+      </div>
+
+      <div class="inflasi-form-group">
+        <label class="inflasi-form-label">Periode Prediksi</label>
+        <div class="inflasi-period-grid">
+          <button class="inflasi-period-btn" id="inflasiP7" onclick="setInflasiPeriod(7,this)">7 Hari</button>
+          <button class="inflasi-period-btn active" id="inflasiP30" onclick="setInflasiPeriod(30,this)">1 Bulan</button>
+          <button class="inflasi-period-btn" id="inflasiP120" onclick="setInflasiPeriod(120,this)">4 Bulan</button>
+        </div>
+      </div>
+
+      <hr class="inflasi-divider">
+
+      <span class="inflasi-faktor-label">⚠️ Faktor Penyebab Inflasi</span>
+      <div class="inflasi-faktor-list">
+
+        <div class="inflasi-faktor-item active-raya" id="inflasiFactorRaya" onclick="toggleInflasiFaktor('raya')">
+          <div class="inflasi-faktor-icon fi-raya-bg">🎉</div>
+          <div class="inflasi-faktor-info">
+            <div class="inflasi-faktor-name">Hari Raya Besar</div>
+            <div class="inflasi-faktor-sub">Lebaran, Natal, Imlek, Nyepi</div>
+          </div>
+          <div class="inflasi-faktor-check checked" id="inflasiCheckRaya">✓</div>
+        </div>
+
+        <div class="inflasi-faktor-item" id="inflasiFactorCuaca" onclick="toggleInflasiFaktor('cuaca')">
+          <div class="inflasi-faktor-icon fi-cuaca-bg">🌧️</div>
+          <div class="inflasi-faktor-info">
+            <div class="inflasi-faktor-name">Cuaca Ekstrem</div>
+            <div class="inflasi-faktor-sub">Kemarau, banjir, La Niña</div>
+          </div>
+          <div class="inflasi-faktor-check" id="inflasiCheckCuaca"></div>
+        </div>
+
+        <div class="inflasi-faktor-item" id="inflasiFactorBbm" onclick="toggleInflasiFaktor('bbm')">
+          <div class="inflasi-faktor-icon fi-bbm-bg">⛽</div>
+          <div class="inflasi-faktor-info">
+            <div class="inflasi-faktor-name">Kenaikan Harga BBM</div>
+            <div class="inflasi-faktor-sub">Berdampak ke biaya distribusi</div>
+          </div>
+          <div class="inflasi-faktor-check" id="inflasiCheckBbm"></div>
+        </div>
+
+      </div>
+
+      <button class="inflasi-run-btn" id="inflasiRunBtn" onclick="runInflasiPrediksi()">📉 Jalankan Prediksi Inflasi</button>
+    </div>
+
+    <!-- RESULT COLUMN -->
+    <div class="inflasi-result-col" id="inflasiResultCol">
+
+      <!-- Placeholder awal -->
+      <div class="inflasi-placeholder" id="inflasiPlaceholder">
+        <div class="inflasi-placeholder-icon">📉</div>
+        <p>Pilih komoditas, wilayah, dan faktor inflasi,<br>lalu tekan <strong>Jalankan Prediksi Inflasi</strong>.</p>
+      </div>
+
+      <!-- Loading -->
+      <div class="inflasi-loading" id="inflasiLoading" style="display:none">
+        <svg class="prediksi-spinner" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+        </svg>
+        <span>Menghitung prediksi inflasi...</span>
+      </div>
+
+      <!-- Metric Card -->
+      <div class="inflasi-metrics-card" id="inflasiMetricsCard" style="display:none">
+        <div class="inflasi-result-meta" id="inflasiResultMeta">—</div>
+        <div class="inflasi-metrics-row">
+          <div class="inflasi-metric-box">
+            <div class="inflasi-metric-lbl">Prediksi Inflasi</div>
+            <div class="inflasi-metric-val" id="inflasiMetricInflasi">—</div>
+            <div class="inflasi-metric-sub" id="inflasiMetricInflasiSub">—</div>
+          </div>
+          <div class="inflasi-metric-box">
+            <div class="inflasi-metric-lbl">Estimasi Harga Akhir</div>
+            <div class="inflasi-metric-val warn" id="inflasiMetricHarga">—</div>
+            <div class="inflasi-metric-sub" id="inflasiMetricHargaSub">—</div>
+          </div>
+          <div class="inflasi-metric-box">
+            <div class="inflasi-metric-lbl">Tingkat Keyakinan</div>
+            <div class="inflasi-metric-val ok" id="inflasiMetricConf">—</div>
+            <div class="inflasi-metric-sub">model AI Prophet</div>
+          </div>
+        </div>
+        <div class="inflasi-banner" id="inflasiStatusBanner" style="display:none">
+          <div class="inflasi-banner-icon" id="inflasiStatusIcon">ℹ️</div>
+          <div>
+            <div class="inflasi-banner-title" id="inflasiStatusTitle">—</div>
+            <div class="inflasi-banner-text" id="inflasiStatusText">—</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Rekomendasi Inflasi -->
+      <div id="inflasiRekomendasi" class="inflasi-rekomendasi" style="display:none; margin-top: 20px; padding: 15px; border-radius: 8px; background: #e3f2fd; border: 1px solid #bbdefb;">
+        <h4 style="margin: 0 0 10px 0; color: #1565c0; display: flex; align-items: center; gap: 8px;">💡 Saran Tindakan <span id="saranInflasiRoleBadge" style="font-size: 0.75rem; padding: 2px 8px; background: #1565c0; color: white; border-radius: 12px; font-weight: normal;"></span></h4>
+        <p id="inflasiSaranText" style="margin: 0; font-size: 0.9rem; color: #0d47a1; line-height: 1.5;"></p>
+      </div>
+
+      <!-- Chart Card -->
+      <div class="inflasi-chart-card" id="inflasiChartCard" style="display:none">
+        <div class="inflasi-chart-header">
+          <div>
+            <div class="inflasi-chart-title">Proyeksi Pergerakan Harga</div>
+            <div class="inflasi-chart-sub" id="inflasiChartSub">Historis + Prediksi</div>
+          </div>
+          <div class="inflasi-chart-legend">
+            <div class="inflasi-legend-item"><div class="inflasi-legend-dot" style="background:var(--green-light)"></div>Historis</div>
+            <div class="inflasi-legend-item"><div class="inflasi-legend-dot" style="background:#e67e22"></div>Prediksi</div>
+            <div class="inflasi-legend-item"><div class="inflasi-legend-dot" style="background:rgba(230,126,34,.2)"></div>Rentang</div>
+          </div>
+        </div>
+        <div class="inflasi-chart-wrap">
+          <canvas id="inflasiChart"></canvas>
+        </div>
+      </div>
+
+      <!-- Kontribusi Faktor -->
+      <div class="inflasi-kontribusi-card" id="inflasiKontribusiCard" style="display:none">
+        <div class="inflasi-kontribusi-title">Kontribusi Faktor terhadap Inflasi</div>
+        <div id="inflasiKontribusiRows"></div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- BERITA -->
+<section id="berita">
+  <div class="berita-header">
+    <div>
+      <div class="section-label">Berita Nasional</div>
+      <h2 class="section-title">Update Terkini Pangan</h2>
+    </div>
+    <a href="{{ route('berita') }}" class="view-all-btn" style="text-decoration: none; display: inline-block; text-align: center;">Lihat Semua Berita →</a>
+  </div>
+  <div class="berita-grid" id="beritaGrid"></div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-grid">
+    <div>
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
+        <div style="width:34px;height:34px;background:var(--green-mid);border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:16px">🌾</div>
+        <div class="footer-brand-name">PantauPangan</div>
+      </div>
+      <p class="footer-desc">Platform informasi harga komoditas pangan yang transparan untuk mendukung kesejahteraan petani dan kebutuhan masyarakat Indonesia.</p>
+    </div>
+    <div>
+      <div class="footer-col-title">Fitur</div>
+      <ul class="footer-links">
+        <li><a href="#beranda">Beranda</a></li>
+        <li><a href="#cari">Cari Harga</a></li>
+        <li><a href="#peta">Peta</a></li>
+        <li><a href="#harga">Grafik &amp; Prediksi</a></li>
+        <li><a href="#inflasi">Prediksi Inflasi</a></li>
+        <li><a href="#berita">Berita Pangan</a></li>
+      </ul>
+    </div>
+    <div>
+      <div class="footer-col-title">Komoditas</div>
+      <ul class="footer-links">
+        <li><a href="#">Beras & Serealia</a></li>
+        <li><a href="#">Sayuran & Umbi</a></li>
+        <li><a href="#">Protein Hewani</a></li>
+        <li><a href="#">Bumbu & Rempah</a></li>
+      </ul>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <span>© 2025 PantauPangan. Data bersumber dari download CSV PIHPS (Pasar Tradisional).</span>
+    <span><a href="#">Kebijakan Privasi</a> · <a href="#">Ketentuan Penggunaan</a></span>
+  </div>
+</footer>
+
+<!-- MODAL BERITA -->
+<div class="modal-overlay" id="newsModal" onclick="closeModal(event)">
+  <div class="modal-box">
+    <div class="news-category" id="modalCategory"></div>
+    <div class="modal-title" id="modalTitle"></div>
+    <div class="modal-source" id="modalSource"></div>
+    
+    <div class="modal-scroll-content">
+      <img id="modalImage" style="width: 100%; aspect-ratio: 4 / 3; object-fit: cover; border-radius: 12px; margin: 15px 0;" src="" alt="News Cover">
+      <div class="modal-body" id="modalBody"></div>
+      <!-- Attribution: (Sumber: Kompas.com) -->
+      <div id="modalAttribution" style="display:none; margin-top:14px; padding:10px 14px; background:#f0faf4; border-left:3px solid var(--green-light); border-radius:6px;"></div>
+    </div>
+    
+    <!-- Baca Selengkapnya button & Close button wrapper -->
+    <div class="modal-footer-btn-container" style="display:flex; align-items:center; justify-content:space-between; margin-top:20px; flex-wrap:wrap; gap:10px;">
+      <a id="modalReadMore" href="#" target="_blank" rel="noopener noreferrer"
+         style="display:none; align-items:center; gap:8px; padding:10px 22px;
+                background:var(--green-deep); color:#fff; font-weight:700; font-size:.88rem;
+                border-radius:50px; text-decoration:none; transition:background .2s; box-shadow:0 4px 14px rgba(26,58,42,.25);"
+         onmouseover="this.style.background='var(--green-mid)'"
+         onmouseout="this.style.background='var(--green-deep)'">
+        📖 Baca Selengkapnya <span style="font-size:1rem">↗</span>
+      </a>
+      <button class="modal-close" onclick="document.getElementById('newsModal').classList.remove('open')"
+              style="padding:10px 22px; border-radius:50px; border:2px solid var(--cream-dark); background:transparent; color:var(--text); font-weight:600; font-size:.88rem; cursor:pointer; transition:background .2s;"
+              onmouseover="this.style.background='var(--cream-dark)'"
+              onmouseout="this.style.background='transparent'">Tutup</button>
+    </div>
+  </div>
+</div>
+
+<script src="{{ asset('asset/script.js') }}"></script>
+</body>
+</html>
+
+
+
