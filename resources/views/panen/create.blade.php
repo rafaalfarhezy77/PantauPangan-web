@@ -31,7 +31,7 @@
         </div>
         @endif
 
-        <form method="POST" action="{{ route('panen.store') }}" class="p-6 space-y-5">
+        <form id="formPanen" method="POST" action="{{ route('panen.store') }}" class="p-6 space-y-5">
             @csrf
 
             {{-- Nama Komoditas --}}
@@ -144,15 +144,21 @@ select.addEventListener('change', function() {
     }
 });
 
-// Sync manual input ke name="nama_komoditas" on submit
-document.querySelector('form').addEventListener('submit', function(e) {
+// Sync input ke server pada saat submit
+document.getElementById('formPanen').addEventListener('submit', function(e) {
     if (select.value === '__manual__') {
         if (!manualInput.value.trim()) {
             e.preventDefault();
             manualInput.focus();
             return;
         }
-        select.value = manualInput.value.trim();
+        // Ganti atribut name agar yang dikirim ke server adalah input text, bukan select
+        select.removeAttribute('name');
+        manualInput.setAttribute('name', 'nama_komoditas');
+    } else {
+        // Kembalikan atribut name ke select jika bukan manual
+        manualInput.removeAttribute('name');
+        select.setAttribute('name', 'nama_komoditas');
     }
 });
 </script>

@@ -1,0 +1,1096 @@
+# Implementasi Basis Data Terdistribusi
+## Setup Murni: XAMPP + CMD + 2 PC dalam 1 WiFi (Tanpa Framework)
+
+---
+
+## Gambaran Sistem
+
+```
+┌─────────────────────────────────┐         ┌─────────────────────────────────┐
+│           PC 1                  │         │           PC 2                  │
+│   XAMPP (Apache + MySQL)        │◄──WiFi─►│   XAMPP (MySQL saja)            │
+│   IP: 192.168.X.X1              │         │   IP: 192.168.X.X2              │
+│                                 │         │                                 │
+│  MySQL Port 3306                │         │  MySQL Port 3306                │
+│  Database: db_pantaupangan      │         │  Database: db_distribusi_pupuk  │
+│  Tabel:                         │         │  Tabel:                         │
+│  ├── komoditas                  │         │  ├── pupuk                      │
+│  ├── harga_harian               │         │  ├── distribusi_pupuk           │
+│  └── pengguna                   │         │  └── alokasi_pupuk              │
+│                                 │         │                                 │
+│  Apache → htdocs/distribusi/    │         │                                 │
+│  (Web App PHP Murni)            │         │                                 │
+└─────────────────────────────────┘         └─────────────────────────────────┘
+          ▲
+          │ Browser
+     http://localhost/distribusi/
+```
+
+---
+
+## LANGKAH-LANGKAH SETUP
+
+---
+
+### ✅ PERSIAPAN AWAL — KEDUA PC
+
+Jalankan **XAMPP Control Panel**, aktifkan:
+- **PC1**: Apache ✅ + MySQL ✅
+- **PC2**: MySQL ✅ (Apache tidak wajib)
+
+---
+
+### ✅ STEP 1 — Cari tahu IP masing-masing PC
+
+Buka **CMD** di masing-masing PC, ketik:
+```cmd
+ipconfig
+```
+Catat nilai **IPv4 Address** (biasanya `192.168.x.x`)
+
+---
+
+### ✅ STEP 2 — PC2: Konfigurasi MySQL agar bisa diakses dari jaringan
+
+**2A. Edit file `my.ini`** di PC2
+
+Buka File Explorer → `C:\xampp\mysql\bin\my.ini`
+
+Cari baris:
+```ini
+bind-address=127.0.0.1
+```
+Ubah menjadi:
+```ini
+bind-address=0.0.0.0
+```
+Jika tidak ada baris tersebut, tambahkan di bawah `[mysqld]`.
+
+**2B. Restart MySQL di XAMPP Control Panel PC2**
+
+**2C. Buka firewall port 3306 di PC2**
+
+Buka CMD sebagai **Administrator** di PC2:
+```cmd
+netsh advfirewall firewall add rule name="MySQL Port 3306" protocol=TCP dir=in localport=3306 action=allow
+```
+
+**2D. Test koneksi dari PC1 ke PC2**
+
+Di CMD PC1 (ganti `IP_PC2` dengan IP aktual PC2):
+```cmd
+ping IP_PC2
+```
+Jika reply → jaringan oke.
+
+---
+
+### ✅ STEP 3 — PC1: Jalankan SQL Database 1
+
+Buka CMD di PC1:
+```cmd
+cd C:\xampp\mysql\bin
+mysql -u root -p < C:\sql_pc1.sql
+```
+*(atau buka phpMyAdmin → http://localhost/phpmyadmin → Import file)*
+
+---
+
+### ✅ STEP 4 — PC2: Jalankan SQL Database 2
+
+Buka CMD di PC2:
+```cmd
+cd C:\xampp\mysql\bin
+mysql -u root -p < C:\sql_pc2.sql
+```
+
+---
+
+### ✅ STEP 5 — PC2: Beri izin akses dari PC1 ke MySQL PC2
+
+Buka CMD di PC2 dan masuk ke MySQL:
+```cmd
+cd C:\xampp\mysql\bin
+mysql -u root -p
+```
+
+Jalankan SQL berikut (ganti `IP_PC1` dengan IP aktual PC1):
+```sql
+CREATE USER 'distribusi'@'IP_PC1' IDENTIFIED BY 'password123';
+GRANT ALL PRIVILEGES ON db_distribusi_pupuk.* TO 'distribusi'@'IP_PC1';
+FLUSH PRIVILEGES;
+EXIT;
+```
+
+---
+
+### ✅ STEP 6 — PC1: Letakkan file PHP aplikasi
+
+Salin folder `distribusi` ke:
+```
+C:\xampp\htdocs\distribusi\
+```
+
+Struktur folder:
+```
+C:\xampp\htdocs\distribusi\
+├── config.php          ← Konfigurasi koneksi 2 database
+├── index.php           ← Dashboard bukti sistem terdistribusi
+├── daftar_pupuk.php    ← Halaman data pupuk (DB2)
+└── ajukan_pupuk.php    ← Form pengajuan alokasi pupuk (simpan ke DB2)
+```
+
+---
+
+### ✅ STEP 7 — Akses Aplikasi
+
+Buka browser di PC1:
+```
+http://localhost/distribusi/
+```
+
+---
+
+## SQL SCRIPTS
+
+---
+
+### 📄 `sql_pc1.sql` — Jalankan di PC1
+
+```sql
+-- ============================================================
+-- SQL PC 1 — Database Utama: Pantau Pangan
+-- Server: PC1 (localhost)
+-- Jalankan: mysql -u root -p < sql_pc1.sql
+-- ============================================================
+
+CREATE DATABASE IF NOT EXISTS db_pantaupangan
+    CHARACTER SET utf8mb4
+    COLLATE utf8mb4_unicode_ci;
+
+USE db_pantaupangan;
+
+-- ── Tabel pengguna ───────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS pengguna (
+    id        INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    nama      VARCHAR(100) NOT NULL,
+    email     VARCHAR(100) NOT NULL UNIQUE,
+    role      ENUM('admin','petani','pembeli') NOT NULL DEFAULT 'petani',
+    provinsi  VARCHAR(100) NOT NULL DEFAULT 'Jawa Tengah',
+    dibuat_pada TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+COMMENT='Data pengguna sistem — DB Server 1 (PC1)';
+
+-- ── Tabel komoditas ──────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS komoditas (
+    id             INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    nama_komoditas VARCHAR(100) NOT NULL,
+    kode           VARCHAR(30)  NOT NULL UNIQUE,
+    kategori       VARCHAR(50)  NOT NULL DEFAULT 'Pangan Pokok',
+    satuan         VARCHAR(20)  NOT NULL DEFAULT 'kg',
+    status         ENUM('aktif','nonaktif') NOT NULL DEFAULT 'aktif',
+    dibuat_pada    TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+COMMENT='Master data komoditas pangan — DB Server 1 (PC1)';
+
+-- ── Tabel harga_harian ───────────────────────────────────────
+CREATE TABLE IF NOT EXISTS harga_harian (
+    id             INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    kode_komoditas VARCHAR(30)  NOT NULL,
+    provinsi       VARCHAR(100) NOT NULL,
+    harga          INT          NOT NULL COMMENT 'Harga dalam Rupiah per kg',
+    tanggal        DATE         NOT NULL,
+    sumber         VARCHAR(100) NULL DEFAULT 'Panel Harga Pangan',
+    dibuat_pada    TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_kode     (kode_komoditas),
+    INDEX idx_provinsi (provinsi),
+    INDEX idx_tanggal  (tanggal),
+    UNIQUE KEY uq_harga (kode_komoditas, provinsi, tanggal),
+    FOREIGN KEY (kode_komoditas) REFERENCES komoditas(kode) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+COMMENT='Data harga harian komoditas pangan — DB Server 1 (PC1)';
+
+-- ════════════════════════════════════════════════════════════════
+-- DATA SAMPLE — PC1
+-- ════════════════════════════════════════════════════════════════
+
+INSERT INTO pengguna (nama, email, role, provinsi) VALUES
+('Administrator',    'admin@pantaupangan.id',   'admin',   'DKI Jakarta'),
+('Budi Santoso',     'budi@petani.id',           'petani',  'Jawa Tengah'),
+('Siti Rahayu',      'siti@petani.id',           'petani',  'Jawa Timur'),
+('Andi Wijaya',      'andi@petani.id',           'petani',  'Jawa Barat'),
+('Dewi Lestari',     'dewi@pembeli.id',          'pembeli', 'DKI Jakarta');
+
+INSERT INTO komoditas (nama_komoditas, kode, kategori, satuan) VALUES
+('Beras Medium',    'BERAS-MED',  'Pangan Pokok', 'kg'),
+('Cabai Merah',     'CABAI-MR',   'Sayuran',      'kg'),
+('Bawang Merah',    'BAWANG-MR',  'Bumbu',        'kg'),
+('Jagung',          'JAGUNG',     'Pangan Pokok', 'kg'),
+('Kedelai',         'KEDELAI',    'Pangan Pokok', 'kg');
+
+INSERT INTO harga_harian (kode_komoditas, provinsi, harga, tanggal) VALUES
+-- Beras Medium
+('BERAS-MED', 'Nasional',    13500, DATE_SUB(CURDATE(), INTERVAL 0 DAY)),
+('BERAS-MED', 'Jawa Tengah', 13200, DATE_SUB(CURDATE(), INTERVAL 0 DAY)),
+('BERAS-MED', 'Jawa Timur',  13100, DATE_SUB(CURDATE(), INTERVAL 0 DAY)),
+('BERAS-MED', 'Jawa Barat',  13400, DATE_SUB(CURDATE(), INTERVAL 0 DAY)),
+('BERAS-MED', 'DKI Jakarta', 14000, DATE_SUB(CURDATE(), INTERVAL 0 DAY)),
+('BERAS-MED', 'Nasional',    13450, DATE_SUB(CURDATE(), INTERVAL 1 DAY)),
+('BERAS-MED', 'Jawa Tengah', 13180, DATE_SUB(CURDATE(), INTERVAL 1 DAY)),
+('BERAS-MED', 'Nasional',    13400, DATE_SUB(CURDATE(), INTERVAL 2 DAY)),
+('BERAS-MED', 'Jawa Tengah', 13150, DATE_SUB(CURDATE(), INTERVAL 2 DAY)),
+-- Cabai Merah
+('CABAI-MR',  'Nasional',    46000, DATE_SUB(CURDATE(), INTERVAL 0 DAY)),
+('CABAI-MR',  'Jawa Tengah', 44000, DATE_SUB(CURDATE(), INTERVAL 0 DAY)),
+('CABAI-MR',  'Jawa Timur',  42000, DATE_SUB(CURDATE(), INTERVAL 0 DAY)),
+('CABAI-MR',  'DKI Jakarta', 52000, DATE_SUB(CURDATE(), INTERVAL 0 DAY)),
+('CABAI-MR',  'Nasional',    43000, DATE_SUB(CURDATE(), INTERVAL 1 DAY)),
+-- Bawang Merah
+('BAWANG-MR', 'Nasional',    32000, DATE_SUB(CURDATE(), INTERVAL 0 DAY)),
+('BAWANG-MR', 'Jawa Tengah', 30000, DATE_SUB(CURDATE(), INTERVAL 0 DAY)),
+('BAWANG-MR', 'Jawa Timur',  29000, DATE_SUB(CURDATE(), INTERVAL 0 DAY)),
+('BAWANG-MR', 'DKI Jakarta', 36000, DATE_SUB(CURDATE(), INTERVAL 0 DAY)),
+-- Jagung
+('JAGUNG',    'Nasional',     5200, DATE_SUB(CURDATE(), INTERVAL 0 DAY)),
+('JAGUNG',    'Jawa Tengah',  5100, DATE_SUB(CURDATE(), INTERVAL 0 DAY)),
+('JAGUNG',    'Jawa Timur',   5050, DATE_SUB(CURDATE(), INTERVAL 0 DAY)),
+-- Kedelai
+('KEDELAI',   'Nasional',     8500, DATE_SUB(CURDATE(), INTERVAL 0 DAY)),
+('KEDELAI',   'Jawa Tengah',  8400, DATE_SUB(CURDATE(), INTERVAL 0 DAY)),
+('KEDELAI',   'Jawa Timur',   8350, DATE_SUB(CURDATE(), INTERVAL 0 DAY));
+
+-- Verifikasi
+SELECT 'DB1 OK' AS status, COUNT(*) AS total_komoditas FROM komoditas;
+SELECT 'Harga Harian' AS tabel, COUNT(*) AS total_baris FROM harga_harian;
+```
+
+---
+
+### 📄 `sql_pc2.sql` — Jalankan di PC2
+
+```sql
+-- ============================================================
+-- SQL PC 2 — Database Distribusi Pupuk
+-- Server: PC2 (remote dari PC1)
+-- Jalankan: mysql -u root -p < sql_pc2.sql
+-- ============================================================
+
+CREATE DATABASE IF NOT EXISTS db_distribusi_pupuk
+    CHARACTER SET utf8mb4
+    COLLATE utf8mb4_unicode_ci;
+
+USE db_distribusi_pupuk;
+
+-- ── Tabel pupuk ──────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS pupuk (
+    id              INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    kode_pupuk      VARCHAR(20)  NOT NULL UNIQUE,
+    nama_pupuk      VARCHAR(100) NOT NULL,
+    satuan          VARCHAR(20)  NOT NULL DEFAULT 'kg',
+    harga_subsidi   INT          NOT NULL COMMENT 'Rupiah per kg',
+    harga_pasaran   INT          NOT NULL COMMENT 'Rupiah per kg',
+    kandungan       VARCHAR(200) NULL,
+    status          ENUM('aktif','nonaktif') NOT NULL DEFAULT 'aktif',
+    dibuat_pada     TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+COMMENT='Master data pupuk subsidi — DB Server 2 (PC2)';
+
+-- ── Tabel distribusi_pupuk ───────────────────────────────────
+CREATE TABLE IF NOT EXISTS distribusi_pupuk (
+    id                   INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    kode_pupuk           VARCHAR(20)  NOT NULL,
+    provinsi             VARCHAR(100) NOT NULL,
+    kuota_ton            DECIMAL(10,2) NOT NULL COMMENT 'Kuota dalam Ton',
+    realisasi_ton        DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+    periode              VARCHAR(20)  NOT NULL COMMENT 'Contoh: 2024-Q1',
+    tanggal_distribusi   DATE         NOT NULL,
+    keterangan           TEXT         NULL,
+    dibuat_pada          TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_kode     (kode_pupuk),
+    INDEX idx_provinsi (provinsi),
+    INDEX idx_periode  (periode),
+    FOREIGN KEY (kode_pupuk) REFERENCES pupuk(kode_pupuk) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+COMMENT='Data distribusi pupuk per wilayah — DB Server 2 (PC2)';
+
+-- ── Tabel alokasi_pupuk ──────────────────────────────────────
+CREATE TABLE IF NOT EXISTS alokasi_pupuk (
+    id                 INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    pengguna_id        INT UNSIGNED NOT NULL COMMENT 'Merujuk ke pengguna.id di DB Server 1 (PC1)',
+    nama_pemohon       VARCHAR(100) NOT NULL,
+    kode_pupuk         VARCHAR(20)  NOT NULL,
+    jumlah_kg          DECIMAL(10,2) NOT NULL,
+    provinsi           VARCHAR(100) NOT NULL,
+    status             ENUM('pending','disetujui','ditolak') NOT NULL DEFAULT 'pending',
+    tanggal_pengajuan  DATE         NOT NULL,
+    catatan            TEXT         NULL,
+    dibuat_pada        TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_pengguna  (pengguna_id),
+    INDEX idx_status    (status),
+    FOREIGN KEY (kode_pupuk) REFERENCES pupuk(kode_pupuk)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+COMMENT='Pengajuan alokasi pupuk dari petani — DB Server 2 (PC2)';
+
+-- ════════════════════════════════════════════════════════════════
+-- DATA SAMPLE — PC2
+-- ════════════════════════════════════════════════════════════════
+
+INSERT INTO pupuk (kode_pupuk, nama_pupuk, satuan, harga_subsidi, harga_pasaran, kandungan) VALUES
+('UREA',    'Urea',                  'kg',  2250, 6500,  'N 46% — Nitrogen tinggi untuk padi & jagung'),
+('NPK',     'NPK Phonska',           'kg',  2300, 7500,  'N 15%, P 15%, K 15% — Pupuk majemuk lengkap'),
+('SP36',    'SP-36 (Superfosfat)',   'kg',  2400, 8000,  'P2O5 36% — Fosfat tinggi untuk pembungaan'),
+('ZA',      'ZA (Amonium Sulfat)',   'kg',  1700, 5000,  'N 21%, S 24% — Cocok untuk tebu & bawang'),
+('ORGANIK', 'Pupuk Organik Granul',  'kg',   800, 3000,  'Bahan organik 15% — Memperbaiki struktur tanah');
+
+INSERT INTO distribusi_pupuk (kode_pupuk, provinsi, kuota_ton, realisasi_ton, periode, tanggal_distribusi, keterangan) VALUES
+-- UREA 2024
+('UREA', 'Jawa Tengah',     85000.00, 82350.00, '2024-Q1', '2024-01-15', 'Distribusi awal tahun lancar'),
+('UREA', 'Jawa Timur',      95000.00, 91200.00, '2024-Q1', '2024-01-15', 'Penyerapan baik di sentra padi'),
+('UREA', 'Jawa Barat',      78000.00, 75100.00, '2024-Q1', '2024-01-20', NULL),
+('UREA', 'Sumatera Utara',  45000.00, 40000.00, '2024-Q1', '2024-01-25', 'Terlambat karena akses daerah terpencil'),
+('UREA', 'Sulawesi Selatan',38000.00, 36500.00, '2024-Q1', '2024-01-20', NULL),
+('UREA', 'Jawa Tengah',     88000.00, 85500.00, '2024-Q2', '2024-04-15', 'Musim tanam kedua'),
+('UREA', 'Jawa Timur',      98000.00, 95000.00, '2024-Q2', '2024-04-15', NULL),
+-- NPK 2024
+('NPK',  'Jawa Tengah',     60000.00, 58000.00, '2024-Q1', '2024-01-15', NULL),
+('NPK',  'Jawa Timur',      70000.00, 67000.00, '2024-Q1', '2024-01-15', NULL),
+('NPK',  'Jawa Barat',      55000.00, 53500.00, '2024-Q1', '2024-01-20', NULL),
+('NPK',  'Sumatera Utara',  30000.00, 28000.00, '2024-Q1', '2024-01-25', NULL),
+('NPK',  'Jawa Tengah',     62000.00, 61000.00, '2024-Q2', '2024-04-15', NULL),
+-- SP36 2024
+('SP36', 'Jawa Tengah',     20000.00, 19000.00, '2024-Q1', '2024-01-15', NULL),
+('SP36', 'Jawa Timur',      22000.00, 21500.00, '2024-Q1', '2024-01-15', NULL),
+('SP36', 'Jawa Barat',      18000.00, 17000.00, '2024-Q1', '2024-01-20', NULL),
+-- ZA 2024
+('ZA',   'Jawa Tengah',     15000.00, 14500.00, '2024-Q1', '2024-01-15', 'Area tanaman tebu'),
+('ZA',   'Jawa Timur',      18000.00, 17800.00, '2024-Q1', '2024-01-15', NULL),
+-- ORGANIK 2024
+('ORGANIK', 'Jawa Tengah',  30000.00, 28000.00, '2024-Q1', '2024-01-15', NULL),
+('ORGANIK', 'Jawa Timur',   35000.00, 33000.00, '2024-Q1', '2024-01-15', NULL),
+('ORGANIK', 'Jawa Barat',   28000.00, 26000.00, '2024-Q1', '2024-01-20', NULL);
+
+-- Pengajuan alokasi dari petani
+-- (pengguna_id merujuk ke id pengguna di DB Server 1 PC1)
+INSERT INTO alokasi_pupuk (pengguna_id, nama_pemohon, kode_pupuk, jumlah_kg, provinsi, status, tanggal_pengajuan, catatan) VALUES
+(2, 'Budi Santoso',  'UREA',    500.00, 'Jawa Tengah', 'disetujui', DATE_SUB(CURDATE(), INTERVAL 15 DAY), 'Untuk lahan padi 1 hektar'),
+(2, 'Budi Santoso',  'NPK',     300.00, 'Jawa Tengah', 'disetujui', DATE_SUB(CURDATE(), INTERVAL 10 DAY), 'Untuk tanaman jagung'),
+(3, 'Siti Rahayu',   'UREA',    400.00, 'Jawa Timur',  'disetujui', DATE_SUB(CURDATE(), INTERVAL 12 DAY), 'Untuk musim tanam kedua'),
+(3, 'Siti Rahayu',   'ORGANIK', 150.00, 'Jawa Timur',  'pending',   DATE_SUB(CURDATE(), INTERVAL 2 DAY),  'Permohonan pupuk organik'),
+(4, 'Andi Wijaya',   'NPK',     250.00, 'Jawa Barat',  'pending',   DATE_SUB(CURDATE(), INTERVAL 5 DAY),  'Untuk sayuran dan bawang'),
+(2, 'Budi Santoso',  'SP36',    100.00, 'Jawa Tengah', 'ditolak',   DATE_SUB(CURDATE(), INTERVAL 20 DAY), 'Kuota habis untuk wilayah ini');
+
+-- Izin akses dari PC1 (jalankan setelah tahu IP PC1)
+-- GANTI IP_PC1 dengan IP aktual PC1 anda!
+-- CREATE USER 'distribusi'@'IP_PC1' IDENTIFIED BY 'password123';
+-- GRANT ALL PRIVILEGES ON db_distribusi_pupuk.* TO 'distribusi'@'IP_PC1';
+-- FLUSH PRIVILEGES;
+
+-- Verifikasi
+SELECT 'DB2 OK' AS status, COUNT(*) AS total_pupuk FROM pupuk;
+SELECT 'Distribusi' AS tabel, COUNT(*) AS total_baris FROM distribusi_pupuk;
+SELECT 'Alokasi' AS tabel, COUNT(*) AS total_baris FROM alokasi_pupuk;
+```
+
+---
+
+## KODE APLIKASI PHP MURNI
+
+### 📄 `config.php`
+
+```php
+<?php
+// ============================================================
+// Konfigurasi Koneksi Dua Database
+// Letakkan di: C:\xampp\htdocs\distribusi\config.php
+// ============================================================
+
+// ─── Ganti IP_PC2 dengan IP aktual PC2 ───────────────────────
+define('IP_PC2', '192.168.X.X');   // ← GANTI INI
+
+// ─── Koneksi DB Server 1 — PC1 (localhost) ───────────────────
+function koneksi_db1() {
+    $host = '127.0.0.1';
+    $db   = 'db_pantaupangan';
+    $user = 'root';
+    $pass = '';        // kosong = default XAMPP
+    $port = 3306;
+
+    $conn = new mysqli($host, $user, $pass, $db, $port);
+    if ($conn->connect_error) {
+        die("<div class='alert error'>❌ Gagal koneksi ke DB Server 1 (PC1): " . $conn->connect_error . "</div>");
+    }
+    $conn->set_charset('utf8mb4');
+    return $conn;
+}
+
+// ─── Koneksi DB Server 2 — PC2 (remote via WiFi) ─────────────
+function koneksi_db2() {
+    $host = IP_PC2;
+    $db   = 'db_distribusi_pupuk';
+    $user = 'distribusi';
+    $pass = 'password123';
+    $port = 3306;
+
+    $conn = new mysqli($host, $user, $pass, $db, $port);
+    if ($conn->connect_error) {
+        die("<div class='alert error'>❌ Gagal koneksi ke DB Server 2 (PC2 - " . IP_PC2 . "): " . $conn->connect_error . "</div>");
+    }
+    $conn->set_charset('utf8mb4');
+    return $conn;
+}
+```
+
+---
+
+### 📄 `index.php` — Dashboard Utama (Bukti Sistem Terdistribusi)
+
+```php
+<?php
+require_once 'config.php';
+
+// ════════════════════════════════════════════════════════════════
+// QUERY DB SERVER 1 — PC1: Harga Komoditas Terkini
+// ════════════════════════════════════════════════════════════════
+$db1   = koneksi_db1();
+$t_db1 = microtime(true);
+
+$sql_komoditas = "
+    SELECT k.nama_komoditas, k.kode, k.kategori,
+           h.harga, h.provinsi, h.tanggal
+    FROM komoditas k
+    JOIN harga_harian h ON k.kode = h.kode_komoditas
+    WHERE h.tanggal = (
+        SELECT MAX(tanggal) FROM harga_harian WHERE kode_komoditas = k.kode AND provinsi = 'Nasional'
+    )
+    AND h.provinsi = 'Nasional'
+    AND k.status = 'aktif'
+    ORDER BY k.nama_komoditas
+";
+$res_komoditas = $db1->query($sql_komoditas);
+$harga_list    = $res_komoditas ? $res_komoditas->fetch_all(MYSQLI_ASSOC) : [];
+
+$sql_stat_db1  = "SELECT COUNT(*) AS total FROM harga_harian";
+$total_harga   = $db1->query($sql_stat_db1)->fetch_assoc()['total'];
+
+$waktu_db1     = round((microtime(true) - $t_db1) * 1000, 2);
+
+// ════════════════════════════════════════════════════════════════
+// QUERY DB SERVER 2 — PC2: Distribusi Pupuk Terkini
+// ════════════════════════════════════════════════════════════════
+$db2   = koneksi_db2();
+$t_db2 = microtime(true);
+
+$sql_pupuk = "
+    SELECT p.kode_pupuk, p.nama_pupuk, p.harga_subsidi, p.harga_pasaran,
+           SUM(d.kuota_ton) AS total_kuota,
+           SUM(d.realisasi_ton) AS total_realisasi,
+           ROUND(SUM(d.realisasi_ton) / SUM(d.kuota_ton) * 100, 1) AS persen
+    FROM pupuk p
+    LEFT JOIN distribusi_pupuk d ON p.kode_pupuk = d.kode_pupuk
+    WHERE p.status = 'aktif'
+    GROUP BY p.kode_pupuk, p.nama_pupuk, p.harga_subsidi, p.harga_pasaran
+    ORDER BY total_kuota DESC
+";
+$res_pupuk  = $db2->query($sql_pupuk);
+$pupuk_list = $res_pupuk ? $res_pupuk->fetch_all(MYSQLI_ASSOC) : [];
+
+$sql_alokasi   = "SELECT COUNT(*) AS total, SUM(jumlah_kg) AS total_kg FROM alokasi_pupuk WHERE status = 'disetujui'";
+$stat_alokasi  = $db2->query($sql_alokasi)->fetch_assoc();
+$total_alokasi = $stat_alokasi['total'] ?? 0;
+$total_kg      = $stat_alokasi['total_kg'] ?? 0;
+
+$waktu_db2 = round((microtime(true) - $t_db2) * 1000, 2);
+
+// ════════════════════════════════════════════════════════════════
+// PROSES GABUNGAN: Hitung statistik dari kedua DB
+// ════════════════════════════════════════════════════════════════
+$total_komoditas   = count($harga_list);
+$total_jenis_pupuk = count($pupuk_list);
+$total_realisasi   = array_sum(array_column($pupuk_list, 'total_realisasi'));
+$total_kuota_semua = array_sum(array_column($pupuk_list, 'total_kuota'));
+$persen_global     = $total_kuota_semua > 0 ? round($total_realisasi / $total_kuota_semua * 100, 1) : 0;
+
+$db1->close();
+$db2->close();
+?>
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard Distribusi Terdistribusi — PantauPangan</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Segoe UI', sans-serif; background: #0f172a; color: #e2e8f0; min-height: 100vh; }
+
+  /* ── Header ── */
+  .header { background: linear-gradient(135deg, #1e3a5f 0%, #1a2744 100%); padding: 24px 32px; border-bottom: 1px solid #334155; }
+  .header h1 { font-size: 22px; font-weight: 700; color: #fff; }
+  .header p  { font-size: 13px; color: #94a3b8; margin-top: 4px; }
+  .header-nav { display:flex; gap:12px; margin-top:16px; }
+  .nav-btn { padding: 8px 18px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; text-decoration: none; display: inline-block; transition: all 0.2s; }
+  .nav-btn.active { background: #3b82f6; color: #fff; }
+  .nav-btn:not(.active) { background: #1e293b; color: #94a3b8; border: 1px solid #334155; }
+  .nav-btn:hover:not(.active) { background: #334155; color: #e2e8f0; }
+
+  /* ── Layout ── */
+  .container { max-width: 1280px; margin: 0 auto; padding: 28px 24px; }
+
+  /* ── Server Badge ── */
+  .server-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 28px; }
+  .server-card { border-radius: 14px; padding: 18px 22px; border: 1px solid; }
+  .server-card.db1 { background: #0c2340; border-color: #1d4ed8; }
+  .server-card.db2 { background: #0c2e1f; border-color: #16a34a; }
+  .server-badge { display: inline-flex; align-items: center; gap: 8px; padding: 6px 14px; border-radius: 100px; font-size: 12px; font-weight: 700; letter-spacing: 0.5px; margin-bottom: 10px; }
+  .badge-db1 { background: #1d4ed8; color: #bfdbfe; }
+  .badge-db2 { background: #15803d; color: #bbf7d0; }
+  .server-title { font-size: 15px; font-weight: 600; color: #e2e8f0; }
+  .server-meta  { font-size: 12px; color: #64748b; margin-top: 6px; display: flex; gap: 16px; flex-wrap: wrap; }
+  .server-meta span { display: flex; align-items: center; gap: 5px; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: #22c55e; animation: pulse 2s infinite; display: inline-block; }
+  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
+  .latency { background: #1e293b; border-radius: 6px; padding: 2px 8px; font-size: 11px; }
+  .latency.fast { color: #4ade80; }
+  .latency.slow { color: #facc15; }
+
+  /* ── Stat Cards ── */
+  .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 28px; }
+  .stat-card { background: #1e293b; border-radius: 12px; padding: 18px 20px; border: 1px solid #334155; }
+  .stat-label { font-size: 11px; color: #64748b; font-weight: 600; text-transform: uppercase; letter-spacing: 0.8px; }
+  .stat-value { font-size: 28px; font-weight: 800; margin: 6px 0 2px; color: #f1f5f9; }
+  .stat-sub   { font-size: 12px; color: #64748b; }
+  .stat-card.highlight .stat-value { color: #60a5fa; }
+
+  /* ── Dua Panel Data ── */
+  .data-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 28px; }
+
+  /* ── Panel ── */
+  .panel { background: #1e293b; border-radius: 14px; border: 1px solid #334155; overflow: hidden; }
+  .panel-header { padding: 16px 20px; border-bottom: 1px solid #334155; display: flex; align-items: center; justify-content: space-between; }
+  .panel-title  { font-size: 14px; font-weight: 700; color: #e2e8f0; }
+  .panel-body   { padding: 0; }
+
+  /* ── Table ── */
+  table { width: 100%; border-collapse: collapse; }
+  thead th { padding: 10px 16px; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; color: #64748b; font-weight: 600; border-bottom: 1px solid #334155; text-align: left; }
+  tbody td { padding: 12px 16px; font-size: 13px; border-bottom: 1px solid #1e293b; }
+  tbody tr:hover { background: #263345; }
+  tbody tr:last-child td { border-bottom: none; }
+
+  /* ── Progress Bar ── */
+  .progress { background: #334155; border-radius: 100px; height: 8px; width: 100%; margin-top: 4px; }
+  .progress-bar { height: 100%; border-radius: 100px; background: linear-gradient(90deg, #4ade80, #22c55e); transition: width 0.5s ease; }
+  .progress-bar.mid  { background: linear-gradient(90deg, #facc15, #f59e0b); }
+  .progress-bar.low  { background: linear-gradient(90deg, #f87171, #ef4444); }
+  .pct-text { font-size: 11px; color: #64748b; margin-top: 2px; }
+
+  /* ── Harga Badge ── */
+  .harga { font-weight: 700; color: #f1f5f9; }
+  .kategori { display: inline-block; padding: 2px 9px; border-radius: 100px; font-size: 11px; font-weight: 600; background: #334155; color: #94a3b8; }
+
+  /* ── Footer ── */
+  .footer { text-align: center; padding: 20px; font-size: 12px; color: #475569; border-top: 1px solid #1e293b; margin-top: 24px; }
+  .source-db1 { color: #60a5fa; font-weight: 600; }
+  .source-db2 { color: #4ade80; font-weight: 600; }
+
+  @media (max-width: 900px) {
+    .server-grid, .data-grid { grid-template-columns: 1fr; }
+    .stats-grid { grid-template-columns: 1fr 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>🌾 PantauPangan — Dashboard Sistem Terdistribusi</h1>
+  <p>Data diambil secara bersamaan dari <strong>dua server MySQL yang berbeda</strong> melalui jaringan WiFi</p>
+  <div class="header-nav">
+    <a href="index.php"       class="nav-btn active">📊 Dashboard</a>
+    <a href="daftar_pupuk.php" class="nav-btn">🌱 Daftar Pupuk (DB2)</a>
+    <a href="ajukan_pupuk.php" class="nav-btn">📋 Ajukan Alokasi</a>
+  </div>
+</div>
+
+<div class="container">
+
+  <!-- ═══ Server Status ═══ -->
+  <div class="server-grid">
+    <div class="server-card db1">
+      <div class="server-badge badge-db1">🖥️ DB SERVER 1</div>
+      <div class="server-title">PC 1 — Database Pantau Pangan</div>
+      <div class="server-meta">
+        <span><span class="dot"></span> Terhubung</span>
+        <span>📍 127.0.0.1:3306</span>
+        <span>🗄️ db_pantaupangan</span>
+        <span class="latency fast">⚡ <?= $waktu_db1 ?> ms</span>
+      </div>
+      <div style="font-size:12px;color:#475569;margin-top:8px;">Tabel: pengguna, komoditas, harga_harian</div>
+    </div>
+    <div class="server-card db2">
+      <div class="server-badge badge-db2">🖥️ DB SERVER 2</div>
+      <div class="server-title">PC 2 — Database Distribusi Pupuk</div>
+      <div class="server-meta">
+        <span><span class="dot"></span> Terhubung</span>
+        <span>📍 <?= IP_PC2 ?>:3306</span>
+        <span>🗄️ db_distribusi_pupuk</span>
+        <span class="latency <?= $waktu_db2 > 100 ? 'slow' : 'fast' ?>">⚡ <?= $waktu_db2 ?> ms</span>
+      </div>
+      <div style="font-size:12px;color:#475569;margin-top:8px;">Tabel: pupuk, distribusi_pupuk, alokasi_pupuk</div>
+    </div>
+  </div>
+
+  <!-- ═══ Statistik Gabungan ═══ -->
+  <div class="stats-grid">
+    <div class="stat-card highlight">
+      <div class="stat-label">Komoditas Dipantau</div>
+      <div class="stat-value"><?= $total_komoditas ?></div>
+      <div class="stat-sub">📦 Dari DB Server 1 (PC1)</div>
+    </div>
+    <div class="stat-card highlight">
+      <div class="stat-label">Jenis Pupuk Subsidi</div>
+      <div class="stat-value"><?= $total_jenis_pupuk ?></div>
+      <div class="stat-sub">🌱 Dari DB Server 2 (PC2)</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Realisasi Distribusi</div>
+      <div class="stat-value"><?= number_format($total_realisasi / 1000, 1) ?>rb</div>
+      <div class="stat-sub">Ton — <?= $persen_global ?>% dari kuota</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Alokasi Disetujui</div>
+      <div class="stat-value"><?= $total_alokasi ?></div>
+      <div class="stat-sub"><?= number_format($total_kg) ?> kg total</div>
+    </div>
+  </div>
+
+  <!-- ═══ Dua Panel Data ═══ -->
+  <div class="data-grid">
+
+    <!-- Panel DB1 -->
+    <div class="panel">
+      <div class="panel-header">
+        <div class="panel-title">📈 Harga Komoditas Terkini</div>
+        <span class="server-badge badge-db1" style="font-size:11px;padding:4px 10px;">DB1 · PC1</span>
+      </div>
+      <div class="panel-body">
+        <table>
+          <thead>
+            <tr>
+              <th>Komoditas</th>
+              <th>Kategori</th>
+              <th>Harga/kg</th>
+              <th>Tanggal</th>
+            </tr>
+          </thead>
+          <tbody>
+            <?php if (empty($harga_list)): ?>
+            <tr><td colspan="4" style="text-align:center;color:#475569;padding:24px;">Tidak ada data</td></tr>
+            <?php else: ?>
+            <?php foreach ($harga_list as $h): ?>
+            <tr>
+              <td><strong><?= htmlspecialchars($h['nama_komoditas']) ?></strong></td>
+              <td><span class="kategori"><?= htmlspecialchars($h['kategori']) ?></span></td>
+              <td class="harga">Rp <?= number_format($h['harga'], 0, ',', '.') ?></td>
+              <td style="color:#64748b;font-size:12px;"><?= $h['tanggal'] ?></td>
+            </tr>
+            <?php endforeach; ?>
+            <?php endif; ?>
+          </tbody>
+        </table>
+        <div style="padding:10px 16px;font-size:11px;color:#475569;border-top:1px solid #334155;">
+          Sumber: <span class="source-db1">DB Server 1 — PC1 (127.0.0.1/db_pantaupangan)</span> · <?= $total_harga ?> total entri harga
+        </div>
+      </div>
+    </div>
+
+    <!-- Panel DB2 -->
+    <div class="panel">
+      <div class="panel-header">
+        <div class="panel-title">🌱 Realisasi Distribusi Pupuk</div>
+        <span class="server-badge badge-db2" style="font-size:11px;padding:4px 10px;">DB2 · PC2</span>
+      </div>
+      <div class="panel-body">
+        <table>
+          <thead>
+            <tr>
+              <th>Pupuk</th>
+              <th>Harga Subsidi</th>
+              <th>Realisasi vs Kuota</th>
+            </tr>
+          </thead>
+          <tbody>
+            <?php if (empty($pupuk_list)): ?>
+            <tr><td colspan="3" style="text-align:center;color:#475569;padding:24px;">Tidak ada data</td></tr>
+            <?php else: ?>
+            <?php foreach ($pupuk_list as $p): ?>
+            <?php $pct = min(100, (float)($p['persen'] ?? 0)); $barClass = $pct >= 90 ? '' : ($pct >= 70 ? 'mid' : 'low'); ?>
+            <tr>
+              <td><strong><?= htmlspecialchars($p['nama_pupuk']) ?></strong><br><span style="font-size:11px;color:#475569;"><?= $p['kode_pupuk'] ?></span></td>
+              <td class="harga" style="font-size:13px;">Rp <?= number_format($p['harga_subsidi'], 0, ',', '.') ?>/kg</td>
+              <td>
+                <div style="font-size:12px;color:#94a3b8;"><?= number_format($p['total_realisasi'] / 1000, 1) ?>rb / <?= number_format($p['total_kuota'] / 1000, 1) ?>rb Ton</div>
+                <div class="progress"><div class="progress-bar <?= $barClass ?>" style="width:<?= $pct ?>%"></div></div>
+                <div class="pct-text"><?= $pct ?>% tercapai</div>
+              </td>
+            </tr>
+            <?php endforeach; ?>
+            <?php endif; ?>
+          </tbody>
+        </table>
+        <div style="padding:10px 16px;font-size:11px;color:#475569;border-top:1px solid #334155;">
+          Sumber: <span class="source-db2">DB Server 2 — PC2 (<?= IP_PC2 ?>/db_distribusi_pupuk)</span> · <?= count($pupuk_list) ?> jenis pupuk
+        </div>
+      </div>
+    </div>
+
+  </div><!-- end data-grid -->
+
+</div><!-- end container -->
+
+<div class="footer">
+  Sistem Basis Data Terdistribusi — PantauPangan &copy; <?= date('Y') ?><br>
+  Data dari <span class="source-db1">DB1 (PC1)</span> diproses dalam <?= $waktu_db1 ?>ms &nbsp;|&nbsp;
+  Data dari <span class="source-db2">DB2 (PC2)</span> diproses dalam <?= $waktu_db2 ?>ms
+</div>
+
+</body>
+</html>
+```
+
+---
+
+### 📄 `daftar_pupuk.php` — Data Pupuk dari DB2
+
+```php
+<?php
+require_once 'config.php';
+
+$db2 = koneksi_db2();
+
+$pupuk = $db2->query("
+    SELECT p.*, 
+           COUNT(d.id) AS total_distribusi,
+           COALESCE(SUM(d.kuota_ton), 0) AS total_kuota,
+           COALESCE(SUM(d.realisasi_ton), 0) AS total_realisasi
+    FROM pupuk p
+    LEFT JOIN distribusi_pupuk d ON p.kode_pupuk = d.kode_pupuk
+    GROUP BY p.id
+    ORDER BY p.kode_pupuk
+")->fetch_all(MYSQLI_ASSOC);
+
+$distribusi = $db2->query("
+    SELECT d.*, p.nama_pupuk
+    FROM distribusi_pupuk d
+    JOIN pupuk p ON d.kode_pupuk = p.kode_pupuk
+    ORDER BY d.tanggal_distribusi DESC
+    LIMIT 20
+")->fetch_all(MYSQLI_ASSOC);
+
+$db2->close();
+?>
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<title>Daftar Pupuk — DB Server 2</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:'Segoe UI',sans-serif; background:#0f172a; color:#e2e8f0; }
+  .header { background:linear-gradient(135deg,#0c2e1f,#0a2218); padding:24px 32px; border-bottom:1px solid #166534; }
+  .header h1 { font-size:20px; font-weight:700; color:#4ade80; }
+  .header p { font-size:13px; color:#6ee7b7; margin-top:4px; }
+  .nav { display:flex; gap:10px; margin-top:14px; }
+  .nav a { padding:7px 16px; border-radius:8px; font-size:13px; font-weight:600; text-decoration:none; background:#1a2f22; color:#4ade80; border:1px solid #166534; }
+  .nav a.active { background:#166534; color:#fff; }
+  .container { max-width:1200px; margin:0 auto; padding:28px 24px; }
+  .badge-server { display:inline-flex; align-items:center; gap:8px; background:#14532d; color:#4ade80; border:1px solid #166534; padding:8px 18px; border-radius:100px; font-size:13px; font-weight:700; margin-bottom:24px; }
+  .dot { width:8px; height:8px; border-radius:50%; background:#4ade80; animation:pulse 2s infinite; }
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+  .section-title { font-size:15px; font-weight:700; color:#e2e8f0; margin-bottom:14px; }
+  .panel { background:#1e293b; border-radius:14px; border:1px solid #334155; overflow:hidden; margin-bottom:24px; }
+  table { width:100%; border-collapse:collapse; }
+  thead th { padding:11px 16px; font-size:11px; text-transform:uppercase; color:#64748b; font-weight:600; border-bottom:1px solid #334155; text-align:left; }
+  tbody td { padding:13px 16px; font-size:13px; border-bottom:1px solid #1e293b; }
+  tbody tr:hover { background:#263345; }
+  tbody tr:last-child td { border-bottom:none; }
+  .progress { background:#334155; border-radius:100px; height:7px; width:100%; margin-top:3px; }
+  .progress-bar { height:100%; border-radius:100px; background:linear-gradient(90deg,#4ade80,#22c55e); }
+  .badge { display:inline-block; padding:2px 10px; border-radius:100px; font-size:11px; font-weight:600; }
+  .badge-aktif { background:#14532d; color:#4ade80; }
+  .badge-pending { background:#713f12; color:#fbbf24; }
+  .badge-ok { background:#1e3a5f; color:#60a5fa; }
+</style>
+</head>
+<body>
+<div class="header">
+  <h1>🌱 Daftar Pupuk Subsidi</h1>
+  <p>Data dari DB Server 2 (PC2) — db_distribusi_pupuk</p>
+  <div class="nav">
+    <a href="index.php">📊 Dashboard</a>
+    <a href="daftar_pupuk.php" class="active">🌱 Daftar Pupuk</a>
+    <a href="ajukan_pupuk.php">📋 Ajukan Alokasi</a>
+  </div>
+</div>
+<div class="container">
+  <div class="badge-server"><span class="dot"></span> DB Server 2 — PC2 (<?= IP_PC2 ?>) — db_distribusi_pupuk</div>
+
+  <div class="section-title">📦 Master Pupuk</div>
+  <div class="panel">
+    <table>
+      <thead><tr><th>Kode</th><th>Nama Pupuk</th><th>Harga Subsidi</th><th>Harga Pasaran</th><th>Total Kuota (Ton)</th><th>Realisasi</th><th>Status</th></tr></thead>
+      <tbody>
+      <?php foreach ($pupuk as $p):
+        $pct = $p['total_kuota'] > 0 ? round($p['total_realisasi'] / $p['total_kuota'] * 100) : 0;
+      ?>
+      <tr>
+        <td><strong><?= $p['kode_pupuk'] ?></strong></td>
+        <td><?= htmlspecialchars($p['nama_pupuk']) ?><br><span style="font-size:11px;color:#475569;"><?= htmlspecialchars($p['kandungan'] ?? '') ?></span></td>
+        <td style="color:#4ade80;font-weight:700;">Rp <?= number_format($p['harga_subsidi'],0,',','.') ?></td>
+        <td style="color:#94a3b8;">Rp <?= number_format($p['harga_pasaran'],0,',','.') ?></td>
+        <td><?= number_format($p['total_kuota']/1000,1) ?> rb Ton</td>
+        <td>
+          <?= number_format($p['total_realisasi']/1000,1) ?> rb Ton
+          <div class="progress"><div class="progress-bar" style="width:<?= $pct ?>%"></div></div>
+          <span style="font-size:11px;color:#64748b;"><?= $pct ?>%</span>
+        </td>
+        <td><span class="badge badge-aktif"><?= $p['status'] ?></span></td>
+      </tr>
+      <?php endforeach; ?>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="section-title">📋 Riwayat Distribusi (20 Terbaru)</div>
+  <div class="panel">
+    <table>
+      <thead><tr><th>Pupuk</th><th>Provinsi</th><th>Periode</th><th>Kuota (Ton)</th><th>Realisasi (Ton)</th><th>%</th><th>Tanggal</th></tr></thead>
+      <tbody>
+      <?php foreach ($distribusi as $d): $pct = $d['kuota_ton'] > 0 ? round($d['realisasi_ton']/$d['kuota_ton']*100) : 0; ?>
+      <tr>
+        <td><strong><?= $d['nama_pupuk'] ?></strong></td>
+        <td><?= htmlspecialchars($d['provinsi']) ?></td>
+        <td><span class="badge badge-ok"><?= $d['periode'] ?></span></td>
+        <td><?= number_format($d['kuota_ton'],0,',','.') ?></td>
+        <td><?= number_format($d['realisasi_ton'],0,',','.') ?></td>
+        <td style="color:<?= $pct >= 90 ? '#4ade80' : ($pct >= 70 ? '#facc15' : '#f87171') ?>;font-weight:700;"><?= $pct ?>%</td>
+        <td style="color:#64748b;font-size:12px;"><?= $d['tanggal_distribusi'] ?></td>
+      </tr>
+      <?php endforeach; ?>
+      </tbody>
+    </table>
+  </div>
+</div>
+</body>
+</html>
+```
+
+---
+
+### 📄 `ajukan_pupuk.php` — Form Simpan ke DB2
+
+```php
+<?php
+require_once 'config.php';
+
+$pesan  = '';
+$error  = '';
+
+// Proses form POST → simpan ke DB Server 2
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $db2          = koneksi_db2();
+    $pengguna_id  = (int) $_POST['pengguna_id'];
+    $nama_pemohon = trim($_POST['nama_pemohon']);
+    $kode_pupuk   = $db2->real_escape_string(trim($_POST['kode_pupuk']));
+    $jumlah_kg    = (float) $_POST['jumlah_kg'];
+    $provinsi     = $db2->real_escape_string(trim($_POST['provinsi']));
+    $catatan      = $db2->real_escape_string(trim($_POST['catatan'] ?? ''));
+    $tanggal      = date('Y-m-d');
+
+    if ($pengguna_id > 0 && $jumlah_kg > 0 && $kode_pupuk && $provinsi) {
+        $sql = "INSERT INTO alokasi_pupuk 
+                (pengguna_id, nama_pemohon, kode_pupuk, jumlah_kg, provinsi, status, tanggal_pengajuan, catatan, dibuat_pada)
+                VALUES ($pengguna_id, '$nama_pemohon', '$kode_pupuk', $jumlah_kg, '$provinsi', 'pending', '$tanggal', '$catatan', NOW())";
+        if ($db2->query($sql)) {
+            $pesan = "✅ Pengajuan berhasil disimpan ke DB Server 2 (PC2)! ID: " . $db2->insert_id;
+        } else {
+            $error = "❌ Gagal menyimpan: " . $db2->error;
+        }
+    } else {
+        $error = "❌ Harap lengkapi semua field yang wajib diisi.";
+    }
+    $db2->close();
+}
+
+// Ambil data untuk form (DB1 = daftar pengguna, DB2 = daftar pupuk)
+$db1       = koneksi_db1();
+$pengguna  = $db1->query("SELECT id, nama, role FROM pengguna WHERE role = 'petani' ORDER BY nama")->fetch_all(MYSQLI_ASSOC);
+$db1->close();
+
+$db2    = koneksi_db2();
+$pupuk  = $db2->query("SELECT kode_pupuk, nama_pupuk, harga_subsidi FROM pupuk WHERE status='aktif' ORDER BY nama_pupuk")->fetch_all(MYSQLI_ASSOC);
+
+// Pengajuan terbaru
+$riwayat = $db2->query("SELECT * FROM alokasi_pupuk ORDER BY dibuat_pada DESC LIMIT 10")->fetch_all(MYSQLI_ASSOC);
+$db2->close();
+
+$provinsi_list = ['Jawa Tengah','Jawa Timur','Jawa Barat','DKI Jakarta','Sumatera Utara','Sulawesi Selatan','Bali','Kalimantan Timur'];
+?>
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<title>Ajukan Alokasi Pupuk</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{font-family:'Segoe UI',sans-serif;background:#0f172a;color:#e2e8f0;}
+  .header{background:linear-gradient(135deg,#1e3a5f,#1a2744);padding:24px 32px;border-bottom:1px solid #334155;}
+  .header h1{font-size:20px;font-weight:700;}
+  .nav{display:flex;gap:10px;margin-top:14px;}
+  .nav a{padding:7px 16px;border-radius:8px;font-size:13px;font-weight:600;text-decoration:none;background:#1e293b;color:#94a3b8;border:1px solid #334155;}
+  .nav a.active{background:#3b82f6;color:#fff;border-color:#3b82f6;}
+  .container{max-width:1000px;margin:0 auto;padding:28px 24px;}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:24px;}
+  .panel{background:#1e293b;border-radius:14px;border:1px solid #334155;padding:24px;}
+  .panel h2{font-size:15px;font-weight:700;margin-bottom:18px;color:#e2e8f0;}
+  label{display:block;font-size:12px;font-weight:600;color:#94a3b8;margin-bottom:5px;text-transform:uppercase;letter-spacing:.5px;}
+  input,select,textarea{width:100%;background:#0f172a;border:1px solid #334155;border-radius:8px;padding:10px 14px;color:#e2e8f0;font-size:14px;margin-bottom:14px;outline:none;}
+  input:focus,select:focus,textarea:focus{border-color:#3b82f6;}
+  select option{background:#0f172a;}
+  button{width:100%;background:#3b82f6;color:#fff;border:none;border-radius:10px;padding:13px;font-size:14px;font-weight:700;cursor:pointer;}
+  button:hover{background:#2563eb;}
+  .alert{padding:12px 16px;border-radius:10px;margin-bottom:18px;font-size:13px;}
+  .alert.ok{background:#14532d;color:#4ade80;border:1px solid #166534;}
+  .alert.err{background:#450a0a;color:#f87171;border:1px solid #7f1d1d;}
+  table{width:100%;border-collapse:collapse;}
+  thead th{padding:9px 12px;font-size:11px;text-transform:uppercase;color:#64748b;border-bottom:1px solid #334155;text-align:left;}
+  tbody td{padding:11px 12px;font-size:12px;border-bottom:1px solid #1e293b;}
+  .badge{display:inline-block;padding:2px 9px;border-radius:100px;font-size:11px;font-weight:600;}
+  .pending{background:#713f12;color:#fbbf24;}
+  .disetujui{background:#14532d;color:#4ade80;}
+  .ditolak{background:#450a0a;color:#f87171;}
+  .db-note{display:flex;gap:8px;align-items:center;font-size:11px;color:#64748b;margin-top:8px;}
+  .dot-blue{width:7px;height:7px;border-radius:50%;background:#3b82f6;}
+  .dot-green{width:7px;height:7px;border-radius:50%;background:#4ade80;}
+</style>
+</head>
+<body>
+<div class="header">
+  <h1>📋 Pengajuan Alokasi Pupuk Subsidi</h1>
+  <div class="nav">
+    <a href="index.php">📊 Dashboard</a>
+    <a href="daftar_pupuk.php">🌱 Daftar Pupuk</a>
+    <a href="ajukan_pupuk.php" class="active">📋 Ajukan Alokasi</a>
+  </div>
+</div>
+
+<div class="container">
+  <div class="grid">
+    <div class="panel">
+      <h2>📝 Form Pengajuan Baru</h2>
+      <?php if ($pesan): ?><div class="alert ok"><?= $pesan ?></div><?php endif; ?>
+      <?php if ($error):  ?><div class="alert err"><?= $error ?></div><?php endif; ?>
+
+      <form method="POST">
+        <label>Petani Pemohon <span style="color:#60a5fa">(Dari DB Server 1 — PC1)</span></label>
+        <select name="pengguna_id" required>
+          <option value="">-- Pilih Petani --</option>
+          <?php foreach ($pengguna as $pg): ?>
+          <option value="<?= $pg['id'] ?>"><?= htmlspecialchars($pg['nama']) ?> (ID: <?= $pg['id'] ?>)</option>
+          <?php endforeach; ?>
+        </select>
+        <div class="db-note"><span class="dot-blue"></span> Data petani diambil dari DB1 (PC1)</div>
+        <br>
+
+        <label>Nama Pemohon</label>
+        <input type="text" name="nama_pemohon" placeholder="Nama lengkap" required>
+
+        <label>Jenis Pupuk <span style="color:#4ade80">(Dari DB Server 2 — PC2)</span></label>
+        <select name="kode_pupuk" required>
+          <option value="">-- Pilih Pupuk --</option>
+          <?php foreach ($pupuk as $p): ?>
+          <option value="<?= $p['kode_pupuk'] ?>"><?= htmlspecialchars($p['nama_pupuk']) ?> — Rp <?= number_format($p['harga_subsidi'],0,',','.') ?>/kg</option>
+          <?php endforeach; ?>
+        </select>
+        <div class="db-note"><span class="dot-green"></span> Daftar pupuk dari DB2 (PC2 — <?= IP_PC2 ?>)</div>
+        <br>
+
+        <label>Jumlah (kg)</label>
+        <input type="number" name="jumlah_kg" min="1" step="0.5" placeholder="Contoh: 500" required>
+
+        <label>Provinsi</label>
+        <select name="provinsi" required>
+          <option value="">-- Pilih Provinsi --</option>
+          <?php foreach ($provinsi_list as $prov): ?>
+          <option value="<?= $prov ?>"><?= $prov ?></option>
+          <?php endforeach; ?>
+        </select>
+
+        <label>Catatan (opsional)</label>
+        <textarea name="catatan" rows="3" placeholder="Keterangan tambahan..."></textarea>
+
+        <button type="submit">💾 Kirim Pengajuan ke DB Server 2 (PC2)</button>
+      </form>
+    </div>
+
+    <div class="panel">
+      <h2>🕐 Riwayat Pengajuan Terbaru</h2>
+      <p style="font-size:12px;color:#64748b;margin-bottom:14px;">Data dari <strong style="color:#4ade80">DB Server 2 — PC2</strong></p>
+      <table>
+        <thead><tr><th>Pemohon</th><th>Pupuk</th><th>Jumlah</th><th>Status</th></tr></thead>
+        <tbody>
+        <?php foreach ($riwayat as $r): ?>
+        <tr>
+          <td><?= htmlspecialchars($r['nama_pemohon']) ?><br><span style="color:#475569">ID:<?= $r['pengguna_id'] ?></span></td>
+          <td><?= $r['kode_pupuk'] ?><br><span style="color:#475569;font-size:11px;"><?= $r['provinsi'] ?></span></td>
+          <td><?= number_format($r['jumlah_kg'],0,',','.') ?> kg</td>
+          <td><span class="badge <?= $r['status'] ?>"><?= $r['status'] ?></span></td>
+        </tr>
+        <?php endforeach; ?>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+</body>
+</html>
+```
+
+---
+
+## CMD CHEATSHEET — Perintah Penting
+
+```cmd
+:: ─── Masuk ke MySQL via CMD ───────────────────────────────────────
+cd C:\xampp\mysql\bin
+mysql -u root -p
+
+:: ─── Import SQL dari file ───────────────────────────────────────────
+mysql -u root -p < C:\sql_pc1.sql
+mysql -u root -p < C:\sql_pc2.sql
+
+:: ─── Cek IP PC ─────────────────────────────────────────────────────
+ipconfig
+
+:: ─── Ping antar PC ─────────────────────────────────────────────────
+ping 192.168.X.X
+
+:: ─── Buka firewall port 3306 (CMD Administrator) ───────────────────
+netsh advfirewall firewall add rule name="MySQL 3306" protocol=TCP dir=in localport=3306 action=allow
+
+:: ─── Test koneksi dari PC1 ke PC2 ──────────────────────────────────
+mysql -h 192.168.X.X2 -u distribusi -ppassword123 db_distribusi_pupuk
+```
+
+---
+
+## Checklist Demo UAS
+
+- [ ] Kedua XAMPP berjalan
+- [ ] Kedua PC terhubung WiFi, bisa saling ping
+- [ ] `sql_pc1.sql` berhasil dijalankan di PC1
+- [ ] `sql_pc2.sql` berhasil dijalankan di PC2
+- [ ] User MySQL remote dibuat di PC2 (`distribusi'@'IP_PC1`)
+- [ ] File PHP ada di `C:\xampp\htdocs\distribusi\`
+- [ ] `config.php` sudah diisi dengan IP PC2 yang benar
+- [ ] `http://localhost/distribusi/` terbuka dan kedua panel berisi data
+- [ ] Isi form pengajuan → data masuk ke MySQL PC2 (bisa dicek via phpMyAdmin PC2)

@@ -80,10 +80,27 @@ return [
             'prefix_indexes' => true,
             'strict' => true,
             'engine' => null,
-            'options' => extension_loaded('pdo_mysql') ? [
-                PDO::MYSQL_ATTR_SSL_CA               => env('MYSQL_ATTR_SSL_CA', 'D:/laragon/etc/ssl/cacert.pem'),
+            // SSL dinonaktifkan untuk XAMPP lokal (tidak perlu SSL)
+            // Aktifkan kembali jika menggunakan TiDB Cloud dengan menambahkan MYSQL_ATTR_SSL_CA di .env
+            'options' => extension_loaded('pdo_mysql') && env('MYSQL_ATTR_SSL_CA') ? [
+                PDO::MYSQL_ATTR_SSL_CA               => env('MYSQL_ATTR_SSL_CA'),
                 PDO::MYSQL_ATTR_SSL_VERIFY_SERVER_CERT => false,
             ] : [],
+        ],
+
+        'mysql_pupuk' => [
+            'driver'    => 'mysql',
+            'host'      => env('DB2_HOST', '127.0.0.1'),
+            'port'      => env('DB2_PORT', '3306'),
+            'database'  => env('DB2_DATABASE', 'db_distribusi_pupuk'),
+            'username'  => env('DB2_USERNAME', 'root'),
+            'password'  => env('DB2_PASSWORD', ''),
+            'charset'   => 'utf8mb4',
+            'collation' => 'utf8mb4_unicode_ci',
+            'prefix'    => '',
+            'strict'    => false,
+            'engine'    => null,
+            'options'   => [],
         ],
 
         'mariadb' => [

@@ -1,0 +1,748 @@
+# Implementasi Basis Data Terdistribusi — PantauPangan
+
+## Gambaran Umum
+
+Sistem ini mengimplementasikan **Fragmentasi Horizontal (Multi-Database)** menggunakan **2 PC yang terhubung dalam jaringan LAN**. Aplikasi Laravel di PC1 akan berkomunikasi dengan **dua server MySQL yang berbeda secara fisik**.
+
+---
+
+## Arsitektur Sistem
+
+```
+┌──────────────────────────────────┐         ┌──────────────────────────────────┐
+│           PC 1                   │         │           PC 2                   │
+│   (Laravel App + XAMPP)          │◄───────►│       (XAMPP saja)               │
+│                                  │  LAN    │                                  │
+│  MySQL: db_pantaupangan          │         │  MySQL: db_distribusi_pupuk      │
+│  ┌─────────────────────────┐     │         │  ┌─────────────────────────┐     │
+│  │ users                   │     │         │  │ pupuk                   │     │
+│  │ komoditas               │     │         │  │ distribusi_pupuk        │     │
+│  │ harga_harian            │     │         │  │ alokasi_pupuk           │     │
+│  │ berita                  │     │         │  └─────────────────────────┘     │
+│  │ hasil_panen             │     │         │                                  │
+│  └─────────────────────────┘     │         │  IP: [IP_PC2] (catat!)          │
+│                                  │         │                                  │
+│  IP: [IP_PC1]                    │         │                                  │
+│  Jalankan: php artisan serve     │         │                                  │
+└──────────────────────────────────┘         └──────────────────────────────────┘
+          ▲
+          │
+        Browser
+        (Demo)
+```
+
+**Koneksi di Laravel (`config/database.php`):**
+- `mysql` → PC1 MySQL (127.0.0.1) → `db_pantaupangan`
+- `mysql_pupuk` → PC2 MySQL ([IP_PC2]) → `db_distribusi_pupuk`
+
+---
+
+## Strategi Distribusi
+
+**Fragmentasi Horizontal berdasarkan domain/fungsi:**
+
+| Aspek | DB Server 1 (PC1) | DB Server 2 (PC2) |
+|-------|-------------------|-------------------|
+| Host | 127.0.0.1 | [IP PC2 di LAN] |
+| Database | `db_pantaupangan` | `db_distribusi_pupuk` |
+| Domain | Monitoring harga pangan | Distribusi pupuk subsidi |
+| Tabel | users, komoditas, harga_harian, berita, hasil_panen | pupuk, distribusi_pupuk, alokasi_pupuk |
+| Koneksi Laravel | `mysql` | `mysql_pupuk` |
+
+---
+
+## Langkah-Langkah Setup
+
+### STEP 1 — PC2: Persiapkan XAMPP & Buka Akses Remote
+
+1. Install & jalankan XAMPP di PC2
+2. Buka `C:\xampp\mysql\bin\my.ini`, cari `bind-address`, ubah:
+   ```ini
+   bind-address = 0.0.0.0
+   ```
+3. Restart MySQL di XAMPP Control Panel
+4. Buka **phpMyAdmin** di PC2, jalankan SQL berikut untuk izinkan koneksi dari PC1:
+   ```sql
+   -- Ganti 'IP_PC1' dengan IP aktual PC1 di jaringan LAN
+   CREATE USER 'distribusi'@'IP_PC1' IDENTIFIED BY 'password123';
+   GRANT ALL PRIVILEGES ON db_distribusi_pupuk.* TO 'distribusi'@'IP_PC1';
+   FLUSH PRIVILEGES;
+   ```
+5. Cek firewall Windows PC2: izinkan port **3306** (atau matikan sementara untuk demo)
+6. Catat IP PC2 dengan perintah `ipconfig` di CMD
+
+### STEP 2 — PC2: Jalankan SQL Database 2
+
+Buka phpMyAdmin PC2 → tab SQL → jalankan **seluruh isi `sql_pc2.sql`**
+
+### STEP 3 — PC1: Jalankan SQL Database 1
+
+Buka phpMyAdmin PC1 → tab SQL → jalankan **seluruh isi `sql_pc1.sql`**
+
+### STEP 4 — PC1: Konfigurasi Laravel
+
+Edit `.env` dan `config/database.php` sesuai kode di bawah.
+
+### STEP 5 — PC1: Jalankan Aplikasi
+
+```bash
+php artisan serve --host=0.0.0.0 --port=8000
+```
+
+### STEP 6 — Uji Koneksi
+
+Buka browser → `http://localhost:8000/distribusi-pupuk/dashboard`
+
+---
+
+## Semua Kode yang Perlu Dibuat
+
+### A. SQL Scripts
+
+#### `sql_pc1.sql` — Dijalankan di phpMyAdmin PC1
+
+```sql
+-- ============================================================
+-- SQL PC1: Database Pantau Pangan (Server Utama)
+-- Jalankan di: phpMyAdmin PC1 → http://localhost/phpmyadmin
+-- ============================================================
+
+CREATE DATABASE IF NOT EXISTS db_pantaupangan 
+    CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+USE db_pantaupangan;
+
+-- ── Tabel users ──────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS users (
+    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    username VARCHAR(255) NOT NULL,
+    email VARCHAR(255) NOT NULL UNIQUE,
+    email_verified_at TIMESTAMP NULL,
+    password VARCHAR(255) NOT NULL,
+    role ENUM('superadmin','admin-komoditas','admin-berita','petani','pembeli','tengkulak','pedagang','dinas pemerintah','lainnya') NOT NULL DEFAULT 'pembeli',
+    instansi_dinas VARCHAR(255) NULL,
+    created_by VARCHAR(255) NULL,
+    updated_by VARCHAR(255) NULL,
+    remember_token VARCHAR(100) NULL,
+    created_at TIMESTAMP NULL,
+    updated_at TIMESTAMP NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ── Tabel komoditas ──────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS komoditas (
+    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    nama_komoditas VARCHAR(255) NOT NULL,
+    slug_komoditas VARCHAR(255) NOT NULL UNIQUE,
+    kategori VARCHAR(255) NULL,
+    icon VARCHAR(255) NULL,
+    status ENUM('aktif','nonaktif') NOT NULL DEFAULT 'aktif',
+    created_at TIMESTAMP NULL,
+    updated_at TIMESTAMP NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ── Tabel harga_harian ───────────────────────────────────────
+CREATE TABLE IF NOT EXISTS harga_harian (
+    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    slug_komoditas VARCHAR(255) NOT NULL,
+    provinsi VARCHAR(255) NOT NULL,
+    harga INT NOT NULL,
+    tanggal DATE NOT NULL,
+    created_at TIMESTAMP NULL,
+    updated_at TIMESTAMP NULL,
+    INDEX idx_slug (slug_komoditas),
+    INDEX idx_provinsi (provinsi),
+    INDEX idx_tanggal (tanggal),
+    UNIQUE KEY uq_harga (slug_komoditas, provinsi, tanggal)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ── Tabel hasil_panen ────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS hasil_panen (
+    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    user_id BIGINT UNSIGNED NOT NULL,
+    nama_komoditas VARCHAR(255) NOT NULL,
+    jumlah DECIMAL(10,2) NOT NULL,
+    satuan VARCHAR(50) NOT NULL DEFAULT 'kg',
+    tanggal_panen DATE NOT NULL,
+    lokasi_lahan VARCHAR(255) NULL,
+    created_at TIMESTAMP NULL,
+    updated_at TIMESTAMP NULL,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ── Tabel migrations (wajib untuk Laravel) ───────────────────
+CREATE TABLE IF NOT EXISTS migrations (
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    migration VARCHAR(255) NOT NULL,
+    batch INT NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ── Tabel sessions (wajib untuk Laravel session) ─────────────
+CREATE TABLE IF NOT EXISTS sessions (
+    id VARCHAR(255) PRIMARY KEY,
+    user_id BIGINT UNSIGNED NULL,
+    ip_address VARCHAR(45) NULL,
+    user_agent TEXT NULL,
+    payload LONGTEXT NOT NULL,
+    last_activity INT NOT NULL,
+    INDEX idx_user_id (user_id),
+    INDEX idx_last_activity (last_activity)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ── Tabel cache ──────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS cache (
+    `key` VARCHAR(255) PRIMARY KEY,
+    value MEDIUMTEXT NOT NULL,
+    expiration INT NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS cache_locks (
+    `key` VARCHAR(255) PRIMARY KEY,
+    owner VARCHAR(255) NOT NULL,
+    expiration INT NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ── Tabel jobs (queue) ───────────────────────────────────────
+CREATE TABLE IF NOT EXISTS jobs (
+    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    queue VARCHAR(255) NOT NULL,
+    payload LONGTEXT NOT NULL,
+    attempts TINYINT UNSIGNED NOT NULL,
+    reserved_at INT UNSIGNED NULL,
+    available_at INT UNSIGNED NOT NULL,
+    created_at INT UNSIGNED NOT NULL,
+    INDEX idx_queue (queue)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ═══════════════════════════════════════════════════════════════
+-- DATA SAMPLE
+-- ═══════════════════════════════════════════════════════════════
+
+-- User superadmin untuk login
+INSERT INTO users (username, email, password, role, created_at, updated_at)
+VALUES 
+('Admin PantauPangan', 'admin@pantaupangan.id', '$2y$12$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'superadmin', NOW(), NOW()),
+('Budi Petani', 'petani@pantaupangan.id', '$2y$12$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'petani', NOW(), NOW());
+-- Password untuk semua user: "password"
+
+-- Data komoditas
+INSERT INTO komoditas (nama_komoditas, slug_komoditas, kategori, icon, status, created_at, updated_at) VALUES
+('Beras Medium', 'beras-medium', 'Pangan Pokok', '🌾', 'aktif', NOW(), NOW()),
+('Cabai Merah', 'cabai-merah', 'Sayuran', '🌶️', 'aktif', NOW(), NOW()),
+('Bawang Merah', 'bawang-merah', 'Bumbu', '🧅', 'aktif', NOW(), NOW()),
+('Jagung', 'jagung', 'Pangan Pokok', '🌽', 'aktif', NOW(), NOW()),
+('Kedelai', 'kedelai', 'Pangan Pokok', '🫘', 'aktif', NOW(), NOW());
+
+-- Data harga harian (30 hari terakhir, beberapa provinsi)
+INSERT INTO harga_harian (slug_komoditas, provinsi, harga, tanggal, created_at, updated_at) VALUES
+-- Beras Medium
+('beras-medium', 'Jawa Tengah', 13500, DATE_SUB(CURDATE(), INTERVAL 1 DAY), NOW(), NOW()),
+('beras-medium', 'Jawa Tengah', 13450, DATE_SUB(CURDATE(), INTERVAL 2 DAY), NOW(), NOW()),
+('beras-medium', 'Jawa Tengah', 13600, DATE_SUB(CURDATE(), INTERVAL 3 DAY), NOW(), NOW()),
+('beras-medium', 'Jawa Timur', 13200, DATE_SUB(CURDATE(), INTERVAL 1 DAY), NOW(), NOW()),
+('beras-medium', 'Jawa Timur', 13150, DATE_SUB(CURDATE(), INTERVAL 2 DAY), NOW(), NOW()),
+('beras-medium', 'DKI Jakarta', 14000, DATE_SUB(CURDATE(), INTERVAL 1 DAY), NOW(), NOW()),
+('beras-medium', 'DKI Jakarta', 13900, DATE_SUB(CURDATE(), INTERVAL 2 DAY), NOW(), NOW()),
+('beras-medium', 'Nasional', 13500, DATE_SUB(CURDATE(), INTERVAL 1 DAY), NOW(), NOW()),
+-- Cabai Merah
+('cabai-merah', 'Jawa Tengah', 45000, DATE_SUB(CURDATE(), INTERVAL 1 DAY), NOW(), NOW()),
+('cabai-merah', 'Jawa Tengah', 43000, DATE_SUB(CURDATE(), INTERVAL 2 DAY), NOW(), NOW()),
+('cabai-merah', 'Jawa Timur', 42000, DATE_SUB(CURDATE(), INTERVAL 1 DAY), NOW(), NOW()),
+('cabai-merah', 'DKI Jakarta', 50000, DATE_SUB(CURDATE(), INTERVAL 1 DAY), NOW(), NOW()),
+('cabai-merah', 'Nasional', 46000, DATE_SUB(CURDATE(), INTERVAL 1 DAY), NOW(), NOW()),
+-- Bawang Merah
+('bawang-merah', 'Jawa Tengah', 32000, DATE_SUB(CURDATE(), INTERVAL 1 DAY), NOW(), NOW()),
+('bawang-merah', 'Jawa Timur', 30000, DATE_SUB(CURDATE(), INTERVAL 1 DAY), NOW(), NOW()),
+('bawang-merah', 'DKI Jakarta', 35000, DATE_SUB(CURDATE(), INTERVAL 1 DAY), NOW(), NOW()),
+('bawang-merah', 'Nasional', 32500, DATE_SUB(CURDATE(), INTERVAL 1 DAY), NOW(), NOW()),
+-- Jagung
+('jagung', 'Jawa Tengah', 5200, DATE_SUB(CURDATE(), INTERVAL 1 DAY), NOW(), NOW()),
+('jagung', 'Jawa Timur', 5100, DATE_SUB(CURDATE(), INTERVAL 1 DAY), NOW(), NOW()),
+('jagung', 'Nasional', 5150, DATE_SUB(CURDATE(), INTERVAL 1 DAY), NOW(), NOW()),
+-- Kedelai
+('kedelai', 'Jawa Tengah', 8500, DATE_SUB(CURDATE(), INTERVAL 1 DAY), NOW(), NOW()),
+('kedelai', 'Jawa Timur', 8400, DATE_SUB(CURDATE(), INTERVAL 1 DAY), NOW(), NOW()),
+('kedelai', 'Nasional', 8450, DATE_SUB(CURDATE(), INTERVAL 1 DAY), NOW(), NOW());
+
+-- Data hasil panen
+INSERT INTO hasil_panen (user_id, nama_komoditas, jumlah, satuan, tanggal_panen, lokasi_lahan, created_at, updated_at) VALUES
+(2, 'Beras Medium', 500.00, 'kg', DATE_SUB(CURDATE(), INTERVAL 5 DAY), 'Lahan Boyolali Blok A', NOW(), NOW()),
+(2, 'Jagung', 200.00, 'kg', DATE_SUB(CURDATE(), INTERVAL 10 DAY), 'Lahan Boyolali Blok B', NOW(), NOW()),
+(2, 'Bawang Merah', 75.00, 'kg', DATE_SUB(CURDATE(), INTERVAL 3 DAY), 'Lahan Sragen', NOW(), NOW());
+```
+
+---
+
+#### `sql_pc2.sql` — Dijalankan di phpMyAdmin PC2
+
+```sql
+-- ============================================================
+-- SQL PC2: Database Distribusi Pupuk (Server Kedua)
+-- Jalankan di: phpMyAdmin PC2 → http://localhost/phpmyadmin
+-- ============================================================
+
+CREATE DATABASE IF NOT EXISTS db_distribusi_pupuk
+    CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+USE db_distribusi_pupuk;
+
+-- ── Tabel pupuk ──────────────────────────────────────────────
+-- Master data jenis pupuk subsidi pemerintah
+CREATE TABLE IF NOT EXISTS pupuk (
+    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    kode_pupuk VARCHAR(20) NOT NULL UNIQUE,
+    nama_pupuk VARCHAR(100) NOT NULL,
+    satuan VARCHAR(20) NOT NULL DEFAULT 'kg',
+    harga_subsidi INT NOT NULL COMMENT 'Harga dalam Rupiah per kg/liter',
+    harga_nonsubsidi INT NOT NULL COMMENT 'Harga pasaran per kg/liter',
+    deskripsi TEXT NULL,
+    status ENUM('aktif','nonaktif') NOT NULL DEFAULT 'aktif',
+    created_at TIMESTAMP NULL,
+    updated_at TIMESTAMP NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+COMMENT='Master data jenis pupuk subsidi — DB Server 2 (PC2)';
+
+-- ── Tabel distribusi_pupuk ───────────────────────────────────
+-- Data distribusi pupuk per provinsi per periode
+CREATE TABLE IF NOT EXISTS distribusi_pupuk (
+    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    kode_pupuk VARCHAR(20) NOT NULL,
+    provinsi VARCHAR(100) NOT NULL,
+    kuota_ton DECIMAL(10,2) NOT NULL COMMENT 'Kuota dalam Ton',
+    realisasi_ton DECIMAL(10,2) NOT NULL DEFAULT 0.00 COMMENT 'Realisasi penyaluran dalam Ton',
+    periode VARCHAR(20) NOT NULL COMMENT 'Format: YYYY-Q1/Q2/Q3/Q4',
+    tanggal_distribusi DATE NOT NULL,
+    keterangan TEXT NULL,
+    created_at TIMESTAMP NULL,
+    updated_at TIMESTAMP NULL,
+    INDEX idx_kode_pupuk (kode_pupuk),
+    INDEX idx_provinsi (provinsi),
+    INDEX idx_periode (periode),
+    FOREIGN KEY (kode_pupuk) REFERENCES pupuk(kode_pupuk) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+COMMENT='Data distribusi pupuk subsidi per wilayah — DB Server 2 (PC2)';
+
+-- ── Tabel alokasi_pupuk ──────────────────────────────────────
+-- Pengajuan alokasi pupuk dari petani (user_id merujuk ke DB1)
+CREATE TABLE IF NOT EXISTS alokasi_pupuk (
+    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    user_id BIGINT UNSIGNED NOT NULL COMMENT 'Merujuk ke users.id di DB Server 1 (PC1)',
+    kode_pupuk VARCHAR(20) NOT NULL,
+    jumlah_kg DECIMAL(10,2) NOT NULL,
+    provinsi VARCHAR(100) NOT NULL,
+    status ENUM('pending','disetujui','ditolak') NOT NULL DEFAULT 'pending',
+    tanggal_pengajuan DATE NOT NULL,
+    catatan TEXT NULL,
+    created_at TIMESTAMP NULL,
+    updated_at TIMESTAMP NULL,
+    INDEX idx_user_id (user_id),
+    INDEX idx_kode_pupuk (kode_pupuk),
+    INDEX idx_status (status),
+    FOREIGN KEY (kode_pupuk) REFERENCES pupuk(kode_pupuk)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+COMMENT='Pengajuan alokasi pupuk oleh petani — DB Server 2 (PC2)';
+
+-- ═══════════════════════════════════════════════════════════════
+-- DATA SAMPLE
+-- ═══════════════════════════════════════════════════════════════
+
+-- Master pupuk subsidi (sesuai Permentan RI)
+INSERT INTO pupuk (kode_pupuk, nama_pupuk, satuan, harga_subsidi, harga_nonsubsidi, deskripsi, status, created_at, updated_at) VALUES
+('UREA',    'Urea',             'kg', 2250,  6500,  'Pupuk nitrogen tinggi untuk tanaman padi dan jagung. Kandungan N 46%.', 'aktif', NOW(), NOW()),
+('NPK',     'NPK Phonska',      'kg', 2300,  7500,  'Pupuk majemuk mengandung N, P, K. Cocok untuk semua jenis tanaman.', 'aktif', NOW(), NOW()),
+('SP36',    'SP-36',            'kg', 2400,  8000,  'Pupuk fosfat tinggi untuk perkembangan akar dan pembungaan.', 'aktif', NOW(), NOW()),
+('ZA',      'ZA (Amonium Sulfat)', 'kg', 1700, 5000, 'Pupuk nitrogen + sulfur. Cocok untuk tanaman tebu dan bawang.', 'aktif', NOW(), NOW()),
+('ORGANIK', 'Pupuk Organik Granul', 'kg', 800, 3000, 'Pupuk organik untuk memperbaiki struktur tanah. Berbahan baku kotoran ternak.', 'aktif', NOW(), NOW());
+
+-- Data distribusi per provinsi, per periode (2024)
+INSERT INTO distribusi_pupuk (kode_pupuk, provinsi, kuota_ton, realisasi_ton, periode, tanggal_distribusi, keterangan, created_at, updated_at) VALUES
+-- UREA — 2024 Q1
+('UREA', 'Jawa Tengah',  85000.00,  82000.00, '2024-Q1', '2024-01-15', 'Distribusi awal tahun berjalan lancar', NOW(), NOW()),
+('UREA', 'Jawa Timur',   95000.00,  91000.00, '2024-Q1', '2024-01-15', 'Penyerapan baik di sentra padi', NOW(), NOW()),
+('UREA', 'Jawa Barat',   78000.00,  75000.00, '2024-Q1', '2024-01-20', NULL, NOW(), NOW()),
+('UREA', 'Sumatera Utara', 45000.00, 40000.00, '2024-Q1', '2024-01-25', 'Keterlambatan distribusi ke daerah terpencil', NOW(), NOW()),
+('UREA', 'Sulawesi Selatan', 38000.00, 36500.00, '2024-Q1', '2024-01-20', NULL, NOW(), NOW()),
+-- UREA — 2024 Q2
+('UREA', 'Jawa Tengah',  88000.00,  85500.00, '2024-Q2', '2024-04-15', 'Musim tanam kedua', NOW(), NOW()),
+('UREA', 'Jawa Timur',   98000.00,  95000.00, '2024-Q2', '2024-04-15', NULL, NOW(), NOW()),
+('UREA', 'Jawa Barat',   80000.00,  78000.00, '2024-Q2', '2024-04-20', NULL, NOW(), NOW()),
+-- NPK — 2024 Q1
+('NPK', 'Jawa Tengah',   60000.00,  58000.00, '2024-Q1', '2024-01-15', NULL, NOW(), NOW()),
+('NPK', 'Jawa Timur',    70000.00,  67000.00, '2024-Q1', '2024-01-15', NULL, NOW(), NOW()),
+('NPK', 'Jawa Barat',    55000.00,  53000.00, '2024-Q1', '2024-01-20', NULL, NOW(), NOW()),
+('NPK', 'Sumatera Utara', 30000.00, 28000.00, '2024-Q1', '2024-01-25', NULL, NOW(), NOW()),
+('NPK', 'Sulawesi Selatan', 25000.00, 24000.00, '2024-Q1', '2024-01-20', NULL, NOW(), NOW()),
+-- NPK — 2024 Q2
+('NPK', 'Jawa Tengah',   62000.00,  61000.00, '2024-Q2', '2024-04-15', NULL, NOW(), NOW()),
+('NPK', 'Jawa Timur',    72000.00,  70000.00, '2024-Q2', '2024-04-15', NULL, NOW(), NOW()),
+-- SP36 — 2024 Q1
+('SP36', 'Jawa Tengah',  20000.00,  19000.00, '2024-Q1', '2024-01-15', NULL, NOW(), NOW()),
+('SP36', 'Jawa Timur',   22000.00,  21500.00, '2024-Q1', '2024-01-15', NULL, NOW(), NOW()),
+('SP36', 'Jawa Barat',   18000.00,  17500.00, '2024-Q1', '2024-01-20', NULL, NOW(), NOW()),
+-- ZA — 2024 Q1
+('ZA', 'Jawa Tengah',    15000.00,  14500.00, '2024-Q1', '2024-01-15', 'Untuk area tanaman tebu', NOW(), NOW()),
+('ZA', 'Jawa Timur',     18000.00,  17800.00, '2024-Q1', '2024-01-15', NULL, NOW(), NOW()),
+-- ORGANIK — 2024 Q1
+('ORGANIK', 'Jawa Tengah', 30000.00, 28000.00, '2024-Q1', '2024-01-15', NULL, NOW(), NOW()),
+('ORGANIK', 'Jawa Timur',  35000.00, 33000.00, '2024-Q1', '2024-01-15', NULL, NOW(), NOW()),
+('ORGANIK', 'Jawa Barat',  28000.00, 26000.00, '2024-Q1', '2024-01-20', NULL, NOW(), NOW());
+
+-- Data pengajuan alokasi dari petani (user_id=2 = petani di DB1)
+INSERT INTO alokasi_pupuk (user_id, kode_pupuk, jumlah_kg, provinsi, status, tanggal_pengajuan, catatan, created_at, updated_at) VALUES
+(2, 'UREA',    500.00, 'Jawa Tengah', 'disetujui', DATE_SUB(CURDATE(), INTERVAL 15 DAY), 'Untuk lahan padi 1 ha', NOW(), NOW()),
+(2, 'NPK',     300.00, 'Jawa Tengah', 'disetujui', DATE_SUB(CURDATE(), INTERVAL 10 DAY), 'Untuk tanaman jagung', NOW(), NOW()),
+(2, 'ORGANIK', 200.00, 'Jawa Tengah', 'pending',   DATE_SUB(CURDATE(), INTERVAL 3 DAY),  'Permohonan pupuk organik', NOW(), NOW());
+
+-- ── Izin akses dari PC1 (GANTI IP_PC1 dengan IP aktual) ──────
+-- PENTING: Jalankan bagian ini TERPISAH setelah mengetahui IP PC1
+-- CREATE USER 'distribusi'@'IP_PC1' IDENTIFIED BY 'password123';
+-- GRANT ALL PRIVILEGES ON db_distribusi_pupuk.* TO 'distribusi'@'IP_PC1';
+-- FLUSH PRIVILEGES;
+```
+
+---
+
+### B. Konfigurasi Laravel
+
+#### `.env` — Tambahkan baris baru di bawah konfigurasi DB yang ada
+
+```dotenv
+# ── Database 1: PC1 (Server Utama - Harga Pangan) ──────────
+DB_CONNECTION=mysql
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_DATABASE=db_pantaupangan
+DB_USERNAME=root
+DB_PASSWORD=
+
+# ── Database 2: PC2 (Server Pupuk - Distribusi Pupuk) ───────
+DB2_HOST=192.168.X.X
+DB2_PORT=3306
+DB2_DATABASE=db_distribusi_pupuk
+DB2_USERNAME=distribusi
+DB2_PASSWORD=password123
+```
+> **Ganti `192.168.X.X`** dengan IP aktual PC2 (lihat dari `ipconfig` di CMD PC2)
+
+---
+
+#### `config/database.php` — Tambah koneksi `mysql_pupuk`
+
+Di dalam array `'connections'`, tambah setelah blok `'mysql'`:
+
+```php
+'mysql_pupuk' => [
+    'driver'    => 'mysql',
+    'host'      => env('DB2_HOST', '127.0.0.1'),
+    'port'      => env('DB2_PORT', '3306'),
+    'database'  => env('DB2_DATABASE', 'db_distribusi_pupuk'),
+    'username'  => env('DB2_USERNAME', 'root'),
+    'password'  => env('DB2_PASSWORD', ''),
+    'charset'   => 'utf8mb4',
+    'collation' => 'utf8mb4_unicode_ci',
+    'prefix'    => '',
+    'strict'    => false,
+    'engine'    => null,
+    // Tidak perlu SSL untuk MySQL lokal XAMPP
+    'options'   => [],
+],
+```
+
+---
+
+### C. Model Laravel (3 file baru)
+
+#### `app/Models/Pupuk.php`
+
+```php
+<?php
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Model;
+
+class Pupuk extends Model
+{
+    // ← Model ini menggunakan DB Server 2 (PC2)
+    protected $connection = 'mysql_pupuk';
+    protected $table      = 'pupuk';
+    protected $primaryKey = 'id';
+    protected $guarded    = [];
+
+    public function distribusi()
+    {
+        return $this->hasMany(DistribusiPupuk::class, 'kode_pupuk', 'kode_pupuk');
+    }
+
+    public function alokasi()
+    {
+        return $this->hasMany(AlokasiPupuk::class, 'kode_pupuk', 'kode_pupuk');
+    }
+}
+```
+
+#### `app/Models/DistribusiPupuk.php`
+
+```php
+<?php
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Model;
+
+class DistribusiPupuk extends Model
+{
+    // ← Model ini menggunakan DB Server 2 (PC2)
+    protected $connection = 'mysql_pupuk';
+    protected $table      = 'distribusi_pupuk';
+    protected $guarded    = [];
+
+    protected $casts = [
+        'kuota_ton'          => 'decimal:2',
+        'realisasi_ton'      => 'decimal:2',
+        'tanggal_distribusi' => 'date',
+    ];
+
+    public function pupuk()
+    {
+        return $this->belongsTo(Pupuk::class, 'kode_pupuk', 'kode_pupuk');
+    }
+}
+```
+
+#### `app/Models/AlokasiPupuk.php`
+
+```php
+<?php
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Model;
+
+class AlokasiPupuk extends Model
+{
+    // ← Model ini menggunakan DB Server 2 (PC2)
+    protected $connection = 'mysql_pupuk';
+    protected $table      = 'alokasi_pupuk';
+    protected $guarded    = [];
+
+    protected $casts = [
+        'jumlah_kg'          => 'decimal:2',
+        'tanggal_pengajuan'  => 'date',
+    ];
+
+    // user() tidak bisa pakai relasi Eloquent biasa (beda koneksi DB)
+    // Ambil user manual via: User::find($this->user_id)
+}
+```
+
+---
+
+### D. Controller
+
+#### `app/Http/Controllers/DistribusiPupukController.php`
+
+```php
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Models\AlokasiPupuk;
+use App\Models\DistribusiPupuk;
+use App\Models\HargaHarian;
+use App\Models\Komoditas;
+use App\Models\Pupuk;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+
+class DistribusiPupukController extends Controller
+{
+    /**
+     * Halaman daftar distribusi pupuk (baca DB Server 2 — PC2)
+     */
+    public function index()
+    {
+        $distribusi = DistribusiPupuk::with('pupuk')
+            ->orderBy('tanggal_distribusi', 'desc')
+            ->get();
+
+        $pupukList = Pupuk::where('status', 'aktif')->get();
+
+        return view('distribusi.index', compact('distribusi', 'pupukList'));
+    }
+
+    /**
+     * Form pengajuan alokasi pupuk
+     */
+    public function create()
+    {
+        // DB2: ambil daftar pupuk aktif
+        $pupukList = Pupuk::where('status', 'aktif')->get();
+
+        return view('distribusi.create', compact('pupukList'));
+    }
+
+    /**
+     * Simpan pengajuan alokasi ke DB Server 2 (PC2)
+     */
+    public function store(Request $request)
+    {
+        $validated = $request->validate([
+            'kode_pupuk'  => ['required', 'string', 'exists:mysql_pupuk.pupuk,kode_pupuk'],
+            'jumlah_kg'   => ['required', 'numeric', 'min:1'],
+            'provinsi'    => ['required', 'string', 'max:100'],
+            'catatan'     => ['nullable', 'string', 'max:500'],
+        ]);
+
+        // Simpan ke DB Server 2 (PC2)
+        AlokasiPupuk::create([
+            'user_id'           => auth()->id(),
+            'kode_pupuk'        => $validated['kode_pupuk'],
+            'jumlah_kg'         => $validated['jumlah_kg'],
+            'provinsi'          => $validated['provinsi'],
+            'status'            => 'pending',
+            'tanggal_pengajuan' => now()->toDateString(),
+            'catatan'           => $validated['catatan'] ?? null,
+        ]);
+
+        return redirect()->route('distribusi.index')
+            ->with('success', 'Pengajuan alokasi pupuk berhasil dikirim!');
+    }
+
+    /**
+     * ════════════════════════════════════════════════════════════
+     * HALAMAN BUKTI SISTEM TERDISTRIBUSI
+     * Mengambil data dari DUA server database secara bersamaan:
+     * - DB Server 1 (PC1): Data harga komoditas (HargaHarian, Komoditas)
+     * - DB Server 2 (PC2): Data distribusi pupuk (DistribusiPupuk, Pupuk)
+     * ════════════════════════════════════════════════════════════
+     */
+    public function dashboard()
+    {
+        // ─────────────────────────────────────────────────────────
+        // QUERY DB SERVER 1 — PC1 (koneksi: mysql)
+        // Ambil harga komoditas terkini per provinsi
+        // ─────────────────────────────────────────────────────────
+        $server1_host = config('database.connections.mysql.host');
+        $server1_db   = config('database.connections.mysql.database');
+
+        $komoditasList = Komoditas::where('status', 'aktif')
+            ->orderBy('nama_komoditas')
+            ->get();
+
+        $hargaTerkini = HargaHarian::where('tanggal', '>=', now()->subDays(7)->toDateString())
+            ->whereIn('provinsi', ['Jawa Tengah', 'Jawa Timur', 'Jawa Barat', 'Nasional'])
+            ->orderBy('tanggal', 'desc')
+            ->get()
+            ->groupBy('slug_komoditas');
+
+        // ─────────────────────────────────────────────────────────
+        // QUERY DB SERVER 2 — PC2 (koneksi: mysql_pupuk)
+        // Ambil realisasi distribusi pupuk terbaru per provinsi
+        // ─────────────────────────────────────────────────────────
+        $server2_host = config('database.connections.mysql_pupuk.host');
+        $server2_db   = config('database.connections.mysql_pupuk.database');
+
+        $pupukList = Pupuk::where('status', 'aktif')->get();
+
+        $distribusiTerkini = DistribusiPupuk::with('pupuk')
+            ->whereIn('provinsi', ['Jawa Tengah', 'Jawa Timur', 'Jawa Barat'])
+            ->orderBy('tanggal_distribusi', 'desc')
+            ->get()
+            ->groupBy('provinsi');
+
+        // Statistik gabungan dari kedua DB
+        $totalKuotaTon    = DistribusiPupuk::sum('kuota_ton');
+        $totalRealisasi   = DistribusiPupuk::sum('realisasi_ton');
+        $persentaseTotal  = $totalKuotaTon > 0
+            ? round(($totalRealisasi / $totalKuotaTon) * 100, 1)
+            : 0;
+
+        $totalKomoditas  = $komoditasList->count();
+        $totalJenisPupuk = $pupukList->count();
+
+        // Alokasi pengajuan user yang login (DB Server 2)
+        $alokasiku = auth()->check()
+            ? AlokasiPupuk::where('user_id', auth()->id())
+                ->orderBy('created_at', 'desc')
+                ->limit(5)
+                ->get()
+            : collect();
+
+        return view('distribusi.dashboard', compact(
+            // Data DB1
+            'komoditasList', 'hargaTerkini',
+            'server1_host', 'server1_db',
+            // Data DB2
+            'pupukList', 'distribusiTerkini',
+            'server2_host', 'server2_db',
+            // Statistik gabungan
+            'totalKuotaTon', 'totalRealisasi', 'persentaseTotal',
+            'totalKomoditas', 'totalJenisPupuk',
+            'alokasiku'
+        ));
+    }
+}
+```
+
+---
+
+### E. Routes
+
+#### `routes/web.php` — Tambahkan sebelum `require __DIR__.'/auth.php';`
+
+```php
+// ── Rute Distribusi Pupuk ─────────────────────────────────────────────────────
+use App\Http\Controllers\DistribusiPupukController;
+
+Route::middleware(['auth', 'role:petani,superadmin'])->group(function () {
+    Route::get('/distribusi-pupuk',          [DistribusiPupukController::class, 'index'])  ->name('distribusi.index');
+    Route::get('/distribusi-pupuk/ajukan',   [DistribusiPupukController::class, 'create']) ->name('distribusi.create');
+    Route::post('/distribusi-pupuk/ajukan',  [DistribusiPupukController::class, 'store'])  ->name('distribusi.store');
+    Route::get('/distribusi-pupuk/dashboard',[DistribusiPupukController::class, 'dashboard'])->name('distribusi.dashboard');
+});
+```
+
+---
+
+### F. Views (Blade Templates)
+
+#### `resources/views/distribusi/index.blade.php`
+#### `resources/views/distribusi/create.blade.php`
+#### `resources/views/distribusi/dashboard.blade.php`
+
+*(Kode Blade lengkap akan diberikan terpisah — lihat Fase Eksekusi)*
+
+---
+
+## Ringkasan Deliverables untuk UAS
+
+| Item | File | Keterangan |
+|------|------|-----------|
+| SQL PC1 | `sql_pc1.sql` | Schema + data `db_pantaupangan` |
+| SQL PC2 | `sql_pc2.sql` | Schema + data `db_distribusi_pupuk` |
+| Kode PHP | `DistribusiPupukController.php` | Controller utama |
+| Kode PHP | 3 Model file | Pupuk, DistribusiPupuk, AlokasiPupuk |
+| Config | `.env` + `database.php` | Konfigurasi 2 koneksi DB |
+| View | 3 Blade templates | Halaman UI |
+| Laporan | `arsitektur.md` | Dokumentasi teknis |
+
+---
+
+## Pembuktian untuk Demo
+
+Di halaman `/distribusi-pupuk/dashboard` akan terlihat:
+- ✅ Badge **"DB Server 1: PC1 (127.0.0.1/db_pantaupangan)"**
+- ✅ Badge **"DB Server 2: PC2 ([IP_PC2]/db_distribusi_pupuk)"**
+- ✅ Data harga komoditas diambil dari Server 1
+- ✅ Data distribusi pupuk diambil dari Server 2
+- ✅ Keduanya diproses dan ditampilkan bersamaan
+
+---
+
+## Catatan Penting untuk Setup
+
+> [!IMPORTANT]
+> Sebelum demo, pastikan kedua PC terhubung ke jaringan LAN yang sama (WiFi hotspot yang sama atau kabel switch). Verifikasi koneksi dengan ping dari PC1 ke PC2.
+
+> [!WARNING]
+> Di PC2, **firewall Windows** sering memblokir port 3306. Matikan sementara atau buat exception khusus port 3306 untuk demo.
+
+> [!TIP]
+> Gunakan `ipconfig` di CMD PC2 untuk mengetahui IP-nya, lalu isi di `.env` PC1.
