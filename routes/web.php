@@ -57,15 +57,4 @@ Route::middleware(['auth', 'role:admin-berita,superadmin'])->group(function () {
     Route::delete('/admin/berita/{berita}', [App\Http\Controllers\Admin\BeritaAdminController::class, 'destroy'])->name('admin.berita.destroy');
 });
 
-// ── Rute Distribusi Pupuk ─────────────────────────────────────────────────────
-use App\Http\Controllers\DistribusiPupukController;
-
-Route::middleware(['auth', 'role:petani,superadmin'])->group(function () {
-    Route::get('/distribusi-pupuk',          [DistribusiPupukController::class, 'index'])  ->name('distribusi.index');
-    Route::get('/distribusi-pupuk/ajukan',   [DistribusiPupukController::class, 'create']) ->name('distribusi.create');
-    Route::post('/distribusi-pupuk/ajukan',  [DistribusiPupukController::class, 'store'])  ->name('distribusi.store');
-    Route::get('/distribusi-pupuk/dashboard',[DistribusiPupukController::class, 'dashboard'])->name('distribusi.dashboard');
-});
-
 require __DIR__.'/auth.php';
-

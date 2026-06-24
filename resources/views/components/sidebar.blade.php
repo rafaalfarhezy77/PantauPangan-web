@@ -59,23 +59,6 @@
         </a>
         @endif
 
-        {{-- Distribusi Pupuk (UAS Basda) --}}
-        @if(in_array($role, ['petani', 'superadmin']))
-        <div class="sidebar-section">Distribusi Pupuk (UAS)</div>
-        <a href="{{ route('distribusi.dashboard') }}"
-           class="sidebar-link {{ request()->routeIs('distribusi.dashboard') ? 'active' : '' }}">
-            <span>📊</span> Dashboard Basda
-        </a>
-        <a href="{{ route('distribusi.index') }}"
-           class="sidebar-link {{ request()->routeIs('distribusi.index') ? 'active' : '' }}">
-            <span>🚚</span> Realisasi Distribusi
-        </a>
-        <a href="{{ route('distribusi.create') }}"
-           class="sidebar-link {{ request()->routeIs('distribusi.create') ? 'active' : '' }}">
-            <span>📝</span> Ajukan Alokasi
-        </a>
-        @endif
-
         {{-- Admin Panel --}}
         @if($role === 'superadmin')
         <div class="sidebar-section">Admin Panel</div>

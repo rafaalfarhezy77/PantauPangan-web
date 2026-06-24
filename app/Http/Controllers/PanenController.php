@@ -63,10 +63,7 @@ class PanenController extends Controller
      */
     public function destroy(HasilPanen $hasilPanen)
     {
-        // Pastikan user hanya bisa menghapus catatan miliknya sendiri
-        if ($hasilPanen->user_id !== auth()->id()) {
-            abort(403, 'Anda tidak diizinkan menghapus data ini.');
-        }
+        $this->authorize('delete', $hasilPanen);
 
         $hasilPanen->delete();
 
