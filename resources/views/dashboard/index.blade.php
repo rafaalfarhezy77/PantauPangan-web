@@ -101,25 +101,25 @@
     </a>
     @if(Auth::user()->role === 'superadmin')
     <p class="text-[0.65rem] font-semibold uppercase tracking-widest text-white/30 px-2 pt-4 pb-1.5">Khusus SuperAdmin</p>
-    <a href="dashboardAdmin.php" 
+    <a href="{{ route('admin.dashboard') }}" 
        class="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm font-medium text-green-pale hover:bg-white/10 hover:text-white transition-colors no-underline">
       <span class="w-5 text-center text-base">🛡️</span>Admin Panel
     </a>
     @elseif(Auth::user()->role === 'admin-komoditas')
     <p class="text-[0.65rem] font-semibold uppercase tracking-widest text-white/30 px-2 pt-4 pb-1.5">Panel Komoditas</p>
-    <a href="dashboardKomoditas.php" 
+    <a href="{{ route('admin.komoditas') }}" 
        class="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm font-medium text-amber-300 hover:bg-white/10 hover:text-white transition-colors no-underline">
       <span class="w-5 text-center text-base">📦</span>Import Data CSV
     </a>
     @elseif(Auth::user()->role === 'admin-berita')
     <p class="text-[0.65rem] font-semibold uppercase tracking-widest text-white/30 px-2 pt-4 pb-1.5">Panel Berita</p>
-    <a href="dashboardBerita.php" 
+    <a href="{{ route('admin.berita') }}" 
        class="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm font-medium text-blue-300 hover:bg-white/10 hover:text-white transition-colors no-underline">
       <span class="w-5 text-center text-base">📰</span>Kelola Berita
     </a>
     @elseif(Auth::user()->role === 'petani')
     <p class="text-[0.65rem] font-semibold uppercase tracking-widest text-white/30 px-2 pt-4 pb-1.5">Fitur Petani</p>
-    <a href="panen.php" 
+    <a href="{{ route('panen') }}" 
        class="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm font-medium text-green-pale hover:bg-white/10 hover:text-white transition-colors no-underline">
       <span class="w-5 text-center text-base">🌾</span>Catat Panen
     </a>
@@ -233,7 +233,7 @@
             <p class="font-bold text-green-deep text-sm">⭐ Pantauan Saya</p>
             <p id="watchlistCount" class="text-xs text-gray-400 mt-0.5">0 komoditas aktif</p>
           </div>
-          <a href="../index.html#harga"
+          <a href="{{ route('beranda') }}#harga"
              class="text-xs font-semibold text-green-mid bg-green-mist px-3 py-1.5 rounded-full hover:bg-green-pale transition-colors no-underline">+ Tambah</a>
         </div>
         <div id="watchlist"></div>
@@ -325,7 +325,7 @@ function renderWatchlist() {
   }
 
   container.innerHTML = watchlistData.map((w,i) => `
-    <a href="detail.php?id=${w.id}"
+    <a href="/komoditas/${w.id}"
        class="flex items-center gap-3 px-5 py-3.5 border-b border-cream-dark last:border-0
               hover:bg-cream transition-colors no-underline text-inherit">
       <div class="w-9 h-9 bg-green-mist rounded-xl flex items-center justify-center text-lg flex-shrink-0">${w.icon}</div>
@@ -394,7 +394,7 @@ function renderHistory() {
   }
 
   container.innerHTML = historyData.map(h => `
-    <a href="detail.php"
+    <a href="/komoditas/${h.slug}"
        class="block bg-cream border border-cream-dark rounded-xl p-3.5 hover:border-green-pale hover:shadow-sm transition-all no-underline">
       <p class="text-xs text-gray-400 mb-1">${h.icon} ${h.commodity}</p>
       <p class="text-base font-bold text-green-deep mb-0.5">${h.price}</p>
@@ -472,26 +472,7 @@ async function updateChart() {
     }
   });
 }
-async function doLogout() {
-  try {
-   
-    const response = await fetch('logout.php', { credentials: 'include' });
-    const result = await response.json();
 
-    if (result.success) {
-      localStorage.removeItem('isLoggedIn');
-      localStorage.removeItem('username');
-      localStorage.removeItem('role');
-      
-      
-      window.location.href = 'login.php';
-    }
-  } catch (error) {
-    console.error("Gagal logout:", error);
-    localStorage.clear();
-    window.location.href = 'login.php';
-  }
-}
 
 function openSidebar()  { document.getElementById('sidebar').classList.remove('-translate-x-full'); document.getElementById('overlay').classList.remove('hidden'); }
 function closeSidebar() { document.getElementById('sidebar').classList.add('-translate-x-full'); document.getElementById('overlay').classList.add('hidden'); }
