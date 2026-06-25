@@ -23,8 +23,14 @@ class MailService
             $mail->SMTPAuth   = true;
             $mail->Username   = env('SUMOPOD_USERNAME');
             $mail->Password   = env('SUMOPOD_PASSWORD');
-            $mail->SMTPSecure = PHPMailer::ENCRYPTION_SMTPS; // SSL port 465
-            $mail->Port       = (int) env('SUMOPOD_PORT', 465);
+
+            // Port 587 + STARTTLS lebih kompatibel dengan cloud provider (Render, dll)
+            // Port 465 (SMTPS/SSL) sering diblokir oleh firewall cloud
+            $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
+            $mail->Port       = (int) env('SUMOPOD_PORT', 587);
+
+            // Timeout 10 detik agar tidak memblokir request terlalu lama
+            $mail->Timeout    = 10;
             $mail->CharSet    = PHPMailer::CHARSET_UTF8;
 
             // ── Recipients ────────────────────────────────────────────
@@ -46,7 +52,10 @@ class MailService
             return true;
 
         } catch (Exception $e) {
-            Log::error('[MailService] Gagal kirim email welcome ke ' . $user->email . ' — ' . $mail->ErrorInfo);
+            Log::error('[MailService] PHPMailer error ke ' . $user->email . ' — ' . $mail->ErrorInfo);
+            return false;
+        } catch (\Throwable $e) {
+            Log::error('[MailService] Unexpected error ke ' . $user->email . ' — ' . $e->getMessage());
             return false;
         }
     }
