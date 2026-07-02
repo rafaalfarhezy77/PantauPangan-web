@@ -123,6 +123,16 @@
        class="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm font-medium text-green-pale hover:bg-white/10 hover:text-white transition-colors no-underline">
       <span class="w-5 text-center text-base">🌾</span>Catat Panen
     </a>
+    <a href="{{ route('pupuk') }}" 
+       class="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm font-medium text-green-pale hover:bg-white/10 hover:text-white transition-colors no-underline">
+      <span class="w-5 text-center text-base">🌱</span>Distribusi Pupuk
+    </a>
+    @elseif(in_array(Auth::user()->role, ['admin-pupuk', 'superadmin']))
+    <p class="text-[0.65rem] font-semibold uppercase tracking-widest text-white/30 px-2 pt-4 pb-1.5">Panel Pupuk</p>
+    <a href="{{ route('admin.pupuk') }}" 
+       class="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm font-medium text-green-pale hover:bg-white/10 hover:text-white transition-colors no-underline">
+      <span class="w-5 text-center text-base">🌱</span>Distribusi Pupuk
+    </a>
     @endif
   </nav>
 
@@ -279,19 +289,17 @@
 
 <script>
 
+const username = @json(Auth::user()->username);
+const role     = @json(Auth::user()->role);
+
 let watchlistData = [];
-
-let notifData = [];
-
-let historyData = [];
+let notifData     = [];
+let historyData   = [];
 
 const days = ['Sen','Sel','Rab','Kam','Jum','Sab','Min'];
 const fmt  = n => 'Rp ' + n.toLocaleString('id-ID');
 
-const days = ['Sen','Sel','Rab','Kam','Jum','Sab','Min'];
-const fmt  = n => 'Rp ' + n.toLocaleString('id-ID');
-
-function initUser() { // Digantikan oleh Laravel Blade server-side }
+function initUser() {
 
 
   const initials = (username || 'P').split(' ').map(n => n[0]).join('').substring(0,2).toUpperCase();

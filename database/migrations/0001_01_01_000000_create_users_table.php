@@ -17,7 +17,7 @@ return new class extends Migration
             $table->string('email')->unique();
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
-            $table->enum('role', ['superadmin', 'admin-komoditas', 'admin-berita', 'petani', 'pembeli', 'tengkulak', 'pedagang', 'dinas pemerintah', 'lainnya'])->default('pembeli');
+            $table->enum('role', ['superadmin', 'admin-komoditas', 'admin-berita', 'admin-pupuk', 'petani', 'pembeli', 'tengkulak', 'pedagang', 'dinas pemerintah', 'lainnya'])->default('pembeli');
             $table->string('instansi_dinas')->nullable();
             $table->string('created_by')->nullable();
             $table->string('updated_by')->nullable();

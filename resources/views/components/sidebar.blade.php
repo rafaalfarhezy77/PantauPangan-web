@@ -57,6 +57,10 @@
            class="sidebar-link">
             <span>➕</span> Tambah Panen
         </a>
+        <a href="{{ route('pupuk') }}"
+           class="sidebar-link {{ request()->routeIs('pupuk*') ? 'active' : '' }}">
+            <span>🌱</span> Distribusi Pupuk
+        </a>
         @endif
 
         {{-- Admin Panel --}}
@@ -79,6 +83,13 @@
         <a href="{{ route('admin.berita') }}"
            class="sidebar-link {{ $current === 'berita-admin' ? 'active' : '' }}">
             <span>📰</span> Kelola Berita
+        </a>
+        @endif
+
+        @if(in_array($role, ['admin-pupuk', 'superadmin']))
+        <a href="{{ route('admin.pupuk') }}"
+           class="sidebar-link {{ request()->routeIs('admin.pupuk*') ? 'active' : '' }}">
+            <span>🌱</span> Distribusi Pupuk
         </a>
         @endif
 

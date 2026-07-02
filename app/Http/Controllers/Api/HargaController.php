@@ -135,9 +135,16 @@ class HargaController extends Controller
         $cacheKey = 'harga_history:' . $slug . ':' . str_replace(' ', '_', strtolower($provinsi)) . ':d' . $days;
 
         $data = Cache::remember($cacheKey, now()->addHours(6), function () use ($slug, $provinsi, $days) {
-            return HargaHarian::where('slug_komoditas', $slug)
-                ->where('provinsi', $provinsi)
-                ->where('tanggal', '>=', now()->subDays($days)->toDateString())
+            $query = HargaHarian::where('slug_komoditas', $slug)
+                ->where('tanggal', '>=', now()->subDays($days)->toDateString());
+
+            if ($provinsi !== 'Nasional') {
+                $query->where('provinsi', $provinsi);
+            }
+
+            // ponytail: group by date and average when Nasional, one query either way
+            return $query->selectRaw('tanggal, AVG(harga) as harga')
+                ->groupBy('tanggal')
                 ->orderBy('tanggal')
                 ->get(['tanggal', 'harga'])->toArray();
         });

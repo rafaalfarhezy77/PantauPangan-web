@@ -15,6 +15,21 @@
                     <x-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
                         {{ __('Dashboard') }}
                     </x-nav-link>
+
+                    @if(Auth::user()->isPetani())
+                        <x-nav-link :href="route('panen')" :active="request()->routeIs('panen*')">
+                            {{ __('Hasil Panen') }}
+                        </x-nav-link>
+                        <x-nav-link :href="route('pupuk')" :active="request()->routeIs('pupuk*')">
+                            {{ __('Distribusi Pupuk') }}
+                        </x-nav-link>
+                    @endif
+
+                    @if(Auth::user()->isAdminPupuk() || Auth::user()->isSuperAdmin())
+                        <x-nav-link :href="route('admin.pupuk')" :active="request()->routeIs('admin.pupuk*')">
+                            {{ __('Admin Pupuk') }}
+                        </x-nav-link>
+                    @endif
                 </div>
             </div>
 
@@ -70,6 +85,21 @@
             <x-responsive-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
                 {{ __('Dashboard') }}
             </x-responsive-nav-link>
+
+            @if(Auth::user()->isPetani())
+                <x-responsive-nav-link :href="route('panen')" :active="request()->routeIs('panen*')">
+                    {{ __('Hasil Panen') }}
+                </x-responsive-nav-link>
+                <x-responsive-nav-link :href="route('pupuk')" :active="request()->routeIs('pupuk*')">
+                    {{ __('Distribusi Pupuk') }}
+                </x-responsive-nav-link>
+            @endif
+
+            @if(Auth::user()->isAdminPupuk() || Auth::user()->isSuperAdmin())
+                <x-responsive-nav-link :href="route('admin.pupuk')" :active="request()->routeIs('admin.pupuk*')">
+                    {{ __('Admin Pupuk') }}
+                </x-responsive-nav-link>
+            @endif
         </div>
 
         <!-- Responsive Settings Options -->

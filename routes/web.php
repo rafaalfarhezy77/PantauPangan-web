@@ -31,6 +31,8 @@ Route::middleware(['auth', 'role:petani'])->group(function () {
     Route::get('/panen/tambah', [PanenController::class, 'create'])->name('panen.create');
     Route::post('/panen', [PanenController::class, 'store'])->name('panen.store');
     Route::delete('/panen/{hasilPanen}', [PanenController::class, 'destroy'])->name('panen.destroy');
+    
+    Route::get('/pupuk', [App\Http\Controllers\PupukController::class, 'index'])->name('pupuk');
 });
 
 // ── Rute Admin (Superadmin) ───────────────────────────────────────────────────
@@ -55,6 +57,12 @@ Route::middleware(['auth', 'role:admin-berita,superadmin'])->group(function () {
     Route::post('/admin/berita', [App\Http\Controllers\Admin\BeritaAdminController::class, 'store'])->name('admin.berita.store');
     Route::put('/admin/berita/{berita}', [App\Http\Controllers\Admin\BeritaAdminController::class, 'update'])->name('admin.berita.update');
     Route::delete('/admin/berita/{berita}', [App\Http\Controllers\Admin\BeritaAdminController::class, 'destroy'])->name('admin.berita.destroy');
+});
+
+// ── Rute Admin Pupuk ──────────────────────────────────────────────────────────
+Route::middleware(['auth', 'role:admin-pupuk,superadmin'])->group(function () {
+    Route::get('/admin/pupuk', [App\Http\Controllers\Admin\PupukAdminController::class, 'index'])->name('admin.pupuk');
+    // Tambahan rute CRUD bisa ditambahkan di sini
 });
 
 require __DIR__.'/auth.php';
