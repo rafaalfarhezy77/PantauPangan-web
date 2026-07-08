@@ -62,7 +62,9 @@ Route::middleware(['auth', 'role:admin-berita,superadmin'])->group(function () {
 // ── Rute Admin Pupuk ──────────────────────────────────────────────────────────
 Route::middleware(['auth', 'role:admin-pupuk,superadmin'])->group(function () {
     Route::get('/admin/pupuk', [App\Http\Controllers\Admin\PupukAdminController::class, 'index'])->name('admin.pupuk');
-    // Tambahan rute CRUD bisa ditambahkan di sini
+    Route::post('/admin/pupuk', [App\Http\Controllers\Admin\PupukAdminController::class, 'store'])->name('admin.pupuk.store');
+    Route::put('/admin/pupuk/{distribusiPupuk}', [App\Http\Controllers\Admin\PupukAdminController::class, 'update'])->name('admin.pupuk.update');
+    Route::delete('/admin/pupuk/{distribusiPupuk}', [App\Http\Controllers\Admin\PupukAdminController::class, 'destroy'])->name('admin.pupuk.destroy');
 });
 
 require __DIR__.'/auth.php';

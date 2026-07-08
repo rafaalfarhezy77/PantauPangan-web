@@ -103,7 +103,19 @@
     <p class="text-[0.65rem] font-semibold uppercase tracking-widest text-white/30 px-2 pt-4 pb-1.5">Khusus SuperAdmin</p>
     <a href="{{ route('admin.dashboard') }}" 
        class="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm font-medium text-green-pale hover:bg-white/10 hover:text-white transition-colors no-underline">
-      <span class="w-5 text-center text-base">🛡️</span>Admin Panel
+      <span class="w-5 text-center text-base">🛡️</span>Manajemen User
+    </a>
+    <a href="{{ route('admin.komoditas') }}" 
+       class="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm font-medium text-amber-300 hover:bg-white/10 hover:text-white transition-colors no-underline">
+      <span class="w-5 text-center text-base">📦</span>Import Komoditas
+    </a>
+    <a href="{{ route('admin.berita') }}" 
+       class="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm font-medium text-blue-300 hover:bg-white/10 hover:text-white transition-colors no-underline">
+      <span class="w-5 text-center text-base">📰</span>Kelola Berita
+    </a>
+    <a href="{{ route('admin.pupuk') }}" 
+       class="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm font-medium text-green-pale hover:bg-white/10 hover:text-white transition-colors no-underline">
+      <span class="w-5 text-center text-base">🌱</span>Admin Pupuk
     </a>
     @elseif(Auth::user()->role === 'admin-komoditas')
     <p class="text-[0.65rem] font-semibold uppercase tracking-widest text-white/30 px-2 pt-4 pb-1.5">Panel Komoditas</p>
@@ -117,6 +129,12 @@
        class="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm font-medium text-blue-300 hover:bg-white/10 hover:text-white transition-colors no-underline">
       <span class="w-5 text-center text-base">📰</span>Kelola Berita
     </a>
+    @elseif(Auth::user()->role === 'admin-pupuk')
+    <p class="text-[0.65rem] font-semibold uppercase tracking-widest text-white/30 px-2 pt-4 pb-1.5">Panel Pupuk</p>
+    <a href="{{ route('admin.pupuk') }}" 
+       class="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm font-medium text-green-pale hover:bg-white/10 hover:text-white transition-colors no-underline">
+      <span class="w-5 text-center text-base">🌱</span>Distribusi Pupuk
+    </a>
     @elseif(Auth::user()->role === 'petani')
     <p class="text-[0.65rem] font-semibold uppercase tracking-widest text-white/30 px-2 pt-4 pb-1.5">Fitur Petani</p>
     <a href="{{ route('panen') }}" 
@@ -124,12 +142,6 @@
       <span class="w-5 text-center text-base">🌾</span>Catat Panen
     </a>
     <a href="{{ route('pupuk') }}" 
-       class="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm font-medium text-green-pale hover:bg-white/10 hover:text-white transition-colors no-underline">
-      <span class="w-5 text-center text-base">🌱</span>Distribusi Pupuk
-    </a>
-    @elseif(in_array(Auth::user()->role, ['admin-pupuk', 'superadmin']))
-    <p class="text-[0.65rem] font-semibold uppercase tracking-widest text-white/30 px-2 pt-4 pb-1.5">Panel Pupuk</p>
-    <a href="{{ route('admin.pupuk') }}" 
        class="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm font-medium text-green-pale hover:bg-white/10 hover:text-white transition-colors no-underline">
       <span class="w-5 text-center text-base">🌱</span>Distribusi Pupuk
     </a>

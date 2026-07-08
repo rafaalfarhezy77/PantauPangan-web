@@ -19,10 +19,11 @@ class BeritaAdminController extends Controller
      */
     public function index()
     {
-        $berita    = Berita::orderBy('tanggal', 'desc')->paginate(15);
-        $komoditas = Komoditas::where('status', 'aktif')->orderBy('nama_komoditas')->get();
+        $berita      = Berita::orderBy('tanggal', 'desc')->paginate(15);
+        $komoditas   = Komoditas::where('status', 'aktif')->orderBy('nama_komoditas')->get();
+        $valid_slugs = $komoditas->pluck('nama_komoditas', 'slug_komoditas')->all();
 
-        return view('admin.berita', compact('berita', 'komoditas'));
+        return view('admin.berita', compact('berita', 'komoditas', 'valid_slugs'));
     }
 
     /**
