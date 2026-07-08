@@ -16,10 +16,18 @@ class KomoditasAdminController extends Controller
      */
     public function index()
     {
-        $komoditas   = Komoditas::where('status', 'aktif')->orderBy('nama_komoditas')->get();
-        $importLogs  = ImportLog::orderBy('created_at', 'desc')->take(10)->get();
+        $komoditas  = Komoditas::where('status', 'aktif')->orderBy('nama_komoditas')->get();
+        $valid_slugs = $komoditas->pluck('nama_komoditas', 'slug_komoditas')->all();
 
-        return view('admin.komoditas', compact('komoditas', 'importLogs'));
+        try {
+            $import_logs = ImportLog::orderBy('created_at', 'desc')->take(10)->get()->toArray();
+            $res_log     = true;
+        } catch (\Exception $e) {
+            $import_logs = [];
+            $res_log     = false;
+        }
+
+        return view('admin.komoditas', compact('valid_slugs', 'import_logs', 'res_log'));
     }
 
     /**

@@ -42,9 +42,12 @@
     <span class="hidden sm:inline-flex items-center gap-1 ml-2 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-blue-100 text-blue-700">📰 Admin Berita</span>
   </div>
   <div class="flex items-center gap-4">
-    <span class="text-sm text-green-pale hidden sm:block">👤 <?= htmlspecialchars($_SESSION['username']) ?></span>
+    <span class="text-sm text-green-pale hidden sm:block">👤 {{ auth()->user()->name ?? session('username') }}</span>
     <a href="{{ route('dashboard') }}" class="text-xs text-white/60 hover:text-white transition-colors no-underline">← Dashboard</a>
-    <a href="Proses/prosesLogout.php" onclick="doLogout(event)" class="text-xs text-red-400/70 hover:text-red-400 transition-colors no-underline">🚪 Keluar</a>
+    <form id="logoutForm" action="{{ route('logout') }}" method="POST" class="inline">
+      @csrf
+      <button type="submit" class="text-xs text-red-400/70 hover:text-red-400 transition-colors bg-transparent border-0 cursor-pointer p-0">🚪 Keluar</button>
+    </form>
   </div>
 </nav>
 
@@ -177,12 +180,12 @@
     </div>
     
     <div class="p-0 overflow-x-auto custom-scrollbar">
-      <?php if(empty($berita_terbaru)): ?>
+      @if(empty($berita_terbaru))
         <div class="p-10 text-center flex flex-col items-center justify-center text-gray-400">
           <div class="text-4xl mb-3 opacity-50">📰</div>
           <p class="text-sm">Belum ada riwayat berita.</p>
         </div>
-      <?php else: ?>
+      @else
         <table class="w-full text-sm text-left">
           <thead class="text-xs text-gray-500 bg-cream/50 uppercase border-b border-cream-dark">
             <tr>
@@ -195,48 +198,48 @@
             </tr>
           </thead>
           <tbody class="divide-y divide-cream-dark">
-            <?php foreach($berita_terbaru as $b): ?>
+            @foreach($berita_terbaru as $b)
             <tr class="hover:bg-cream/30 transition-colors">
               <td class="px-6 py-3 whitespace-nowrap text-xs text-gray-500">
-                <?= date('d M Y', strtotime($b['tanggal'])) ?>
+                {{ date('d M Y', strtotime($b['tanggal'])) }}
               </td>
               <td class="px-6 py-3 font-medium text-green-deep max-w-xs">
-                <div class="truncate max-w-[200px]"><?= htmlspecialchars($b['judul']) ?></div>
-                <?php if(!empty($b['link_url'])): ?>
-                  <a href="<?= htmlspecialchars($b['link_url']) ?>" target="_blank" rel="noopener noreferrer"
+                <div class="truncate max-w-[200px]">{{ $b['judul'] }}</div>
+                @if(!empty($b['link_url']))
+                  <a href="{{ $b['link_url'] }}" target="_blank" rel="noopener noreferrer"
                      class="text-[10px] text-blue-600 hover:underline font-normal">🔗 Lihat artikel asli</a>
                 @endif
               </td>
               <td class="px-6 py-3">
-                <div class="text-xs font-semibold text-gray-700"><?= htmlspecialchars($b['sumber'] ?? '-') ?></div>
-                <?php if(!empty($b['penulis'])): ?>
-                  <div class="text-[10px] text-gray-400">✍️ <?= htmlspecialchars($b['penulis']) ?></div>
+                <div class="text-xs font-semibold text-gray-700">{{ $b['sumber'] ?? '-' }}</div>
+                @if(!empty($b['penulis']))
+                  <div class="text-[10px] text-gray-400">✍️ {{ $b['penulis'] }}</div>
                 @endif
               </td>
               <td class="px-6 py-3">
-                <?php if($b['slug_komoditas']): ?>
+                @if($b['slug_komoditas'])
                   <span class="px-2 py-1 rounded-md text-[10px] font-bold bg-amber-100 text-amber-700 uppercase">
-                    <?= htmlspecialchars($b['slug_komoditas']) ?>
+                    {{ $b['slug_komoditas'] }}
                   </span>
-                <?php else: ?>
+                @else
                   <span class="text-xs text-gray-400">-</span>
                 @endif
               </td>
               <td class="px-6 py-3 text-xs text-gray-500">
-                👤 <?= htmlspecialchars($b['uploaded_by']) ?>
+                👤 {{ $b['uploaded_by'] }}
               </td>
               <td class="px-6 py-3 text-center space-x-2 whitespace-nowrap">
-                <button onclick='openEditModal(<?= json_encode($b) ?>)' 
+                <button onclick='openEditModal({{ json_encode($b) }})'
                         class="px-2 py-1 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors text-xs font-bold border-0 cursor-pointer">
                   ✏️ Edit
                 </button>
-                <button onclick="confirmDelete(<?= $b['id'] ?>, '<?= htmlspecialchars(addslashes($b['judul'])) ?>')" 
+                <button onclick="confirmDelete({{ $b['id'] }}, '{{ addslashes($b['judul']) }}')"
                         class="px-2 py-1 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors text-xs font-bold border-0 cursor-pointer">
                   🗑️ Hapus
                 </button>
               </td>
             </tr>
-            <?php endforeach; ?>
+            @endforeach
           </tbody>
         </table>
       @endif

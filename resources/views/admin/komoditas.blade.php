@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Panel Komoditas — PantauPangan</title>
+<meta name="csrf-token" content="{{ csrf_token() }}">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.tailwindcss.com"></script>
@@ -42,9 +43,12 @@
     <span class="hidden sm:inline-flex items-center gap-1 ml-2 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-soft text-amber-deep">🌾 Admin Komoditas</span>
   </div>
   <div class="flex items-center gap-4">
-    <span class="text-sm text-green-pale hidden sm:block">👤 <?= htmlspecialchars($_SESSION['username']) ?></span>
+    <span class="text-sm text-green-pale hidden sm:block">👤 {{ auth()->user()->name ?? session('username') }}</span>
     <a href="{{ route('dashboard') }}" class="text-xs text-white/60 hover:text-white transition-colors no-underline">← Dashboard</a>
-    <a href="Proses/prosesLogout.php" onclick="doLogout(event)" class="text-xs text-red-400/70 hover:text-red-400 transition-colors no-underline">🚪 Keluar</a>
+    <form id="logoutForm" action="{{ route('logout') }}" method="POST" class="inline">
+      @csrf
+      <button type="submit" class="text-xs text-red-400/70 hover:text-red-400 transition-colors bg-transparent border-0 cursor-pointer p-0">🚪 Keluar</button>
+    </form>
   </div>
 </nav>
 
@@ -78,9 +82,9 @@
         <select id="slugSelect" name="slug_komoditas" required
           class="w-full px-4 py-3 bg-white border border-cream-dark rounded-xl text-sm outline-none focus:border-green-light transition-colors">
           <option value="">— Pilih komoditas —</option>
-          <?php foreach ($valid_slugs as $slug => $nama): ?>
-          <option value="<?= htmlspecialchars($slug) ?>"><?= htmlspecialchars($nama) ?> <span class="text-gray-400">(<?= htmlspecialchars($slug) ?>)</span></option>
-          <?php endforeach; ?>
+          @foreach ($valid_slugs as $slug => $nama)
+          <option value="{{ $slug }}">{{ $nama }} <span class="text-gray-400">({{ $slug }})</span></option>
+          @endforeach
         </select>
       </div>
 
@@ -88,7 +92,7 @@
       <div>
         <label class="block text-xs font-semibold text-gray-600 mb-1.5">📅 Tanggal Data <span class="text-red-500">*</span></label>
         <input type="date" id="tanggalInput" name="tanggal_upload" required
-          value="<?= date('Y-m-d') ?>"
+          value="{{ date('Y-m-d') }}"
           class="w-full px-4 py-3 bg-white border border-cream-dark rounded-xl text-sm outline-none focus:border-green-light transition-colors">
         <p class="text-xs text-gray-400 mt-1">Tanggal referensi untuk data ini (biasanya tanggal terbaru dalam CSV).</p>
       </div>
@@ -157,15 +161,15 @@
       <button onclick="loadLogs()" class="text-xs font-semibold text-green-mid bg-green-mist px-3 py-1.5 rounded-full hover:bg-green-pale transition-colors border-0 cursor-pointer">↻ Refresh</button>
     </div>
     <div id="logsContainer" class="custom-scrollbar max-h-72 overflow-y-auto">
-      <?php if (empty($import_logs)): ?>
+      @if (empty($import_logs))
       <div class="text-center py-8 text-gray-400 text-sm">
         <div class="text-3xl mb-2">📭</div>
         <p>Belum ada riwayat import.</p>
-        <?php if (!$res_log): ?>
+        @if (!$res_log)
         <p class="text-xs mt-1 text-amber-deep">⚠️ Tabel <code>import_log</code> belum dibuat. Log akan tersedia setelah tabel dibuat.</p>
         @endif
       </div>
-      <?php else: ?>
+      @else
       <table class="w-full text-sm text-left">
         <thead class="bg-cream text-[0.65rem] uppercase tracking-wider text-gray-400 border-b border-cream-dark">
           <tr>
@@ -179,23 +183,23 @@
           </tr>
         </thead>
         <tbody class="divide-y divide-cream-dark" id="logsBody">
-          <?php foreach ($import_logs as $log): ?>
+          @foreach ($import_logs as $log)
           <tr class="hover:bg-cream/50">
-            <td class="px-5 py-3 font-semibold text-green-deep"><?= htmlspecialchars($log['slug_komoditas']) ?></td>
-            <td class="px-5 py-3 text-xs text-gray-500 truncate max-w-[140px]"><?= htmlspecialchars($log['filename'] ?? '-') ?></td>
-            <td class="px-5 py-3 text-xs text-gray-600"><?= htmlspecialchars($log['tanggal_upload'] ?? '-') ?></td>
-            <td class="px-5 py-3 font-bold text-green-mid"><?= number_format($log['total_entri']) ?></td>
-            <td class="px-5 py-3 text-xs text-gray-500"><?= htmlspecialchars($log['uploaded_by']) ?></td>
-            <td class="px-5 py-3 text-xs text-gray-400"><?= date('d M Y H:i', strtotime($log['created_at'])) ?></td>
+            <td class="px-5 py-3 font-semibold text-green-deep">{{ $log['slug_komoditas'] }}</td>
+            <td class="px-5 py-3 text-xs text-gray-500 truncate max-w-[140px]">{{ $log['filename'] ?? '-' }}</td>
+            <td class="px-5 py-3 text-xs text-gray-600">{{ $log['tanggal_upload'] ?? '-' }}</td>
+            <td class="px-5 py-3 font-bold text-green-mid">{{ number_format($log['total_entri']) }}</td>
+            <td class="px-5 py-3 text-xs text-gray-500">{{ $log['uploaded_by'] }}</td>
+            <td class="px-5 py-3 text-xs text-gray-400">{{ date('d M Y H:i', strtotime($log['created_at'])) }}</td>
             <td class="px-5 py-3 text-center">
-              <?php if ($log['errors'] > 0): ?>
-              <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-red-50 text-red-600"><?= $log['errors'] ?> Error</span>
-              <?php else: ?>
+              @if ($log['errors'] > 0)
+              <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-red-50 text-red-600">{{ $log['errors'] }} Error</span>
+              @else
               <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-green-mist text-green-700">✓ Sukses</span>
               @endif
             </td>
           </tr>
-          <?php endforeach; ?>
+          @endforeach
         </tbody>
       </table>
       @endif
@@ -309,9 +313,9 @@ async function executeImport() {
     document.getElementById('progressBar').style.width = '60%';
     document.getElementById('progressText').textContent = 'Memproses dan menyimpan ke database...';
 
-    const res = await fetch('Proses/prosesImportCSV.php', {
+    const res = await fetch('{{ route('admin.komoditas.import') }}', {
       method: 'POST',
-      credentials: 'include',
+      headers: { 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content },
       body: formData
     });
 
@@ -392,28 +396,8 @@ function showAlert(msg, type) {
 }
 
 async function loadLogs() {
-  try {
-    const res = await fetch('api_import_log.php', { credentials: 'include' });
-    const data = await res.json();
-    if (!data.success || !data.logs) return;
-    const body = document.getElementById('logsBody');
-    if (!body) {
-      document.getElementById('logsContainer').innerHTML = renderLogsTable(data.logs);
-      return;
-    }
-    body.innerHTML = data.logs.map(l => `
-      <tr class="hover:bg-cream/50">
-        <td class="px-5 py-3 font-semibold text-green-deep">${l.slug_komoditas}</td>
-        <td class="px-5 py-3 text-xs text-gray-500 truncate max-w-[140px]">${l.filename||'-'}</td>
-        <td class="px-5 py-3 text-xs text-gray-600">${l.tanggal_upload||'-'}</td>
-        <td class="px-5 py-3 font-bold text-green-mid">${parseInt(l.total_entri).toLocaleString('id-ID')}</td>
-        <td class="px-5 py-3 text-xs text-gray-500">${l.uploaded_by}</td>
-        <td class="px-5 py-3 text-xs text-gray-400">${l.created_at}</td>
-        <td class="px-5 py-3 text-center">${parseInt(l.errors)>0
-          ? `<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-red-50 text-red-600">${l.errors} Error</span>`
-          : `<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-green-mist text-green-700">✓ Sukses</span>`}</td>
-      </tr>`).join('');
-  } catch(e) { console.warn('Gagal refresh log:', e); }
+  // Reload halaman untuk refresh log dari server-side (rute api_import_log.php tidak ada di Laravel)
+  window.location.reload();
 }
 
 function renderLogsTable(logs) {
@@ -427,12 +411,7 @@ function closeConfirmModal() {
   modal.classList.remove('flex');
 }
 
-async function doLogout(e) {
-  e.preventDefault();
-  await fetch('logout.php', { credentials: 'include' });
-  localStorage.clear();
-  window.location.href = 'login.php';
-}
+// Logout ditangani via form POST #logoutForm (CSRF-safe, Laravel route 'logout')
 </script>
 
 <!-- MODAL KONFIRMASI CUSTOM -->
