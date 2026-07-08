@@ -11,6 +11,29 @@
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&family=Lora:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
 
     {{-- Styles --}}
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              'green-deep':  '#1a3a2a',
+              'green-mid':   '#2d6a4f',
+              'green-light': '#52b788',
+              'green-pale':  '#b7e4c7',
+              'green-mist':  '#d8f3dc',
+              'cream':       '#faf7f2',
+              'cream-dark':  '#f0ebe0',
+            },
+            fontFamily: {
+              sans:  ['Plus Jakarta Sans', 'sans-serif'],
+              serif: ['Lora', 'serif'],
+            },
+          }
+        }
+      }
+    </script>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 
     <style>
