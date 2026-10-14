@@ -520,6 +520,21 @@ export async function checkAndRunDeltaSync(options?: {
   // 6. Invalidate Redis cache setelah sinkronisasi selesai
   await redisDelByPattern("pantau:*");
 
+  // 7. Picu webhook microservice AI Forecasting secara asinkron
+  const mlServiceUrl = process.env.ML_SERVICE_URL || "http://localhost:8000";
+  fetch(`${mlServiceUrl}/internal/forecast/generate`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      trigger: "delta_sync_completed",
+      monthsAhead: 6,
+      timestamp: new Date().toISOString(),
+    }),
+  }).catch((err) => {
+    // Non-blocking: jika service ML offline, proses sinkronisasi tetap sukses
+    console.info("[SyncEngine] ML forecast service notice:", (err as Error).message);
+  });
+
   return result;
 }
 
