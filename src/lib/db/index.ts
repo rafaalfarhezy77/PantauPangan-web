@@ -31,4 +31,5 @@ if (!isProduction) {
 }
 
 export const db = drizzle(poolConnection, { schema, mode: "default" });
+export { poolConnection };
 export * from "./schema";

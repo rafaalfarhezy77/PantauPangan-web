@@ -541,7 +541,7 @@ export async function checkAndRunDeltaSync(options?: {
 /**
  * Menghitung persentase perubahan MoM (M-1) dan YoY (M-12)
  */
-async function calculateMoMAndYoY(
+export async function calculateMoMAndYoY(
   level: TingkatHarga,
   regionScope: WilayahHarga
 ): Promise<void> {
