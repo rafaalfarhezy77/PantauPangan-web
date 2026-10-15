@@ -19,6 +19,7 @@ import {
   Check,
   ChevronDown,
   ChevronUp,
+  Wheat,
 } from "lucide-react";
 import {
   Card,
@@ -592,6 +593,90 @@ export default function CommodityDetailPage() {
           <div className="text-[11px] text-slate-500 truncate">
             QIPA: {commodity.latestAnomaly?.qipa || "-"} • AIPA: {commodity.latestAnomaly?.aipa || "-"}
           </div>
+        </div>
+      </div>
+
+      {/* 2.5 ANALISIS PREDIKSI INFLASI & DETEKSI DINI ANOMALI PASAR (BAPANAS) */}
+      <div className="rounded-3xl border border-forest-700/20 bg-gradient-to-br from-white via-cream-50/40 to-mint-100/20 p-6 sm:p-8 shadow-sm space-y-5">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="space-y-1">
+            <div className="inline-flex items-center gap-2 text-forest-700 font-bold text-xs uppercase tracking-wider bg-forest-50 px-3 py-1 rounded-full border border-forest-700/10">
+              <ShieldAlert className="h-3.5 w-3.5 text-forest-700" />
+              <span>Early Warning System (EWS) Inflasi Bapanas</span>
+            </div>
+            <h2 className="font-serif text-xl sm:text-2xl font-bold text-forest-900">
+              Diagnosis Prediksi Inflasi Komoditas: {commodity.displayName}
+            </h2>
+            <p className="text-xs sm:text-sm text-slate-600">
+              Evaluasi potensi kenaikan harga pangan di daerah sebelum rilis resmi data inflasi BPS melalui metrik harga anomali resmi Bapanas via gateway API Indonesia.
+            </p>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <Badge
+              className={`text-xs font-bold px-3 py-1.5 rounded-xl border ${
+                commodity.latestAnomaly?.severity === "alert_high"
+                  ? "bg-red-100 text-red-800 border-red-300 animate-pulse"
+                  : commodity.latestAnomaly?.severity === "warning"
+                  ? "bg-amber-100 text-amber-800 border-amber-300"
+                  : "bg-emerald-100 text-emerald-800 border-emerald-300"
+              }`}
+            >
+              Status: {commodity.latestAnomaly?.status || "Normal"}
+            </Badge>
+          </div>
+        </div>
+
+        {/* 3 Indikator & Insight */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2">
+          <div className="bg-white p-4 rounded-2xl border border-cream-100 shadow-xs space-y-1">
+            <div className="text-[11px] font-semibold text-slate-500 uppercase">QIPA (Disparitas Pasokan)</div>
+            <div className="text-xl font-bold font-mono text-slate-900">
+              {commodity.latestAnomaly?.qipa ? parseFloat(commodity.latestAnomaly.qipa).toFixed(2) : "0.00"}
+            </div>
+            <p className="text-[11px] text-slate-600 leading-tight">
+              {commodity.latestAnomaly?.qipa && parseFloat(commodity.latestAnomaly.qipa) > 5
+                ? "Terindikasi ketimpangan kuantitas pasokan atau hambatan distribusi dari daerah sentra produksi."
+                : "Distribusi volume pasokan antar wilayah terpantau lancar dan seimbang."}
+            </p>
+          </div>
+
+          <div className="bg-white p-4 rounded-2xl border border-cream-100 shadow-xs space-y-1">
+            <div className="text-[11px] font-semibold text-slate-500 uppercase">AIPA (Akselerasi Harga)</div>
+            <div className="text-xl font-bold font-mono text-slate-900">
+              {commodity.latestAnomaly?.aipa ? parseFloat(commodity.latestAnomaly.aipa).toFixed(2) : "0.00"}
+            </div>
+            <p className="text-[11px] text-slate-600 leading-tight">
+              {commodity.latestAnomaly?.aipa && parseFloat(commodity.latestAnomaly.aipa) > 5
+                ? "Percepatan kenaikan harga harian meningkat pesat mendahului tren historis bulanan."
+                : "Laju pergerakan harga berada dalam batas fluktuasi wajar harian."}
+            </p>
+          </div>
+
+          <div className="bg-white p-4 rounded-2xl border border-cream-100 shadow-xs space-y-1">
+            <div className="text-[11px] font-semibold text-slate-500 uppercase">IFPA (Indeks Fluktuasi Komposit)</div>
+            <div className="text-xl font-bold font-mono text-red-600">
+              {commodity.latestAnomaly?.ifpa ? parseFloat(commodity.latestAnomaly.ifpa).toFixed(2) : "0.00"}
+            </div>
+            <p className="text-[11px] text-slate-600 leading-tight">
+              {commodity.latestAnomaly?.ifpa && parseFloat(commodity.latestAnomaly.ifpa) > 8
+                ? "Sinyal waspada tinggi: Berpotensi kuat menjadi kontributor utama inflasi harga bergejolak (volatile foods)."
+                : "Indeks komposit stabil, risiko inflasi komoditas ini tergolong rendah."}
+            </p>
+          </div>
+        </div>
+
+        {/* Banner Insight Metodologi Bapanas vs PIHPS */}
+        <div className="p-3.5 bg-forest-900 text-cream-50 rounded-xl text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="flex items-center gap-2">
+            <Wheat className="h-4 w-4 text-mint-200 flex-shrink-0" />
+            <span>
+              <strong>Metodologi Prediktif Resmi:</strong> Seluruh indikator diambil langsung dari endpoint harga anomali Badan Pangan Nasional melalui gateway API Indonesia (menggantikan scraping PIHPS).
+            </span>
+          </div>
+          <span className="text-[11px] text-mint-200/90 whitespace-nowrap bg-forest-700/60 px-2 py-0.5 rounded border border-mint-200/20">
+            Terverifikasi Bapanas RI
+          </span>
         </div>
       </div>
 

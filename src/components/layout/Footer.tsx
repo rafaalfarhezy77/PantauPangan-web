@@ -18,24 +18,23 @@ export function Footer() {
                   PantauPangan v2.0
                 </span>
                 <p className="text-xs text-mint-200/80">
-                  Sistem Informasi & Analisis Harga Pangan Strategis Nasional
+                  Sistem Informasi & Prediksi Inflasi Pangan Daerah Berbasis Data Bapanas
                 </p>
               </div>
             </div>
             <p className="text-xs text-mint-100/70 leading-relaxed max-w-md">
-              Platform agregasi harga pangan terpadu tingkat Konsumen dan Produsen
-              di 38 provinsi seluruh Indonesia. Seluruh data disinkronisasikan
-              langsung secara berkala dari sumber data resmi Badan Pangan
-              Nasional (Bapanas) melalui integrasi API Indonesia.
+              Sebelumnya sistem ini menggunakan metode web scraping dari situs PIHPS yang rentan terputus.
+              Pada versi 2.0 ini, PantauPangan terintegrasi penuh dengan <strong>API resmi Badan Pangan Nasional (Bapanas)</strong> melalui <strong>apiindonesia.id</strong>.
+              Dengan memanfaatkan <strong>endpoint harga anomali</strong>, sistem mampu memproyeksikan potensi inflasi harga pangan di suatu daerah sebelum inflasi tersebut terjadi di pasar.
             </p>
-            <div className="flex items-center gap-3 pt-1">
+            <div className="flex flex-wrap items-center gap-2 pt-1">
               <span className="inline-flex items-center gap-1.5 text-xs text-mint-200 bg-forest-700/60 border border-mint-200/20 px-2.5 py-1 rounded-lg">
                 <Database className="h-3.5 w-3.5" />
-                <span>Smart Delta Sync Engine</span>
+                <span>Gateway API Resmi Bapanas</span>
               </span>
               <span className="inline-flex items-center gap-1.5 text-xs text-mint-200 bg-forest-700/60 border border-mint-200/20 px-2.5 py-1 rounded-lg">
                 <ShieldCheck className="h-3.5 w-3.5" />
-                <span>Anti Manipulasi Data</span>
+                <span>Early Warning Inflasi (QIPA / AIPA / IFPA)</span>
               </span>
             </div>
           </div>
@@ -52,13 +51,13 @@ export function Footer() {
                 </Link>
               </li>
               <li>
-                <Link href="/#cari" className="hover:text-cream-50 transition-colors">
-                  Eksplorasi Harga Pangan
+                <Link href="/#prediksi-inflasi" className="hover:text-cream-50 transition-colors font-medium text-mint-200">
+                  ⚡ Prediksi Inflasi Daerah
                 </Link>
               </li>
               <li>
                 <Link href="/#radar" className="hover:text-cream-50 transition-colors">
-                  Radar Anomali IFPA / QIPA
+                  Radar Anomali (EWS)
                 </Link>
               </li>
               <li>
@@ -67,8 +66,18 @@ export function Footer() {
                 </Link>
               </li>
               <li>
+                <Link href="/#sumber-data" className="hover:text-cream-50 transition-colors">
+                  Evolusi: PIHPS vs Bapanas API
+                </Link>
+              </li>
+              <li>
+                <Link href="/#cari" className="hover:text-cream-50 transition-colors">
+                  Eksplorasi Harga Pangan
+                </Link>
+              </li>
+              <li>
                 <Link href="/login" className="hover:text-cream-50 transition-colors">
-                  Portal Akun Pengguna
+                  Portal Masuk Akun
                 </Link>
               </li>
             </ul>
@@ -77,7 +86,7 @@ export function Footer() {
           {/* Kolom 3: Sumber Data & Lisensi */}
           <div className="space-y-3">
             <h3 className="font-semibold text-xs tracking-wider uppercase text-mint-200">
-              Sumber Data Resmi
+              Sumber Data & Metodologi
             </h3>
             <ul className="space-y-2 text-xs text-mint-100/80">
               <li>
@@ -87,17 +96,27 @@ export function Footer() {
                   rel="noopener noreferrer"
                   className="hover:text-cream-50 transition-colors underline"
                 >
-                  API Indonesia Gateway
+                  Gateway API Indonesia (apiindonesia.id)
                 </a>
               </li>
               <li>
-                <span className="text-white/60">
-                  Data Mentah: Badan Pangan Nasional (Bapanas) RI
+                <span className="text-white/80">
+                  Sumber Utama: Badan Pangan Nasional (Bapanas RI)
                 </span>
               </li>
               <li>
-                <span className="text-white/60">
-                  Metode Deteksi Anomali: QIPA, AIPA & IFPA Index
+                <span className="text-white/80">
+                  Tingkat Harga: Konsumen (Pasar) & Produsen (Tani)
+                </span>
+              </li>
+              <li>
+                <span className="text-white/80">
+                  Metrik Deteksi Dini: QIPA, AIPA, dan IFPA Index
+                </span>
+              </li>
+              <li>
+                <span className="text-white/60 text-[11px] block pt-1">
+                  Migrasi dari Web Scraping PIHPS (Bank Indonesia) ke API Bapanas Terverifikasi.
                 </span>
               </li>
             </ul>

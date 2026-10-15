@@ -98,6 +98,11 @@ export function PriceTicker({
                   <span className="font-medium text-cream-50 group-hover:underline">
                     {item.displayName}
                   </span>
+                  {item.latestAnomaly?.severity === "alert_high" && (
+                    <span className="bg-red-500/30 text-red-300 border border-red-400/40 text-[9px] px-1 py-0.2 rounded font-bold uppercase animate-pulse">
+                      Alert Inflasi
+                    </span>
+                  )}
                   <span className="text-white/80 font-mono">
                     Rp {item.latestPrice?.price?.toLocaleString("id-ID")}
                   </span>

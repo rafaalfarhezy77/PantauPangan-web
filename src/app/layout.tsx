@@ -17,8 +17,9 @@ const lora = Lora({
 });
 
 export const metadata: Metadata = {
-  title: "PantauPangan v2.0 | Sistem Informasi Harga Komoditas Pangan Nasional",
-  description: "Platform agregasi dan pemantauan harga pangan strategis nasional real-time terintegrasi API Indonesia.",
+  title: "PantauPangan v2.0 | Sistem Pemantauan & Prediksi Inflasi Pangan Daerah",
+  description:
+    "Sistem informasi komoditas pangan 38 provinsi di Indonesia terintegrasi API resmi Badan Pangan Nasional (Bapanas) via apiindonesia.id. Dilengkapi radar anomali (QIPA, AIPA, IFPA) untuk mendeteksi dini potensi inflasi pangan daerah sebelum terjadi.",
 };
 
 export default function RootLayout({

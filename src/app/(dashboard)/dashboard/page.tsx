@@ -296,6 +296,30 @@ export default async function DashboardPage() {
         </div>
       </div>
 
+      {/* 2.5 Banner Deteksi Dini & Prediksi Inflasi Domisili */}
+      <div className="p-4 sm:p-5 rounded-2xl border border-emerald-600/20 bg-gradient-to-r from-emerald-50/60 via-card to-card flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-xs">
+        <div className="space-y-1">
+          <div className="flex items-center gap-2">
+            <span className="flex h-2 w-2 rounded-full bg-emerald-600 animate-ping"></span>
+            <span className="text-xs font-bold uppercase tracking-wider text-emerald-800 dark:text-emerald-400">
+              Integrasi Resmi Bapanas RI (apiindonesia.id)
+            </span>
+          </div>
+          <h3 className="font-bold text-foreground text-base sm:text-lg">
+            Pusat Pemantauan & Peringatan Dini Inflasi Pangan: {provinceName}
+          </h3>
+          <p className="text-xs text-muted-foreground max-w-2xl">
+            Sistem menggunakan endpoint harga anomali Bapanas (QIPA, AIPA, IFPA) untuk mendeteksi potensi gejolak harga pangan di daerah Anda mendahului laporan inflasi bulanan resmi BPS.
+          </p>
+        </div>
+        <Link href="/#prediksi-inflasi">
+          <Button variant="outline" size="sm" className="border-emerald-600/30 text-emerald-700 hover:bg-emerald-50 text-xs font-semibold rounded-xl">
+            Simulator Prediksi Inflasi
+            <ArrowRight className="w-3.5 h-3.5 ml-1" />
+          </Button>
+        </Link>
+      </div>
+
       {/* 3. Panel Khusus Sesuai Role Pengguna */}
       <div>
         {user.role === "petani" && (

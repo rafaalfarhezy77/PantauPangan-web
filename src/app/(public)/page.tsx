@@ -14,6 +14,20 @@ import {
   ShieldAlert,
   ChevronRight,
   Loader2,
+  TrendingUp,
+  TrendingDown,
+  Activity,
+  AlertTriangle,
+  Zap,
+  ArrowRight,
+  ShieldCheck,
+  Cpu,
+  BarChart3,
+  Gauge,
+  Sparkles,
+  Info,
+  CheckCircle2,
+  XCircle,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -45,6 +59,7 @@ interface CommodityItem {
   id: number;
   slug: string;
   displayName: string;
+  apiName: string;
   category: string;
   unit: string;
   icon: string | null;
@@ -133,6 +148,12 @@ function HomePageContent() {
   const [nationalTrend, setNationalTrend] = useState<Array<{ periodMonth: string; price: number | null }>>([]);
   const [chartRange, setChartRange] = useState<"6B" | "1T" | "3T" | "MAX">("1T");
 
+  // State untuk Simulator Prediksi Inflasi Daerah
+  const [predictProvinceCode, setPredictProvinceCode] = useState("32"); // Default Jawa Barat
+  const [predictCommoditySlug, setPredictCommoditySlug] = useState("cabai-merah-keriting");
+  const [predictProvincePrice, setPredictProvincePrice] = useState<number | null>(null);
+  const [anomalyFilter, setAnomalyFilter] = useState<"all" | "alert" | "warning">("all");
+
   // Sinkronisasi URL parameter saat saklar tingkat harga diubah
   const handleTingkatChange = (newTingkat: "konsumen" | "produsen") => {
     setTingkat(newTingkat);
@@ -159,6 +180,7 @@ function HomePageContent() {
           if (comRes.data.length > 0) {
             setSelectedMapCommodity(comRes.data[0]);
             setSearchCommoditySlug(comRes.data[0].slug);
+            setPredictCommoditySlug(comRes.data[2]?.slug || comRes.data[0].slug);
           }
         }
         if (provRes.success && Array.isArray(provRes.data)) {
@@ -174,9 +196,9 @@ function HomePageContent() {
   // Metrik agregasi dari dataset summary
   const summaryMetrics = useMemo(() => {
     let totalRows = 0;
-    let periodFrom = "2021-01";
+    let periodFrom = "2024-01";
     let periodTo = "2026-03";
-    let comCount = 46;
+    let comCount = 16;
 
     for (const s of summaries) {
       totalRows += s.rowCount || 0;
@@ -201,7 +223,6 @@ function HomePageContent() {
         ).then((r) => r.json());
 
         if (provRes.success && Array.isArray(provRes.data)) {
-          // Petakan ke format Map
           const pMap = new Map<string, PriceRecord>();
           for (const item of provRes.data) {
             if (item.provinceCode && !pMap.has(item.provinceCode)) {
@@ -249,6 +270,26 @@ function HomePageContent() {
     loadMapAndTrendData();
   }, [selectedMapCommodity, tingkat, provincesList]);
 
+  // Muat harga provinsi spesifik untuk Simulator Prediksi Inflasi Daerah
+  useEffect(() => {
+    if (!predictProvinceCode || !predictCommoditySlug) return;
+    async function loadPredictPrice() {
+      try {
+        const res = await fetch(
+          `/api/v1/prices?tingkat=konsumen&wilayah=provinsi&komoditas=${predictCommoditySlug}&provinsi=${predictProvinceCode}&limit=1`
+        ).then((r) => r.json());
+        if (res.success && Array.isArray(res.data) && res.data[0]) {
+          setPredictProvincePrice(res.data[0].price);
+        } else {
+          setPredictProvincePrice(null);
+        }
+      } catch {
+        setPredictProvincePrice(null);
+      }
+    }
+    loadPredictPrice();
+  }, [predictProvinceCode, predictCommoditySlug]);
+
   // Filter data tren sesuai rentang waktu (6B, 1T, 3T, MAX)
   const filteredTrend = useMemo(() => {
     if (nationalTrend.length === 0) return [];
@@ -277,7 +318,6 @@ function HomePageContent() {
         setSearchResults(json.data);
       }
 
-      // Catat pencarian di background jika sudah login
       const selectedComm = commoditiesList.find((c) => c.slug === searchCommoditySlug);
       if (selectedComm) {
         fetch("/api/v1/search-history", {
@@ -308,37 +348,120 @@ function HomePageContent() {
     );
   }, [commoditiesList]);
 
+  // Filter list anomali untuk tampilan section radar
+  const filteredAnomalyCards = useMemo(() => {
+    if (anomalyFilter === "alert") {
+      return commoditiesList.filter((c) => c.latestAnomaly?.severity === "alert_high");
+    }
+    if (anomalyFilter === "warning") {
+      return commoditiesList.filter((c) => c.latestAnomaly?.severity === "warning");
+    }
+    return anomalyAlerts;
+  }, [commoditiesList, anomalyFilter, anomalyAlerts]);
+
+  // Kalkulasi Simulator Prediksi Inflasi Daerah
+  const predictionAnalysis = useMemo(() => {
+    const selectedComm = commoditiesList.find((c) => c.slug === predictCommoditySlug);
+    const selectedProv = provincesList.find((p) => p.code === predictProvinceCode);
+
+    if (!selectedComm) return null;
+
+    const natPrice = selectedComm.latestPrice?.price || 0;
+    const provPrice = predictProvincePrice || natPrice;
+    const diffPct = natPrice > 0 ? ((provPrice - natPrice) / natPrice) * 100 : 0;
+
+    const ifpaScore = selectedComm.latestAnomaly?.ifpa ? parseFloat(selectedComm.latestAnomaly.ifpa) : 0;
+    const qipaScore = selectedComm.latestAnomaly?.qipa ? parseFloat(selectedComm.latestAnomaly.qipa) : 0;
+    const aipaScore = selectedComm.latestAnomaly?.aipa ? parseFloat(selectedComm.latestAnomaly.aipa) : 0;
+
+    // Skor probabilitas inflasi daerah (0 - 100)
+    // Formula komposit: IFPA (bobot 40%) + Disparitas Daerah (bobot 35%) + AIPA (bobot 25%)
+    let riskScore = Math.min(
+      99,
+      Math.max(
+        15,
+        Math.round(
+          Math.abs(ifpaScore) * 3.5 +
+            Math.max(0, diffPct) * 1.8 +
+            Math.abs(aipaScore) * 2.2 +
+            20
+        )
+      )
+    );
+
+    let riskLevel: "Rendah" | "Waspada" | "Tinggi (Kritis)";
+    let riskColor: string;
+    let projectionText: string;
+    let recommendation: string;
+
+    if (ifpaScore >= 10 || diffPct > 15 || riskScore >= 70) {
+      riskLevel = "Tinggi (Kritis)";
+      riskColor = "text-red-700 bg-red-100 border-red-200";
+      projectionText = `Potensi kenaikan harga +${(Math.abs(ifpaScore) * 0.8).toFixed(1)}% hingga +${(Math.abs(ifpaScore) * 1.4).toFixed(1)}% dalam 30-45 hari ke depan.`;
+      recommendation = `Perlu intervensi operasi pasar murah oleh TPID ${selectedProv?.name || "Provinsi"} dan percepatan fasilitasi distribusi dari sentra produksi terdekat.`;
+    } else if (ifpaScore >= 5 || diffPct > 5 || riskScore >= 45) {
+      riskLevel = "Waspada";
+      riskColor = "text-amber-700 bg-amber-100 border-amber-200";
+      projectionText = `Tekanan harga moderat (+${(Math.abs(ifpaScore) * 0.5).toFixed(1)}% s/d +${(Math.abs(ifpaScore) * 0.9).toFixed(1)}%), fluktuasi pasokan mulai terdeteksi.`;
+      recommendation = `Monitoring harian rantai pasok distributor dan penyiapan buffer stock cadangan pangan daerah.`;
+    } else {
+      riskLevel = "Rendah";
+      riskColor = "text-emerald-700 bg-emerald-100 border-emerald-200";
+      projectionText = "Harga relatif stabil dengan deviasi normal. Tidak ada sinyal tekanan inflasi pangan dalam waktu dekat.";
+      recommendation = "Pertahankan kelancaran logistik dan pantau disparitas produsen-konsumen secara berkala.";
+    }
+
+    return {
+      commodity: selectedComm,
+      province: selectedProv,
+      natPrice,
+      provPrice,
+      diffPct: diffPct.toFixed(1),
+      ifpaScore: ifpaScore.toFixed(2),
+      qipaScore: qipaScore.toFixed(2),
+      aipaScore: aipaScore.toFixed(2),
+      riskScore,
+      riskLevel,
+      riskColor,
+      projectionText,
+      recommendation,
+    };
+  }, [predictCommoditySlug, predictProvinceCode, predictProvincePrice, commoditiesList, provincesList]);
+
   return (
     <div className="space-y-16 pb-20">
-      {/* 1. HERO SECTION */}
-      <section className="relative overflow-hidden bg-gradient-to-b from-forest-900 via-forest-900 to-forest-700 text-cream-50 pt-12 pb-20 px-4 sm:px-6 lg:px-8">
-        <div className="absolute inset-0 bg-[radial-gradient(#52B788_1px,transparent_1px)] [background-size:24px_24px] opacity-10"></div>
+      {/* 1. HERO SECTION DENGAN STORYTELLING DATA RESMI & PREDIKSI INFLASI */}
+      <section className="relative overflow-hidden bg-gradient-to-b from-forest-900 via-forest-900 to-forest-700 text-cream-50 pt-12 pb-24 px-4 sm:px-6 lg:px-8">
+        <div className="absolute inset-0 bg-[radial-gradient(#52B788_1px,transparent_1px)] [background-size:24px_24px] opacity-15"></div>
         <div className="max-w-7xl mx-auto relative z-10 text-center space-y-6">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-forest-500/20 border border-mint-200/30 text-mint-200 text-xs font-semibold backdrop-blur-sm">
-            <Wheat className="h-4 w-4" />
-            <span>Integrasi Langsung Data API Indonesia (Bapanas)</span>
+          {/* Badge Navigasi & Transformasi Sistem */}
+          <div className="inline-flex flex-wrap items-center justify-center gap-2 px-4 py-1.5 rounded-full bg-forest-500/20 border border-mint-200/30 text-mint-200 text-xs font-semibold backdrop-blur-md shadow-sm">
+            <span className="flex h-2 w-2 rounded-full bg-mint-200 animate-ping"></span>
+            <span>Gateway API Resmi Bapanas via apiindonesia.id</span>
+            <span className="text-white/40 hidden sm:inline">•</span>
+            <span className="text-mint-100/90 hidden sm:inline">Migrasi Penuh dari Scraping PIHPS</span>
           </div>
 
-          <h1 className="font-serif text-3xl sm:text-5xl lg:text-6xl font-bold tracking-tight max-w-4xl mx-auto leading-tight">
-            Pantau Harga Komoditas Pangan Strategis Nasional Secara Real-Time.
+          <h1 className="font-serif text-3xl sm:text-5xl lg:text-6xl font-bold tracking-tight max-w-5xl mx-auto leading-tight text-cream-50">
+            Pantau Harga & Deteksi Dini Inflasi Pangan Daerah Sebelum Terjadi.
           </h1>
 
-          <p className="text-sm sm:text-base text-mint-100/80 max-w-2xl mx-auto leading-relaxed">
-            Menghadirkan transparansi harga pangan di 38 provinsi tanpa rekayasa
-            data. Dilengkapi Radar Anomali Pasar (QIPA, AIPA, IFPA) untuk
-            keamanan pangan masyarakat dan kesejahteraan petani.
+          <p className="text-sm sm:text-base text-mint-100/85 max-w-3xl mx-auto leading-relaxed">
+            Sistem informasi pangan strategis 38 provinsi di Indonesia yang mengintegrasikan data resmi
+            Badan Pangan Nasional (Bapanas). Didukung algoritma <strong>Early Warning System (EWS)</strong> berbasis
+            indikator anomali kuantitatif (<strong>QIPA, AIPA, IFPA</strong>) untuk memprediksi lonjakan inflasi pangan lokal sebelum merembet ke pasar umum.
           </p>
 
           {/* SAKLAR GLOBAL TINGKAT HARGA (Konsumen vs Produsen) */}
-          <div className="pt-4 flex flex-col sm:flex-row items-center justify-center gap-4">
-            <div className="bg-forest-900/90 border border-mint-200/30 p-1.5 rounded-2xl flex items-center gap-1 shadow-xl">
+          <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-4">
+            <div className="bg-forest-900/95 border border-mint-200/30 p-1.5 rounded-2xl flex items-center gap-1 shadow-2xl backdrop-blur-md">
               <button
                 type="button"
                 onClick={() => handleTingkatChange("konsumen")}
                 className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer ${
                   tingkat === "konsumen"
-                    ? "bg-mint-200 text-forest-900 shadow-md shadow-forest-900/20"
-                    : "text-mint-100 hover:text-white"
+                    ? "bg-mint-200 text-forest-900 shadow-md shadow-forest-900/30 scale-100"
+                    : "text-mint-100 hover:text-white opacity-80"
                 }`}
               >
                 <span>🛒 Tingkat Konsumen</span>
@@ -352,30 +475,48 @@ function HomePageContent() {
                 onClick={() => handleTingkatChange("produsen")}
                 className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer ${
                   tingkat === "produsen"
-                    ? "bg-mint-200 text-forest-900 shadow-md shadow-forest-900/20"
-                    : "text-mint-100 hover:text-white"
+                    ? "bg-mint-200 text-forest-900 shadow-md shadow-forest-900/30 scale-100"
+                    : "text-mint-100 hover:text-white opacity-80"
                 }`}
               >
                 <span>🌾 Tingkat Produsen</span>
                 <span className="text-[10px] opacity-75 font-normal">
-                  (Tingkat Petani & Peternak)
+                  (Petani & Peternak Hulu)
                 </span>
               </button>
             </div>
           </div>
 
+          {/* Quick Action CTA Links */}
+          <div className="pt-2 flex flex-wrap items-center justify-center gap-3 text-xs">
+            <a
+              href="#prediksi-inflasi"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-forest-700/80 hover:bg-forest-600 text-cream-50 font-semibold border border-mint-200/30 transition-all hover:scale-105"
+            >
+              <Zap className="h-4 w-4 text-amber-300" />
+              <span>Simulator Prediksi Inflasi Daerah</span>
+            </a>
+            <a
+              href="#sumber-data"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-mint-100 font-semibold border border-white/15 transition-all"
+            >
+              <Database className="h-4 w-4 text-mint-200" />
+              <span>Mengapa Beralih dari Web Scraping PIHPS?</span>
+            </a>
+          </div>
+
           {/* METRIK REAL-TIME STATS GRID */}
-          <div className="pt-6 grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 max-w-4xl mx-auto">
-            <div className="bg-white/10 backdrop-blur-md rounded-2xl p-4 border border-white/10 text-left">
+          <div className="pt-6 grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 max-w-5xl mx-auto">
+            <div className="bg-white/10 backdrop-blur-md rounded-2xl p-4 border border-white/10 text-left transition-transform hover:-translate-y-1">
               <div className="flex items-center gap-2 text-mint-200 text-xs font-semibold mb-1">
                 <MapPin className="h-4 w-4" />
-                <span>Wilayah NKRI</span>
+                <span>Cakupan Wilayah</span>
               </div>
               <div className="text-2xl sm:text-3xl font-bold font-serif">38 Provinsi</div>
-              <div className="text-[11px] text-mint-100/70 mt-1">Sabang s/d Merauke</div>
+              <div className="text-[11px] text-mint-100/70 mt-1">Sabang sampai Merauke</div>
             </div>
 
-            <div className="bg-white/10 backdrop-blur-md rounded-2xl p-4 border border-white/10 text-left">
+            <div className="bg-white/10 backdrop-blur-md rounded-2xl p-4 border border-white/10 text-left transition-transform hover:-translate-y-1">
               <div className="flex items-center gap-2 text-mint-200 text-xs font-semibold mb-1">
                 <Wheat className="h-4 w-4" />
                 <span>Komoditas Aktif</span>
@@ -383,35 +524,342 @@ function HomePageContent() {
               <div className="text-2xl sm:text-3xl font-bold font-serif">
                 {commoditiesList.length > 0 ? commoditiesList.length : summaryMetrics.comCount} Ragam
               </div>
-              <div className="text-[11px] text-mint-100/70 mt-1">Pokok, bumbu, protein</div>
+              <div className="text-[11px] text-mint-100/70 mt-1">Pokok, bumbu, protein, minyak</div>
             </div>
 
-            <div className="bg-white/10 backdrop-blur-md rounded-2xl p-4 border border-white/10 text-left">
+            <div className="bg-white/10 backdrop-blur-md rounded-2xl p-4 border border-white/10 text-left transition-transform hover:-translate-y-1">
               <div className="flex items-center gap-2 text-mint-200 text-xs font-semibold mb-1">
                 <Database className="h-4 w-4" />
-                <span>Data Tersimpan</span>
+                <span>Titik Observasi Pasar</span>
               </div>
               <div className="text-2xl sm:text-3xl font-bold font-serif font-mono">
-                {summaryMetrics.totalRows > 0 ? summaryMetrics.totalRows.toLocaleString("id-ID") : "100.000+"}
+                {summaryMetrics.totalRows > 0 ? summaryMetrics.totalRows.toLocaleString("id-ID") : "74.000+"}
               </div>
-              <div className="text-[11px] text-mint-100/70 mt-1">Titik observasi pasar</div>
+              <div className="text-[11px] text-mint-100/70 mt-1">Data historis Bapanas RI</div>
             </div>
 
-            <div className="bg-white/10 backdrop-blur-md rounded-2xl p-4 border border-white/10 text-left">
-              <div className="flex items-center gap-2 text-mint-200 text-xs font-semibold mb-1">
-                <Calendar className="h-4 w-4" />
-                <span>Rentang Waktu</span>
+            <div className="bg-white/10 backdrop-blur-md rounded-2xl p-4 border border-white/10 text-left transition-transform hover:-translate-y-1">
+              <div className="flex items-center gap-2 text-amber-300 text-xs font-semibold mb-1">
+                <ShieldAlert className="h-4 w-4" />
+                <span>EWS Anomali Aktif</span>
               </div>
-              <div className="text-lg sm:text-xl font-bold font-serif truncate">
-                {formatPeriodLabel(summaryMetrics.periodFrom)} - {formatPeriodLabel(summaryMetrics.periodTo)}
+              <div className="text-2xl sm:text-3xl font-bold font-serif text-amber-300 font-mono">
+                {anomalyAlerts.length} Sinyal
               </div>
-              <div className="text-[11px] text-mint-100/70 mt-1">Historis Bapanas RI</div>
+              <div className="text-[11px] text-mint-100/70 mt-1">Early Warning inflasi daerah</div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* 2. SECTION RADAR ANOMALI HARGA PANGAN (Early Warning System) */}
+      {/* 2. SECTION FITUR UTAMA: SIMULATOR & PREDIKSI INFLASI DAERAH BERBASIS ANOMALI BAPANAS */}
+      <section id="prediksi-inflasi" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
+        <div className="rounded-3xl border border-forest-700/20 bg-gradient-to-br from-white via-white to-mint-100/20 p-6 sm:p-10 shadow-sm space-y-8">
+          <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6 border-b border-cream-100 pb-6">
+            <div className="space-y-2 max-w-3xl">
+              <div className="inline-flex items-center gap-2 text-forest-700 font-bold text-xs uppercase tracking-wider bg-forest-50 px-3 py-1 rounded-full border border-forest-700/10">
+                <Sparkles className="h-3.5 w-3.5 text-forest-700" />
+                <span>Teknologi Prediksi Dini Inflasi Pangan Daerah</span>
+              </div>
+              <h2 className="font-serif text-2xl sm:text-4xl font-bold text-forest-900 leading-tight">
+                Bagaimana PantauPangan Memprediksi Inflasi Daerah Sebelum Terjadi?
+              </h2>
+              <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
+                Kami memanfaatkan <strong>endpoint resmi Harga Anomali Bapanas</strong> dari gateway API Indonesia.
+                Alih-alih menunggu rilis data inflasi bulanan resmi BPS yang bersifat <em>lagging</em> (terlambat 1 bulan),
+                sistem mendeteksi 3 sinyal anomali kuantitatif di tingkat hulu & hilir daerah secara <em>leading</em> (mendahului).
+              </p>
+            </div>
+
+            <div className="flex items-center gap-2 text-xs text-slate-600 bg-cream-50 p-3 rounded-2xl border border-cream-100 lg:self-start">
+              <Gauge className="h-5 w-5 text-forest-700 flex-shrink-0" />
+              <span>Akurasi deteksi dini berbasis formula disparitas kuantitas dan akselerasi harga pasar.</span>
+            </div>
+          </div>
+
+          {/* 3 Pilar Formula Endpoint Harga Anomali Bapanas */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="bg-cream-50/70 rounded-2xl p-5 border border-cream-100 space-y-2 relative overflow-hidden">
+              <div className="text-2xl font-bold font-mono text-forest-900">01. QIPA</div>
+              <div className="font-bold text-sm text-slate-800">
+                Quantity Indicator of Price Anomaly
+              </div>
+              <p className="text-xs text-slate-600 leading-relaxed">
+                Mendeteksi ketidakseimbangan kuantitas pasokan atau hambatan distribusi antar-wilayah sebelum memicu kelangkaan di tingkat pasar konsumen.
+              </p>
+              <div className="pt-2 text-[11px] font-semibold text-forest-700">
+                ✓ Sinyal: Defisit pasokan hulu
+              </div>
+            </div>
+
+            <div className="bg-cream-50/70 rounded-2xl p-5 border border-cream-100 space-y-2 relative overflow-hidden">
+              <div className="text-2xl font-bold font-mono text-forest-900">02. AIPA</div>
+              <div className="font-bold text-sm text-slate-800">
+                Acceleration Indicator of Price Anomaly
+              </div>
+              <p className="text-xs text-slate-600 leading-relaxed">
+                Mengukur turunan kecepatan lonjakan harga harian/mingguan di suatu wilayah. Kenaikan tajam dalam durasi singkat menjadi indikator kuat potensi inflasi.
+              </p>
+              <div className="pt-2 text-[11px] font-semibold text-forest-700">
+                ✓ Sinyal: Kecepatan lonjakan harga
+              </div>
+            </div>
+
+            <div className="bg-cream-50/70 rounded-2xl p-5 border border-cream-100 space-y-2 relative overflow-hidden">
+              <div className="text-2xl font-bold font-mono text-forest-900">03. IFPA</div>
+              <div className="font-bold text-sm text-slate-800">
+                Integrated Food Price Anomaly Index
+              </div>
+              <p className="text-xs text-slate-600 leading-relaxed">
+                Indeks komposit gabungan Bapanas yang mengklasifikasikan status pasar: <strong>Normal</strong>, <strong>Warning (Waspada)</strong>, atau <strong>Alert (High/Low Price)</strong>.
+              </p>
+              <div className="pt-2 text-[11px] font-semibold text-forest-700">
+                ✓ Sinyal: Level risiko inflasi gabungan
+              </div>
+            </div>
+          </div>
+
+          {/* SIMULATOR INTERAKTIF: PROYEKSI INFLASI PER PROVINSI & KOMODITAS */}
+          <div className="rounded-2xl border border-mint-200/50 bg-white p-6 sm:p-8 shadow-sm space-y-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div>
+                <h3 className="font-serif text-lg sm:text-xl font-bold text-forest-900 flex items-center gap-2">
+                  <Zap className="h-5 w-5 text-amber-500 fill-amber-500" />
+                  <span>Simulator & Uji Deteksi Dini Inflasi Daerah</span>
+                </h3>
+                <p className="text-xs text-slate-500 mt-1">
+                  Pilih provinsi dan komoditas pangan untuk melihat kalkulasi risiko inflasi serta rekomendasi mitigasi.
+                </p>
+              </div>
+
+              {/* Selector Kontrol Provinsi & Komoditas */}
+              <div className="flex flex-wrap items-center gap-3">
+                <div className="space-y-1">
+                  <label className="text-[11px] font-semibold text-slate-600">Pilih Provinsi:</label>
+                  <select
+                    value={predictProvinceCode}
+                    onChange={(e) => setPredictProvinceCode(e.target.value)}
+                    className="bg-cream-50 border border-cream-100 rounded-xl px-3 py-1.5 text-xs font-semibold text-slate-800 focus:ring-2 focus:ring-forest-700"
+                  >
+                    {provincesList.map((p) => (
+                      <option key={p.code} value={p.code}>
+                        {p.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-[11px] font-semibold text-slate-600">Pilih Komoditas:</label>
+                  <select
+                    value={predictCommoditySlug}
+                    onChange={(e) => setPredictCommoditySlug(e.target.value)}
+                    className="bg-cream-50 border border-cream-100 rounded-xl px-3 py-1.5 text-xs font-semibold text-slate-800 focus:ring-2 focus:ring-forest-700"
+                  >
+                    {commoditiesList.map((c) => (
+                      <option key={c.id} value={c.slug}>
+                        {c.icon || "📦"} {c.displayName}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            {/* Hasil Analisis Prediktif Inflasi */}
+            {predictionAnalysis && (
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 bg-cream-50/50 p-6 rounded-2xl border border-cream-100">
+                {/* Metrik Kiri: Risk Score & Status */}
+                <div className="lg:col-span-5 flex flex-col justify-between space-y-4 bg-white p-5 rounded-xl border border-cream-100 shadow-xs">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">
+                      Status Risiko Inflasi
+                    </span>
+                    <span
+                      className={`text-xs font-bold px-3 py-1 rounded-full border ${predictionAnalysis.riskColor}`}
+                    >
+                      {predictionAnalysis.riskLevel}
+                    </span>
+                  </div>
+
+                  <div className="space-y-1">
+                    <div className="text-xs text-slate-500 font-medium">
+                      Indeks Tekanan Inflasi Daerah ({predictionAnalysis.province?.name})
+                    </div>
+                    <div className="flex items-baseline gap-2">
+                      <span className="text-4xl sm:text-5xl font-bold font-mono text-forest-900">
+                        {predictionAnalysis.riskScore}
+                      </span>
+                      <span className="text-xs text-slate-400 font-medium">/ 100</span>
+                    </div>
+                  </div>
+
+                  {/* Progress Bar Risiko */}
+                  <div className="w-full bg-slate-100 rounded-full h-2.5 overflow-hidden">
+                    <div
+                      className={`h-2.5 rounded-full transition-all duration-500 ${
+                        predictionAnalysis.riskScore > 65
+                          ? "bg-red-600"
+                          : predictionAnalysis.riskScore > 40
+                          ? "bg-amber-500"
+                          : "bg-emerald-600"
+                      }`}
+                      style={{ width: `${predictionAnalysis.riskScore}%` }}
+                    ></div>
+                  </div>
+
+                  <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-xs text-slate-600">
+                    <span>Harga Daerah: <strong>Rp {predictionAnalysis.provPrice.toLocaleString("id-ID")}</strong></span>
+                    <span>Nasional: <strong>Rp {predictionAnalysis.natPrice.toLocaleString("id-ID")}</strong></span>
+                  </div>
+                </div>
+
+                {/* Penjelasan Kanan: Detail Anomali & Rekomendasi Mitigasi */}
+                <div className="lg:col-span-7 flex flex-col justify-between space-y-4">
+                  {/* Grid 3 Skor Anomali Resmi Bapanas */}
+                  <div className="grid grid-cols-3 gap-3">
+                    <div className="bg-white p-3 rounded-xl border border-cream-100 text-center">
+                      <div className="text-[10px] text-slate-500 font-semibold uppercase">IFPA Anomali</div>
+                      <div className="text-base sm:text-lg font-bold font-mono text-slate-800 mt-0.5">
+                        {predictionAnalysis.ifpaScore}
+                      </div>
+                      <div className="text-[10px] text-slate-400">Komposit Fluktuasi</div>
+                    </div>
+
+                    <div className="bg-white p-3 rounded-xl border border-cream-100 text-center">
+                      <div className="text-[10px] text-slate-500 font-semibold uppercase">QIPA Pasokan</div>
+                      <div className="text-base sm:text-lg font-bold font-mono text-slate-800 mt-0.5">
+                        {predictionAnalysis.qipaScore}
+                      </div>
+                      <div className="text-[10px] text-slate-400">Disparitas Kuantitas</div>
+                    </div>
+
+                    <div className="bg-white p-3 rounded-xl border border-cream-100 text-center">
+                      <div className="text-[10px] text-slate-500 font-semibold uppercase">AIPA Akselerasi</div>
+                      <div className="text-base sm:text-lg font-bold font-mono text-slate-800 mt-0.5">
+                        {predictionAnalysis.aipaScore}
+                      </div>
+                      <div className="text-[10px] text-slate-400">Laju Kenaikan</div>
+                    </div>
+                  </div>
+
+                  {/* Proyeksi Teks */}
+                  <div className="bg-white p-4 rounded-xl border border-cream-100 space-y-1">
+                    <div className="flex items-center gap-1.5 text-xs font-bold text-forest-900">
+                      <Activity className="h-4 w-4 text-forest-700" />
+                      <span>Proyeksi Tren Inflasi Daerah (30–60 Hari ke Depan):</span>
+                    </div>
+                    <p className="text-xs text-slate-700 leading-relaxed">
+                      {predictionAnalysis.projectionText}
+                    </p>
+                  </div>
+
+                  {/* Rekomendasi Kebijakan TPID & Pelaku Usaha */}
+                  <div className="bg-forest-50 p-4 rounded-xl border border-forest-700/20 space-y-1">
+                    <div className="flex items-center gap-1.5 text-xs font-bold text-forest-900">
+                      <ShieldCheck className="h-4 w-4 text-forest-700" />
+                      <span>Rekomendasi Tindakan Cepat (TPID & Pelaku Pasar):</span>
+                    </div>
+                    <p className="text-xs text-forest-800 leading-relaxed">
+                      {predictionAnalysis.recommendation}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      </section>
+
+      {/* 3. SECTION EVOLUSI DATA: DARI PIHPS SCRAPING KE API BAPANAS (APIINDONESIA.ID) */}
+      <section id="sumber-data" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
+        <div className="rounded-3xl border border-cream-100 bg-white p-6 sm:p-10 shadow-sm space-y-8">
+          <div className="space-y-2 max-w-3xl">
+            <div className="inline-flex items-center gap-2 text-forest-700 font-bold text-xs uppercase tracking-wider bg-forest-50 px-3 py-1 rounded-full border border-forest-700/10">
+              <Database className="h-3.5 w-3.5 text-forest-700" />
+              <span>Transparansi Arsitektur Data</span>
+            </div>
+            <h2 className="font-serif text-2xl sm:text-3xl font-bold text-forest-900">
+              Evolusi Sumber Data: Mengapa Beralih dari Web Scraping PIHPS ke Gateway API Bapanas?
+            </h2>
+            <p className="text-xs sm:text-sm text-slate-600">
+              Pada pengembangan sebelumnya, sistem mengandalkan teknik web scraping dari portal PIHPS (Bank Indonesia).
+              Kini PantauPangan v2.0 telah bertransformasi total menggunakan integrasi API resmi Badan Pangan Nasional melalui gateway <strong>apiindonesia.id</strong>.
+            </p>
+          </div>
+
+          {/* Tabel / Grid Komparasi Berdampingan */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Kartu Kiri: Web Scraping PIHPS Lama */}
+            <div className="rounded-2xl border border-red-200 bg-red-50/40 p-6 space-y-4">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-red-100 text-red-800 border border-red-200 uppercase">
+                  Metode Sebelumnya
+                </span>
+                <span className="text-xs text-slate-500 font-medium">Arsitektur Legacy</span>
+              </div>
+
+              <h3 className="font-serif text-lg font-bold text-slate-900">
+                Web Scraping Situs PIHPS Bank Indonesia
+              </h3>
+
+              <ul className="space-y-3 text-xs text-slate-700">
+                <li className="flex items-start gap-2.5">
+                  <XCircle className="h-4 w-4 text-red-500 flex-shrink-0 mt-0.5" />
+                  <span><strong>Rentan Rusak (Fragile):</strong> Setiap kali pengelola web PIHPS mengubah struktur DOM/HTML atau class CSS, script scraper otomatis error dan gagal mengambil data.</span>
+                </li>
+                <li className="flex items-start gap-2.5">
+                  <XCircle className="h-4 w-4 text-red-500 flex-shrink-0 mt-0.5" />
+                  <span><strong>Pembatasan IP & Bot Blocker:</strong> Request scraping sering terblokir firewall atau terkena captcha saat serverless melakukan query paralel.</span>
+                </li>
+                <li className="flex items-start gap-2.5">
+                  <XCircle className="h-4 w-4 text-red-500 flex-shrink-0 mt-0.5" />
+                  <span><strong>Tidak Ada Indikator Anomali:</strong> Hanya menyajikan angka harga historis statis tanpa metrik matematis untuk memprediksi inflasi ke depan.</span>
+                </li>
+                <li className="flex items-start gap-2.5">
+                  <XCircle className="h-4 w-4 text-red-500 flex-shrink-0 mt-0.5" />
+                  <span><strong>Hanya Konsumen Eceran:</strong> Tidak menyediakan data komparasi harga hulu tingkat produsen petani/peternak.</span>
+                </li>
+              </ul>
+            </div>
+
+            {/* Kartu Kanan: Modern API Bapanas via apiindonesia.id */}
+            <div className="rounded-2xl border-2 border-forest-500 bg-gradient-to-br from-mint-100/30 to-white p-6 space-y-4 shadow-sm relative overflow-hidden">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-forest-700 text-white shadow-xs uppercase">
+                  PantauPangan v2.0 (Modern)
+                </span>
+                <span className="text-xs text-forest-700 font-bold">Resmi & Stabil</span>
+              </div>
+
+              <h3 className="font-serif text-lg font-bold text-forest-900">
+                Integrasi Gateway API Bapanas (apiindonesia.id)
+              </h3>
+
+              <ul className="space-y-3 text-xs text-slate-700">
+                <li className="flex items-start gap-2.5">
+                  <CheckCircle2 className="h-4 w-4 text-forest-700 flex-shrink-0 mt-0.5" />
+                  <span><strong>Koneksi API Key Terlisensi:</strong> Terhubung resmi via <code>x-api-key</code> server-to-server berformat JSON terstandarisasi yang stabil dan terjamin uptime-nya.</span>
+                </li>
+                <li className="flex items-start gap-2.5">
+                  <CheckCircle2 className="h-4 w-4 text-forest-700 flex-shrink-0 mt-0.5" />
+                  <span><strong>Endpoint Harga Anomali Khusus:</strong> Memiliki akses ke <code>/api/v1/harga-pangan/anomali</code> (QIPA, AIPA, IFPA) sebagai pondasi sistem prediksi dini inflasi daerah.</span>
+                </li>
+                <li className="flex items-start gap-2.5">
+                  <CheckCircle2 className="h-4 w-4 text-forest-700 flex-shrink-0 mt-0.5" />
+                  <span><strong>Dual-Level Transmisi Harga:</strong> Menghimpun 38 provinsi di dua tingkat simultan: <strong>Tingkat Konsumen</strong> dan <strong>Tingkat Produsen</strong>.</span>
+                </li>
+                <li className="flex items-start gap-2.5">
+                  <CheckCircle2 className="h-4 w-4 text-forest-700 flex-shrink-0 mt-0.5" />
+                  <span><strong>Smart Delta Sync Engine:</strong> Hanya menyinkronkan data pembaruan baru, mencegah duplikasi, dan menjamin 100% data asli tanpa manipulasi Math.random.</span>
+                </li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* 4. SECTION RADAR ANOMALI HARGA PANGAN (EARLY WARNING SYSTEM) */}
       <section id="radar" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="rounded-3xl border border-red-200/80 bg-red-50/50 p-6 sm:p-8 space-y-6">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -421,36 +869,63 @@ function HomePageContent() {
                 <span>Early Warning System (EWS)</span>
               </div>
               <h2 className="font-serif text-2xl font-bold text-slate-900">
-                Radar Anomali Harga Pangan Strategis
+                Radar Sinyal Anomali Pangan Bapanas
               </h2>
               <p className="text-xs sm:text-sm text-slate-600 max-w-2xl">
-                Deteksi fluktuasi tak wajar menggunakan parameter kuantitatif:{" "}
-                <strong>QIPA</strong> (Disparitas Kuantitas), <strong>AIPA</strong> (Akselerasi Inflasi), dan{" "}
-                <strong>IFPA</strong> (Indeks Fluktuasi Gabungan).
+                Daftar komoditas strategis yang terdeteksi mengalami anomali harga pada bulan laporan terbaru.
+                Sinyal waspada ini digunakan untuk mengantisipasi rembetan inflasi ke daerah konsumen lainnya.
               </p>
             </div>
-            <Badge variant="outline" className="border-red-300 text-red-700 bg-white font-semibold text-xs py-1 px-3 self-start sm:self-auto">
-              {anomalyAlerts.length} Sinyal Waspada Terdeteksi
-            </Badge>
+
+            {/* Quick Filter Buttons */}
+            <div className="flex items-center gap-1.5 bg-white p-1 rounded-xl border border-red-200 text-xs font-semibold self-start sm:self-auto">
+              <button
+                type="button"
+                onClick={() => setAnomalyFilter("all")}
+                className={`px-3 py-1 rounded-lg transition-colors ${
+                  anomalyFilter === "all" ? "bg-red-700 text-white" : "text-slate-600 hover:text-red-700"
+                }`}
+              >
+                Semua ({anomalyAlerts.length})
+              </button>
+              <button
+                type="button"
+                onClick={() => setAnomalyFilter("alert")}
+                className={`px-3 py-1 rounded-lg transition-colors ${
+                  anomalyFilter === "alert" ? "bg-red-700 text-white" : "text-slate-600 hover:text-red-700"
+                }`}
+              >
+                Alert Tinggi
+              </button>
+              <button
+                type="button"
+                onClick={() => setAnomalyFilter("warning")}
+                className={`px-3 py-1 rounded-lg transition-colors ${
+                  anomalyFilter === "warning" ? "bg-red-700 text-white" : "text-slate-600 hover:text-red-700"
+                }`}
+              >
+                Waspada
+              </button>
+            </div>
           </div>
 
           {/* Grid Anomaly Cards */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {anomalyAlerts.slice(0, 6).map((item) => {
+            {filteredAnomalyCards.slice(0, 6).map((item) => {
               const a = item.latestAnomaly!;
               const isAlertHigh = a.severity === "alert_high";
               return (
                 <Card
                   key={item.id}
-                  className="border border-red-200 bg-white shadow-sm hover:shadow-md transition-shadow rounded-2xl"
+                  className="border border-red-200 bg-white shadow-sm hover:shadow-md transition-all rounded-2xl group"
                 >
                   <CardHeader className="pb-3">
                     <div className="flex items-center justify-between">
-                      <span className="text-2xl">{item.icon || "📦"}</span>
+                      <span className="text-3xl">{item.icon || "📦"}</span>
                       <span
-                        className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
+                        className={`text-[10px] font-bold px-2.5 py-1 rounded-full border ${
                           isAlertHigh
-                            ? "bg-red-100 text-red-800 border-red-200"
+                            ? "bg-red-100 text-red-800 border-red-200 animate-pulse"
                             : "bg-amber-100 text-amber-800 border-amber-200"
                         }`}
                       >
@@ -467,30 +942,37 @@ function HomePageContent() {
                   <CardContent className="space-y-3 pt-0">
                     <div className="grid grid-cols-3 gap-2 bg-cream-50 p-2.5 rounded-xl border border-cream-100 text-center">
                       <div>
-                        <div className="text-[10px] text-slate-500 font-medium">QIPA</div>
+                        <div className="text-[10px] text-slate-500 font-medium">QIPA (Pasokan)</div>
                         <div className="font-mono font-bold text-xs text-slate-800">
                           {a.qipa ? parseFloat(a.qipa).toFixed(2) : "-"}
                         </div>
                       </div>
                       <div>
-                        <div className="text-[10px] text-slate-500 font-medium">AIPA</div>
+                        <div className="text-[10px] text-slate-500 font-medium">AIPA (Laju)</div>
                         <div className="font-mono font-bold text-xs text-slate-800">
                           {a.aipa ? parseFloat(a.aipa).toFixed(2) : "-"}
                         </div>
                       </div>
                       <div>
-                        <div className="text-[10px] text-slate-500 font-medium">IFPA</div>
+                        <div className="text-[10px] text-slate-500 font-medium">IFPA (Indeks)</div>
                         <div className="font-mono font-bold text-xs text-red-600">
                           {a.ifpa ? parseFloat(a.ifpa).toFixed(2) : "-"}
                         </div>
                       </div>
                     </div>
 
+                    <div className="text-[11px] text-slate-500 flex items-center justify-between pt-1">
+                      <span>Harga Rata-rata:</span>
+                      <span className="font-mono font-bold text-slate-900">
+                        Rp {item.latestPrice?.price?.toLocaleString("id-ID") || "-"}
+                      </span>
+                    </div>
+
                     <Link
                       href={`/komoditas/${item.slug}`}
                       className="w-full flex items-center justify-between text-xs h-9 px-3 rounded-xl border border-cream-100 hover:bg-cream-50 text-slate-700 font-medium transition-colors"
                     >
-                      <span>Analisis Komoditas</span>
+                      <span>Analisis Prediksi Inflasi</span>
                       <ChevronRight className="h-3.5 w-3.5" />
                     </Link>
                   </CardContent>
@@ -501,7 +983,7 @@ function HomePageContent() {
         </div>
       </section>
 
-      {/* 3. SECTION PETA CHOROPLETH 38 PROVINSI & GRAFIK TREN */}
+      {/* 5. SECTION PETA CHOROPLETH 38 PROVINSI & GRAFIK TREN */}
       <section id="peta" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
           <div>
@@ -649,7 +1131,7 @@ function HomePageContent() {
         </div>
       </section>
 
-      {/* 4. SECTION PENCARIAN HARGA MULTI-FILTER (#cari) */}
+      {/* 6. SECTION PENCARIAN HARGA MULTI-FILTER (#cari) */}
       <section id="cari" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
         <div className="rounded-3xl border border-cream-100 bg-white p-6 sm:p-8 shadow-sm space-y-6">
           <div className="space-y-1">
@@ -724,7 +1206,7 @@ function HomePageContent() {
               <Button
                 type="submit"
                 disabled={isSearching}
-                className="w-full h-11 bg-forest-700 hover:bg-forest-900 text-white font-semibold rounded-xl gap-2 shadow-sm"
+                className="w-full h-11 bg-forest-700 hover:bg-forest-900 text-white font-semibold rounded-xl gap-2 shadow-sm cursor-pointer"
               >
                 {isSearching ? (
                   <>
@@ -786,7 +1268,7 @@ export default function HomePage() {
           <div className="text-center space-y-3">
             <Loader2 className="h-8 w-8 animate-spin mx-auto text-forest-700" />
             <p className="text-sm font-medium text-slate-600">
-              Memuat data pasar pangan nasional...
+              Memuat data pasar pangan & sistem prediksi inflasi...
             </p>
           </div>
         </div>

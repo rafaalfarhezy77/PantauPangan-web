@@ -105,14 +105,14 @@ export function Navbar() {
                 <span className="font-serif text-lg font-bold text-forest-900 leading-tight">
                   PantauPangan
                 </span>
-                <span className="text-[10px] text-slate-500 font-medium tracking-tight">
-                  Harga Pangan Nasional
+                <span className="text-[10px] text-forest-700 font-semibold tracking-tight">
+                  Prediksi Inflasi & Harga Bapanas
                 </span>
               </div>
             </Link>
 
             {/* Desktop Navigation Links */}
-            <nav className="hidden md:flex items-center gap-6 text-sm font-medium text-slate-700">
+            <nav className="hidden lg:flex items-center gap-5 text-xs font-semibold text-slate-700">
               <Link
                 href="/"
                 className="hover:text-forest-700 transition-colors py-1"
@@ -120,22 +120,35 @@ export function Navbar() {
                 Beranda
               </Link>
               <Link
-                href="/#cari"
-                className="hover:text-forest-700 transition-colors py-1"
+                href="/#prediksi-inflasi"
+                className="hover:text-forest-700 transition-colors py-1 flex items-center gap-1 text-forest-700 font-bold"
               >
-                Eksplorasi Harga
+                <span className="h-2 w-2 rounded-full bg-red-500 animate-pulse"></span>
+                <span>Prediksi Inflasi Daerah</span>
               </Link>
               <Link
                 href="/#radar"
                 className="hover:text-forest-700 transition-colors py-1"
               >
-                Radar Anomali
+                Radar Anomali (EWS)
               </Link>
               <Link
                 href="/#peta"
                 className="hover:text-forest-700 transition-colors py-1"
               >
                 Peta 38 Provinsi
+              </Link>
+              <Link
+                href="/#sumber-data"
+                className="hover:text-forest-700 transition-colors py-1 text-slate-500"
+              >
+                PIHPS vs Bapanas
+              </Link>
+              <Link
+                href="/#cari"
+                className="hover:text-forest-700 transition-colors py-1"
+              >
+                Eksplorasi
               </Link>
             </nav>
 
@@ -253,18 +266,19 @@ export function Navbar() {
               Beranda
             </Link>
             <Link
-              href="/#cari"
+              href="/#prediksi-inflasi"
               onClick={() => setIsMobileMenuOpen(false)}
-              className="block py-2 text-sm font-medium text-slate-800 hover:text-forest-700"
+              className="block py-2 text-sm font-bold text-forest-700 hover:text-forest-900 flex items-center gap-2"
             >
-              Eksplorasi Harga
+              <span className="h-2 w-2 rounded-full bg-red-500 animate-pulse"></span>
+              <span>Prediksi Inflasi Daerah</span>
             </Link>
             <Link
               href="/#radar"
               onClick={() => setIsMobileMenuOpen(false)}
               className="block py-2 text-sm font-medium text-slate-800 hover:text-forest-700"
             >
-              Radar Anomali
+              Radar Anomali (EWS)
             </Link>
             <Link
               href="/#peta"
@@ -272,6 +286,20 @@ export function Navbar() {
               className="block py-2 text-sm font-medium text-slate-800 hover:text-forest-700"
             >
               Peta 38 Provinsi
+            </Link>
+            <Link
+              href="/#sumber-data"
+              onClick={() => setIsMobileMenuOpen(false)}
+              className="block py-2 text-sm font-medium text-slate-600 hover:text-forest-700"
+            >
+              Evolusi Data: PIHPS vs Bapanas
+            </Link>
+            <Link
+              href="/#cari"
+              onClick={() => setIsMobileMenuOpen(false)}
+              className="block py-2 text-sm font-medium text-slate-800 hover:text-forest-700"
+            >
+              Eksplorasi & Filter Harga
             </Link>
             <button
               onClick={() => {
