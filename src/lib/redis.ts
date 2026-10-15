@@ -69,3 +69,15 @@ export async function redisDelByPattern(pattern: string): Promise<void> {
     console.warn(`[Redis] Error deleting pattern ${pattern}:`, err);
   }
 }
+
+export async function redisPing(): Promise<boolean> {
+  const redis = getRedis();
+  if (!redis) return false;
+  try {
+    const res = await redis.ping();
+    return res === "PONG" || res === "OK";
+  } catch {
+    return false;
+  }
+}
+

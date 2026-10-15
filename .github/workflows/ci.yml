@@ -12,13 +12,18 @@ on:
 
 jobs:
   verify:
-    name: Build, Lint, Typecheck & Test
+    name: Secret Audit, Lint, Typecheck, Unit Tests & Production Build
     runs-on: ubuntu-latest
 
     env:
       DATABASE_URL: mysql://root:@localhost:3306/pantau_pangan_v2
       BETTER_AUTH_SECRET: ci_test_secret_key_minimum_32_characters_here_12345
       API_INDONESIA_KEY: ci_mock_key
+      API_INDONESIA_BASE_URL: https://use.apiindonesia.id
+      UPSTASH_REDIS_REST_URL: https://mock-redis.upstash.io
+      UPSTASH_REDIS_REST_TOKEN: mock_token_ci
+      CRON_SECRET: ci_cron_secret_minimum_16_chars
+      ML_SERVICE_URL: http://localhost:8000
 
     steps:
       - name: Checkout repository
@@ -33,11 +38,14 @@ jobs:
       - name: Install dependencies
         run: npm ci --legacy-peer-deps
 
-      - name: Run TypeScript Check
-        run: npx tsc --noEmit
+      - name: Run Secret Audit
+        run: npm run verify:secrets
 
       - name: Run ESLint
         run: npm run lint
+
+      - name: Run TypeScript Typecheck
+        run: npx tsc --noEmit
 
       - name: Run Vitest Unit Tests
         run: npm run test
