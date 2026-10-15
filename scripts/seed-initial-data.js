@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-require-imports, @typescript-eslint/no-unused-vars */
 const mysql = require("mysql2/promise");
 const bcrypt = require("bcryptjs");
 

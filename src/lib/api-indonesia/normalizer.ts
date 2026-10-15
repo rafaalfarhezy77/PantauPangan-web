@@ -33,6 +33,17 @@ export function calculatePercentageChange(
   return Number(change.toFixed(2));
 }
 
+export function calculateSpreadMargin(
+  konsumen: number | null,
+  produsen: number | null
+): number | null {
+  if (konsumen === null || produsen === null || produsen <= 0) {
+    return null;
+  }
+  const spread = ((konsumen - produsen) / produsen) * 100;
+  return Number(spread.toFixed(2));
+}
+
 export type AnomalySeverity = "normal" | "warning" | "alert_low" | "alert_high";
 
 export interface AnomalyMappingResult {

@@ -8,30 +8,21 @@ import {
   MapPin,
   Search,
   Database,
-  Calendar,
   Layers,
   ArrowUpRight,
   ShieldAlert,
   ChevronRight,
   Loader2,
-  TrendingUp,
-  TrendingDown,
   Activity,
-  AlertTriangle,
   Zap,
-  ArrowRight,
   ShieldCheck,
-  Cpu,
-  BarChart3,
   Gauge,
   Sparkles,
-  Info,
   CheckCircle2,
   XCircle,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { MapWrapper } from "@/components/map/MapWrapper";
 import { ProvincePriceData } from "@/components/map/IndonesiaChoroplethMap";
 import {
@@ -376,7 +367,7 @@ function HomePageContent() {
 
     // Skor probabilitas inflasi daerah (0 - 100)
     // Formula komposit: IFPA (bobot 40%) + Disparitas Daerah (bobot 35%) + AIPA (bobot 25%)
-    let riskScore = Math.min(
+    const riskScore = Math.min(
       99,
       Math.max(
         15,

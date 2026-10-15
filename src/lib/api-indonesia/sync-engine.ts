@@ -204,7 +204,7 @@ export interface DeltaSyncResult {
   details: Array<{
     tingkat: TingkatHarga;
     wilayah: WilayahHarga;
-    action: "skipped" | "synced" | "failed";
+    action: "skipped" | "synced" | "failed" | "paused_insufficient_credits";
     reason?: string;
     rows?: number;
   }>;
@@ -466,10 +466,32 @@ export async function checkAndRunDeltaSync(options?: {
       });
     } catch (err: unknown) {
       console.error(`[SyncEngine] Failed syncing ${tingkat}-${wilayah}:`, err);
+      const isInsufficientCredits =
+        (err as { code?: string; status?: number })?.code === "INSUFFICIENT_CREDITS" ||
+        (err as { code?: string; status?: number })?.status === 402;
+      const statusToSet = isInsufficientCredits ? "paused_insufficient_credits" : "failed";
+
+      try {
+        await db
+          .insert(apiSyncMetadata)
+          .values({
+            level: tingkat,
+            regionScope: wilayah,
+            lastCheckedAt: sql`CURRENT_TIMESTAMP`,
+            lastSyncStatus: statusToSet,
+          })
+          .onDuplicateKeyUpdate({
+            set: {
+              lastCheckedAt: sql`CURRENT_TIMESTAMP`,
+              lastSyncStatus: statusToSet,
+            },
+          });
+      } catch {}
+
       result.details.push({
         tingkat,
         wilayah,
-        action: "failed",
+        action: isInsufficientCredits ? "paused_insufficient_credits" : "failed",
         reason: (err as Error).message,
       });
     }
